@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>검사하기 | Caffeine Atlas</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="site-nav" aria-label="검사 페이지 메뉴">
+      <a class="brand-mark" href="./index.html">
+        <span>CA</span>
+        Caffeine Atlas
+      </a>
+      <div class="nav-links">
+        <a href="./index.html">홈페이지</a>
+        <a href="#report-form">유전자형 입력</a>
+        <a href="#resultReport">결과</a>
+      </div>
+      <a class="nav-cta" href="./index.html">홈으로</a>
+    </nav>
+
+    <header class="analyzer-head">
+      <div>
+        <p class="eyebrow">Report generator</p>
+        <h1>카페인 민감도 검사하기</h1>
+        <p class="top-summary">Sample ID와 4개 SNP 유전자형을 입력하면 점수, 레이어 분석, 참조표준 분포, 섭취 가이드를 포함한 리포트가 생성됩니다.</p>
+      </div>
+      <div class="top-actions">
+        <div class="privacy-chip">브라우저 내부 계산</div>
+        <div class="version-chip">Report v0.2</div>
+      </div>
+    </header>
+
+    <section class="status-strip" aria-label="모델 요약">
+      <div class="status-card">
+        <span>Core genes</span>
+        <strong>CYP1A2 / AHR</strong>
+      </div>
+      <div class="status-card">
+        <span>Core marker</span>
+        <strong>CYP1A2*1F rs762551</strong>
+      </div>
+      <div class="status-card">
+        <span>Reference</span>
+        <strong>KPGP PRS distribution</strong>
+      </div>
+      <div class="status-card">
+        <span>Output</span>
+        <strong>0-100 sensitivity index</strong>
+      </div>
+    </section>
+
+    <main class="test-flow" id="report-form">
+      <section class="input-panel input-screen" id="inputScreen" aria-labelledby="input-title">
+        <div class="section-head">
+          <div>
+            <h2 id="input-title">검사 정보 및 유전자형 입력</h2>
+            <p>보고서에 표시할 기본 정보와 4개 SNP 유전자형을 입력합니다.</p>
+          </div>
+          <button class="tool-button ghost" id="resetBtn" type="button" title="선택 초기화">
+            <span aria-hidden="true">↺</span>
+            초기화
+          </button>
+        </div>
+
+        <div class="sample-card detailed-form">
+          <div class="field">
+            <label for="sampleId">Sample ID</label>
+            <input id="sampleId" type="text" placeholder="예: SAMPLE-001" required>
+          </div>
+          <div class="field">
+            <label for="reportDate">Report date</label>
+            <input id="reportDate" type="date">
+          </div>
+          <div class="field">
+            <label for="collectionDate">Collection date</label>
+            <input id="collectionDate" type="date">
+          </div>
+          <div class="field">
+            <label for="sampleType">Specimen</label>
+            <select id="sampleType">
+              <option value="Buccal swab">구강상피세포</option>
+              <option value="Saliva">타액</option>
+              <option value="Blood">혈액</option>
+              <option value="Raw genotype data">기존 유전자형 데이터</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="sex">Sex</label>
+            <select id="sex">
+              <option value="Not provided">미기재</option>
+              <option value="Female">여성</option>
+              <option value="Male">남성</option>
+              <option value="Other">기타</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="institution">Institution</label>
+            <input id="institution" type="text" placeholder="예: Caffeine Atlas Lab">
+          </div>
+        </div>
+
+        <div class="report-standard-panel">
+          <strong>리포트 구성 기준</strong>
+          <div>
+            <span>검사 정보</span>
+            <span>유전자형 원자료</span>
+            <span>결과 요약</span>
+            <span>해석 및 한계</span>
+          </div>
+        </div>
+
+        <div class="gene-grid" id="geneGrid"></div>
+
+        <div class="submit-panel">
+          <div>
+            <strong>검사 준비 상태</strong>
+            <p id="validationText">Sample ID와 4개 SNP 유전자형을 모두 입력한 뒤 검사하기를 눌러주세요.</p>
+          </div>
+          <button class="tool-button primary analyze-button" id="analyzeBtn" type="button">
+            검사하기
+          </button>
+        </div>
+      </section>
+
+      <section class="report-screen" id="resultReport" hidden aria-labelledby="result-title">
+        <div class="report-toolbar">
+          <div>
+            <p class="eyebrow">Caffeine sensitivity report</p>
+            <h2 id="result-title">결과 리포트</h2>
+          </div>
+          <button class="tool-button ghost" id="editBtn" type="button">
+            입력 수정
+          </button>
+        </div>
+
+        <div class="section-head compact report-status-head">
+          <div>
+            <p id="coverageText">검사하기 버튼을 누르면 결과가 생성됩니다.</p>
+          </div>
+        </div>
+
+        <div class="result-placeholder" id="resultPlaceholder">
+          <span>검사 대기</span>
+          <strong>검사 정보와 유전자형을 입력해 주세요</strong>
+          <p>결과는 자동으로 노출되지 않습니다. 필수 정보를 확인한 뒤 검사하기 버튼을 눌러야 리포트가 생성됩니다.</p>
+        </div>
+
+        <div class="result-content" id="resultContent" hidden>
+        <div class="report-hero-card">
+          <div class="type-summary">
+            <span class="type-code" id="typeEmoji">--</span>
+            <div>
+              <span class="type-badge" id="typeBadge">대기 중</span>
+              <h3 id="typeName">검사 결과 대기</h3>
+              <p id="typeDesc">검사 정보와 유전자형을 입력하면 개인 유형이 표시됩니다.</p>
+            </div>
+          </div>
+          <div class="score-stage">
+            <div class="score-kicker">Integrated sensitivity index</div>
+            <div class="score-number">
+              <span id="scoreValue">--</span>
+              <small>점</small>
+            </div>
+            <div class="score-label" id="scoreLabel">대기 중</div>
+            <div class="gauge" aria-hidden="true">
+              <div class="gauge-track">
+                <div class="gauge-fill" id="gaugeFill"></div>
+                <div class="gauge-marker" id="gaugeMarker"></div>
+              </div>
+              <div class="gauge-scale">
+                <span>각성형</span>
+                <span>잠잠형</span>
+                <span>잠꾸러기형</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-meta" id="reportMeta">
+          <span>Sample ID: 미입력</span>
+          <span>Report date: --</span>
+        </div>
+
+        <div class="result-detail-grid">
+          <div>
+            <span>Result category</span>
+            <strong id="detailCategory">--</strong>
+          </div>
+          <div>
+            <span>Reference position</span>
+            <strong id="detailPercentile">--</strong>
+          </div>
+          <div>
+            <span>Input quality</span>
+            <strong id="detailInputQuality">--</strong>
+          </div>
+        </div>
+
+        <div class="metabolism-type-card">
+          <span>Metabolism layer type</span>
+          <strong id="metabolismTypeName">--</strong>
+          <p id="metabolismTypeDesc">대사 레이어 계산 후 고속/중간/저속 대사자 판정이 표시됩니다.</p>
+        </div>
+
+        <div class="layer-stack">
+          <h3>Layer decomposition</h3>
+          <div class="layer-row">
+            <span>대사 레이어</span>
+            <strong id="metabolismScore">--</strong>
+            <div class="mini-bar"><i id="metabolismBar"></i></div>
+          </div>
+          <div class="layer-row">
+            <span>섭취/조절 레이어</span>
+            <strong id="behaviorScore">--</strong>
+            <div class="mini-bar"><i id="behaviorBar"></i></div>
+          </div>
+          <div class="layer-row">
+            <span>신뢰도</span>
+            <strong id="confidenceScore">--</strong>
+            <div class="mini-bar"><i id="confidenceBar"></i></div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-head">
+            <h3>Reference cohort distribution</h3>
+            <span id="percentileText">--</span>
+          </div>
+          <canvas id="referenceChart" width="680" height="300" aria-label="참조표준 PRS 분포 그래프"></canvas>
+        </div>
+
+        <div class="result-copy">
+          <h3 id="interpretationTitle">유전자형을 선택해 주세요</h3>
+          <p id="interpretationText">최소 1개 이상의 유전자형을 선택하면 계산됩니다. 모든 정보는 이 화면 안에서만 처리됩니다.</p>
+        </div>
+
+        <div class="recommend-card">
+          <h3>Professional guidance</h3>
+          <ul id="recommendList">
+            <li>결과 계산 후 개인화 문구가 표시됩니다.</li>
+          </ul>
+        </div>
+
+        <div class="summary-card">
+          <h3>Genotype evidence summary</h3>
+          <div class="summary-grid" id="summaryGrid"></div>
+        </div>
+
+        <div class="save-scope-card">
+          <h3>저장되는 항목</h3>
+          <ul>
+            <li>검사 정보, 검체 정보, 보고일</li>
+            <li>4개 SNP별 유전자형, 효과 대립유전자, 반영 점수, 근거 등급</li>
+            <li>최종 민감도 지수, 백분위, 레이어 점수, 그래프 이미지</li>
+            <li>결과 해석, 섭취 가이드, 한계 및 주의 문구</li>
+          </ul>
+        </div>
+
+        <div class="action-row detailed-actions">
+          <button class="tool-button primary" id="saveBtn" type="button" title="상세 리포트 저장">
+            <span aria-hidden="true">↓</span>
+            상세 리포트 저장
+          </button>
+          <button class="tool-button ghost" id="dataSaveBtn" type="button" title="원자료 JSON 저장">
+            <span aria-hidden="true">{ }</span>
+            원자료 저장
+          </button>
+          <button class="tool-button" id="copyBtn" type="button" title="결과 텍스트 복사">
+            <span aria-hidden="true">⧉</span>
+            결과 복사
+          </button>
+        </div>
+
+        <p class="disclaimer">본 결과는 연구·교육용 보조 지표이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다. 실제 반응은 수면, 약물, 간 기능, 임신, 흡연, 스트레스 등의 영향을 받을 수 있습니다.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

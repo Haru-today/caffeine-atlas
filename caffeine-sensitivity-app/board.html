@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>자료실 | Caffeine Atlas</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <nav class="site-nav portal-nav" aria-label="주요 메뉴">
+      <a class="brand-mark" href="./index.html">
+        <span>CA</span>
+        Caffeine Atlas
+      </a>
+      <div class="nav-links">
+        <a href="./index.html#service">서비스 소개</a>
+        <a href="./index.html#report">리포트</a>
+        <a href="./board.html" aria-current="page">자료실</a>
+        <a href="./account.html">회원 안내</a>
+      </div>
+      <a class="nav-cta" href="./analyzer.html" target="_blank" rel="noopener">검사하기</a>
+    </nav>
+
+    <header class="page-hero">
+      <div>
+        <p class="eyebrow">Board</p>
+        <h1>공지사항 및 자료실</h1>
+        <p class="top-summary">카페인 민감도 검사 서비스의 공지, 근거자료, 참고문헌, 운영 안내를 게시판 형식으로 제공합니다.</p>
+      </div>
+      <div class="page-hero-actions">
+        <a class="hero-button primary" href="./board-write.html">글쓰기</a>
+        <a class="hero-button secondary dark" href="./index.html">홈으로</a>
+      </div>
+    </header>
+
+    <main class="board-layout">
+      <section class="board-main" aria-label="게시글 목록">
+        <div class="board-actions">
+          <div class="board-tabs" aria-label="게시판 분류">
+            <a href="./board.html" class="active">전체</a>
+            <a href="#notice-list">공지</a>
+            <a href="#post-evidence">자료</a>
+            <a href="#post-references">논문</a>
+          </div>
+          <label class="board-search">
+            <span>검색</span>
+            <input type="search" placeholder="제목 또는 분류 검색">
+          </label>
+        </div>
+
+        <div class="board-table" id="notice-list">
+          <div class="board-header" aria-hidden="true">
+            <span>분류</span>
+            <span>제목</span>
+            <span>등록일</span>
+            <span>조회</span>
+          </div>
+          <a class="board-row pinned" href="#post-open">
+            <span>공지</span>
+            <strong>카페인 민감도 검사 페이지 오픈</strong>
+            <small>2026.07.01</small>
+            <em>128</em>
+          </a>
+          <a class="board-row" href="#post-evidence">
+            <span>자료</span>
+            <strong>모델 근거자료 패키지</strong>
+            <small>2026.07.01</small>
+            <em>94</em>
+          </a>
+          <a class="board-row" href="#post-references">
+            <span>논문</span>
+            <strong>참고문헌 BibTeX 파일</strong>
+            <small>2026.07.01</small>
+            <em>76</em>
+          </a>
+          <a class="board-row" href="./account.html">
+            <span>회원</span>
+            <strong>회원가입·로그인 기반 데이터 축적 안내</strong>
+            <small>2026.07.01</small>
+            <em>52</em>
+          </a>
+        </div>
+
+        <article class="board-detail" id="post-open">
+          <div class="detail-head">
+            <span>공지</span>
+            <div>
+              <h2>카페인 민감도 검사 페이지 오픈</h2>
+              <p>등록일 2026.07.01 · 담당 Caffeine Atlas 운영팀</p>
+            </div>
+          </div>
+          <p>유전자형 입력 후 검사 결과 화면으로 전환되는 카페인 민감도 검사 페이지를 공개했습니다. 결과 리포트에서는 민감도 지수, 백분위 위치, 대사 유형, 권장 섭취 가이드, 저장 가능한 상세 결과를 확인할 수 있습니다.</p>
+          <div class="post-actions">
+            <a class="tool-button primary" href="./analyzer.html" target="_blank" rel="noopener">검사 페이지 열기</a>
+            <a class="tool-button ghost" href="#notice-list">목록으로</a>
+          </div>
+        </article>
+
+        <article class="board-detail" id="post-evidence">
+          <div class="detail-head">
+            <span>자료</span>
+            <div>
+              <h2>모델 근거자료 패키지</h2>
+              <p>등록일 2026.07.01 · 첨부 1개</p>
+            </div>
+          </div>
+          <p>프로젝트에서 참고한 카페인 대사 관련 유전자, 문헌 근거, 해석 범위, 연구용 리포트 운영 시 주의사항을 정리한 자료입니다. 홈페이지에서는 게시글로 먼저 확인하고, 필요한 경우 첨부 문서를 열도록 구성했습니다.</p>
+          <div class="attachment-grid">
+            <a class="attachment-card" href="../caffeine_model_evidence_pack.md" target="_blank" rel="noopener">
+              <span>첨부 문서</span>
+              <strong>caffeine_model_evidence_pack.md</strong>
+              <small>근거자료 패키지 보기</small>
+            </a>
+          </div>
+          <div class="post-actions">
+            <a class="tool-button ghost" href="./board-write.html">문의 글쓰기</a>
+            <a class="tool-button ghost" href="#notice-list">목록으로</a>
+          </div>
+        </article>
+
+        <article class="board-detail" id="post-references">
+          <div class="detail-head">
+            <span>논문</span>
+            <div>
+              <h2>참고문헌 BibTeX 파일</h2>
+              <p>등록일 2026.07.01 · 첨부 1개</p>
+            </div>
+          </div>
+          <p>논문 작성과 참고문헌 관리에 사용할 수 있도록 관련 문헌을 BibTeX 형식으로 정리한 파일입니다. 원문 파일은 게시글의 첨부 자료로 제공됩니다.</p>
+          <div class="attachment-grid">
+            <a class="attachment-card" href="../caffeine_model_references.bib" target="_blank" rel="noopener">
+              <span>첨부 문헌</span>
+              <strong>caffeine_model_references.bib</strong>
+              <small>BibTeX 파일 열기</small>
+            </a>
+          </div>
+          <div class="post-actions">
+            <a class="tool-button ghost" href="./board-write.html">문의 글쓰기</a>
+            <a class="tool-button ghost" href="#notice-list">목록으로</a>
+          </div>
+        </article>
+      </section>
+
+      <aside class="board-side" aria-label="자료실 안내">
+        <section class="side-panel">
+          <p class="eyebrow">Write</p>
+          <h2>게시글 작성</h2>
+          <p>검사 운영 문의, 자료 요청, 문헌 추가 요청을 남길 수 있는 화면입니다. 현재는 정적 프로토타입이므로 브라우저 임시저장 방식으로 작동합니다.</p>
+          <a class="tool-button primary" href="./board-write.html">글쓰기</a>
+        </section>
+        <section class="side-panel">
+          <p class="eyebrow">Account</p>
+          <h2>회원 데이터 축적</h2>
+          <p>회원가입과 로그인으로 검사 결과를 누적하려면 서버, 데이터베이스, 동의 관리가 필요합니다.</p>
+          <a class="tool-button ghost" href="./account.html">구축 방식 보기</a>
+        </section>
+        <section class="side-panel muted-panel">
+          <h2>운영 안내</h2>
+          <ul class="plain-list">
+            <li>자료실 첨부는 게시글 상세에서 열립니다.</li>
+            <li>검사 결과는 의료 진단이나 처방이 아닙니다.</li>
+            <li>실제 운영 시 문의 글과 회원 정보는 서버에 저장해야 합니다.</li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="site-footer">
+      <span>Caffeine Atlas</span>
+      <p>Research-use caffeine sensitivity report prototype. Not for diagnosis or medical prescription.</p>
+    </footer>
+  </div>
+</body>
+</html>
