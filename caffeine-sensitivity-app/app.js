@@ -88,13 +88,13 @@
   };
 
   var referenceBins = [
-    { raw: -0.5, count: 12 },
-    { raw: -0.25, count: 50 },
-    { raw: 0, count: 79 },
-    { raw: 0.25, count: 85 },
-    { raw: 0.5, count: 76 },
-    { raw: 0.75, count: 32 },
-    { raw: 1, count: 16 }
+    { raw: -0.5, level: 1 },
+    { raw: -0.25, level: 3 },
+    { raw: 0, level: 5 },
+    { raw: 0.25, level: 5 },
+    { raw: 0.5, level: 4 },
+    { raw: 0.75, level: 2 },
+    { raw: 1, level: 1 }
   ];
 
   var selections = {};
@@ -274,8 +274,8 @@
     var below = 0;
     referenceBins.forEach(function (bin) {
       var binScore = normalizeReference(bin.raw);
-      total += bin.count;
-      if (binScore < score) below += bin.count;
+      total += bin.level;
+      if (binScore < score) below += bin.level;
     });
     return {
       percentile: total > 0 ? (below / total) * 100 : 0,
@@ -526,7 +526,7 @@
     elements.confidenceScore.textContent = confidence + "%";
     elements.confidenceBar.style.width = confidence + "%";
 
-    elements.percentileText.textContent = "참조표본 백분위 " + percentile.percentile.toFixed(1) + "%";
+    elements.percentileText.textContent = "참조분포 백분위 " + percentile.percentile.toFixed(1) + "%";
     elements.detailCategory.textContent = category.label;
     elements.detailPercentile.textContent = percentile.percentile.toFixed(1) + " percentile";
     elements.detailInputQuality.textContent = confidence + "% / 4 SNP 입력 완료";
@@ -617,8 +617,8 @@
     var padBottom = 52;
     var chartW = width - padLeft - padRight;
     var chartH = height - padTop - padBottom;
-    var maxCount = referenceBins.reduce(function (max, bin) {
-      return Math.max(max, bin.count);
+    var maxLevel = referenceBins.reduce(function (max, bin) {
+      return Math.max(max, bin.level);
     }, 1);
 
     ctx.clearRect(0, 0, width, height);
@@ -632,29 +632,25 @@
     ctx.textAlign = "right";
     for (var i = 0; i <= 4; i += 1) {
       var y = padTop + chartH - (i / 4) * chartH;
-      var value = Math.round((i / 4) * maxCount);
       ctx.beginPath();
       ctx.moveTo(padLeft, y);
       ctx.lineTo(width - padRight, y);
       ctx.stroke();
-      ctx.fillText(String(value), padLeft - 10, y + 4);
     }
 
     var barGap = 10;
     var barW = (chartW - barGap * (referenceBins.length - 1)) / referenceBins.length;
     referenceBins.forEach(function (bin, index) {
       var x = padLeft + index * (barW + barGap);
-      var h = Math.max(2, (bin.count / maxCount) * chartH);
+      var h = Math.max(2, (bin.level / maxLevel) * chartH);
       var y = padTop + chartH - h;
       ctx.fillStyle = "#087f8c";
       ctx.fillRect(x, y, barW, h);
       ctx.fillStyle = "#045c66";
       ctx.fillRect(x, y, barW, 4);
-      ctx.fillStyle = "#263347";
+      ctx.fillStyle = "#657487";
       ctx.textAlign = "center";
       ctx.font = "12px sans-serif";
-      ctx.fillText(bin.count + "명", x + barW / 2, y - 7);
-      ctx.fillStyle = "#657487";
       ctx.fillText(Math.round(normalizeReference(bin.raw)), x + barW / 2, height - 24);
     });
 
@@ -666,7 +662,7 @@
     ctx.save();
     ctx.translate(16, padTop + chartH / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText("참조표본 빈도", 0, 0);
+    ctx.fillText("참조분포", 0, 0);
     ctx.restore();
 
     if (typeof userScore === "number") {
@@ -729,7 +725,7 @@
       "점수: " + lastResult.score.toFixed(1) + "점",
       "유형: " + lastResult.category.label,
       "대사 레이어 판정: " + lastResult.metabolismSubtype.name,
-      "참조표본 위치: " + lastResult.percentile.toFixed(1) + "%",
+      "참조분포 위치: " + lastResult.percentile.toFixed(1) + "%",
       layerText.join("\n"),
       "",
       "[유전자형]",
@@ -892,13 +888,13 @@
       "<h2>결과 요약</h2><section class=\"score-grid\">",
       metaBox("결과 유형", data.result.category),
       metaBox("대사 레이어 판정", data.result.metabolismSubtype.name),
-      metaBox("참조표본 위치", data.result.percentile + " percentile"),
+      metaBox("참조분포 위치", data.result.percentile + " percentile"),
       metaBox("입력 완성도", data.result.confidence + "%"),
       metaBox("대사 레이어", data.result.metabolismScore === null ? "입력 없음" : data.result.metabolismScore + "점"),
       metaBox("조절 레이어", data.result.regulationScore === null ? "입력 없음" : data.result.regulationScore + "점"),
       "</section>",
       "<h2>결과 해석</h2><p class=\"label\">", escapeHtml(data.result.title), "</p><p>", escapeHtml(data.result.interpretation), "</p>",
-      "<h2>참조표본 분포</h2><img class=\"chart\" src=\"", chartImage, "\" alt=\"참조표본 분포 그래프\">",
+      "<h2>참조분포</h2><img class=\"chart\" src=\"", chartImage, "\" alt=\"참조분포 그래프\">",
       "<h2>유전자형 상세</h2><table><thead><tr><th>유전자</th><th>유전자형</th><th>레이어</th><th>효과대립유전자</th><th>반영점수</th><th>근거</th></tr></thead><tbody>",
       genotypeRows,
       "</tbody></table>",
