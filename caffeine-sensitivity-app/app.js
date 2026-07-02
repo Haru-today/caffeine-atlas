@@ -99,6 +99,7 @@
 
   var GOOGLE_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxkjHn8rhkkRL-hcnTHyrUcHD0ldsEL8PKAwFXUmkrum06PiGbKD50zOKF1tG-qdI-G/exec";
   var FIXED_INSTITUTION = "동의대학교 임상병리학과 분자진단연구실";
+  var KOREA_TIME_ZONE = "Asia/Seoul";
   var selections = {};
   var lastResult = null;
   var hasSubmitted = false;
@@ -156,6 +157,40 @@
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
+  }
+
+  function getKoreaDateParts(date) {
+    var parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: KOREA_TIME_ZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false
+    }).formatToParts(date || new Date());
+
+    return parts.reduce(function (result, part) {
+      if (part.type !== "literal") {
+        result[part.type] = part.value;
+      }
+      return result;
+    }, {});
+  }
+
+  function getKoreaDateString(date) {
+    var parts = getKoreaDateParts(date);
+    return parts.year + "-" + parts.month + "-" + parts.day;
+  }
+
+  function getKoreaDateTimeString(date) {
+    var parts = getKoreaDateParts(date);
+    return [
+      parts.year, "-", parts.month, "-", parts.day,
+      " ", parts.hour, ":", parts.minute, ":", parts.second,
+      " KST"
+    ].join("");
   }
 
   function normalizeReference(raw) {
@@ -809,7 +844,8 @@
     var reportInfo = getReportInfo();
     return {
       reportTitle: "카페인 반응 근거 기반 해석 리포트",
-      generatedAt: new Date().toISOString(),
+      generatedAt: getKoreaDateTimeString(),
+      timeZone: KOREA_TIME_ZONE,
       reportInfo: reportInfo,
       result: {
         score: Number(lastResult.score.toFixed(1)),
@@ -846,7 +882,7 @@
     if (!data) return null;
 
     return {
-      submittedAt: new Date().toISOString(),
+      submittedAt: getKoreaDateTimeString(),
       sampleId: data.reportInfo.sampleId,
       reportDate: data.reportInfo.reportDate,
       collectionDate: data.reportInfo.collectionDate,
@@ -1030,8 +1066,8 @@
     createGeneCards();
     bindEvents();
     elements.institution.value = FIXED_INSTITUTION;
-    elements.reportDate.valueAsDate = new Date();
-    elements.collectionDate.valueAsDate = new Date();
+    elements.reportDate.value = getKoreaDateString();
+    elements.collectionDate.value = getKoreaDateString();
     updateReportMeta();
     renderEmpty();
     drawReferenceChart(null);

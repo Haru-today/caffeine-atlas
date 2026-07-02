@@ -1,5 +1,6 @@
 const SPREADSHEET_ID = "1v0-AhubC4vXzK-dzmA1G_S0qR8DYLOe1woqnAl7VL0s";
 const SHEET_NAME = "Responses";
+const KOREA_TIME_ZONE = "Asia/Seoul";
 
 const FIELD_KEYS = [
   "submittedAt",
@@ -68,11 +69,15 @@ function doPost(e) {
   }
 
   const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  spreadsheet.setSpreadsheetTimeZone(KOREA_TIME_ZONE);
   const sheet = spreadsheet.getSheetByName(SHEET_NAME) || spreadsheet.insertSheet(SHEET_NAME);
 
   ensureResponseHeader_(sheet);
 
   sheet.appendRow(FIELD_KEYS.map((key) => {
+    if (key === "submittedAt") {
+      return payload.submittedAt || formatKoreaDateTime_(new Date());
+    }
     if (key === "rankOutOf100") {
       return payload.rankOutOf100 ?? rankFromPercentile_(payload.percentile);
     }
@@ -93,6 +98,7 @@ function jsonResponse(value) {
 
 function setupTemplate() {
   const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  spreadsheet.setSpreadsheetTimeZone(KOREA_TIME_ZONE);
   ensureResponsesSheet_(spreadsheet);
   buildDashboard_(spreadsheet);
   buildSummary_(spreadsheet);
@@ -205,6 +211,10 @@ function buildDataDictionary_(spreadsheet) {
     ["전체 리포트 JSON", "결과 해석, 섭취 가이드, 유전자형 상세를 포함한 전체 리포트 원본", "계산 결과"]
   ]);
   finishTemplateSheet_(sheet, 3);
+}
+
+function formatKoreaDateTime_(date) {
+  return Utilities.formatDate(date, KOREA_TIME_ZONE, "yyyy-MM-dd HH:mm:ss 'KST'");
 }
 
 function rankFromPercentile_(percentile) {
