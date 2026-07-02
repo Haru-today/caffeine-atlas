@@ -27,6 +27,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
   letter-spacing: 0;
   word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 button,
@@ -184,16 +185,18 @@ a {
 }
 
 .top-summary {
-  max-width: 780px;
+  max-width: 680px;
   margin: 10px 0 0;
   color: var(--muted);
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.7;
 }
 
 .hero .top-summary {
+  max-width: 620px;
   color: rgba(255, 255, 255, 0.82);
   font-size: 17px;
+  line-height: 1.68;
 }
 
 .hero-actions {
@@ -270,7 +273,8 @@ a {
 .section-head.wide {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 0.55fr);
-  align-items: end;
+  align-items: start;
+  gap: 18px;
   margin-bottom: 18px;
 }
 
@@ -312,7 +316,8 @@ a {
 .preview-list p {
   margin-bottom: 0;
   color: #47576c;
-  line-height: 1.6;
+  font-size: 15px;
+  line-height: 1.68;
 }
 
 .report-showcase {
@@ -512,7 +517,8 @@ a {
 
 .section-head .service-summary {
   grid-column: 1 / -1;
-  max-width: 720px;
+  max-width: 680px;
+  line-height: 1.68;
 }
 
 .section-head.compact {
@@ -1480,8 +1486,8 @@ canvas {
 
 .portal-copy h1 {
   display: grid;
-  gap: 4px;
-  max-width: 700px;
+  gap: 6px;
+  max-width: 760px;
   font-size: clamp(34px, 4.5vw, 62px);
   line-height: 1.12;
   text-wrap: balance;
@@ -1499,8 +1505,8 @@ canvas {
 
 .quick-card {
   display: grid;
-  gap: 7px;
-  min-height: 116px;
+  gap: 8px;
+  min-height: 112px;
   padding: 16px;
   border: 1px solid rgba(255, 255, 255, 0.36);
   border-radius: 8px;
@@ -1546,8 +1552,8 @@ canvas {
   color: inherit;
   font-size: 13px;
   font-weight: 750;
-  line-height: 1.45;
-  opacity: 0.82;
+  line-height: 1.58;
+  opacity: 0.86;
   overflow-wrap: anywhere;
 }
 
@@ -1608,7 +1614,8 @@ canvas {
 .test-card p {
   margin-bottom: 0;
   color: #47576c;
-  line-height: 1.6;
+  font-size: 15px;
+  line-height: 1.68;
 }
 
 .test-card a {
@@ -1660,7 +1667,8 @@ canvas {
 .evidence-grid p {
   margin-bottom: 0;
   color: #47576c;
-  line-height: 1.58;
+  font-size: 15px;
+  line-height: 1.68;
 }
 
 .evidence-grid {
@@ -1741,7 +1749,7 @@ canvas {
 
 .support-card p {
   color: #47576c;
-  line-height: 1.6;
+  line-height: 1.68;
 }
 
 .support-info {
