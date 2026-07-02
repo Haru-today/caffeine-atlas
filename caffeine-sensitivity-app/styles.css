@@ -503,6 +503,11 @@ a {
   line-height: 1.5;
 }
 
+.section-head .service-summary {
+  grid-column: 1 / -1;
+  white-space: nowrap;
+}
+
 .section-head.compact {
   margin-bottom: 12px;
 }
@@ -591,6 +596,60 @@ a {
   font-weight: 900;
 }
 
+.consent-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid #d7e5e8;
+  border-radius: 8px;
+  background: #f7fcfd;
+}
+
+.consent-card input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--teal-dark);
+}
+
+.consent-card span {
+  display: grid;
+  gap: 4px;
+  color: #405265;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.consent-card strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.sync-status {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #eef6f7;
+  color: #405265;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sync-status.error {
+  background: #fff2ef;
+  color: var(--coral);
+  font-weight: 850;
+}
+
+.sync-status.success {
+  background: #eef8f1;
+  color: var(--green);
+  font-weight: 850;
+}
+
 .analyze-button {
   min-height: 52px;
   font-size: 16px;
@@ -635,6 +694,12 @@ a {
 .field textarea:focus {
   border-color: var(--teal);
   box-shadow: 0 0 0 3px rgba(0, 109, 119, 0.12);
+}
+
+.field input[readonly] {
+  background: #f3f7f8;
+  color: #405265;
+  cursor: default;
 }
 
 .gene-grid {
@@ -1101,6 +1166,10 @@ a {
   line-height: 1.65;
 }
 
+.result-copy p {
+  white-space: pre-line;
+}
+
 .chart-head {
   display: flex;
   justify-content: space-between;
@@ -1112,9 +1181,21 @@ a {
   margin-bottom: 0;
 }
 
-.chart-head span {
+.chart-position {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+
+.chart-position strong {
   color: var(--teal-dark);
-  font-size: 13px;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.chart-position span {
+  color: var(--teal-dark);
+  font-size: 12px;
   font-weight: 900;
 }
 
@@ -1240,6 +1321,10 @@ canvas {
   .report-showcase,
   .section-head.wide {
     grid-template-columns: 1fr;
+  }
+
+  .section-head .service-summary {
+    white-space: normal;
   }
 
   .report-hero-card {
@@ -1659,6 +1744,16 @@ canvas {
 .support-info strong {
   color: var(--ink);
   font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.support-info a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.support-info a:hover {
+  text-decoration: underline;
 }
 
 .faq-list {

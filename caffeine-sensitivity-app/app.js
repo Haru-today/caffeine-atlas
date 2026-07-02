@@ -97,6 +97,8 @@
     { raw: 1, level: 1 }
   ];
 
+  var GOOGLE_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxkjHn8rhkkRL-hcnTHyrUcHD0ldsEL8PKAwFXUmkrum06PiGbKD50zOKF1tG-qdI-G/exec";
+  var FIXED_INSTITUTION = "동의대학교 임상병리학과 분자진단연구실";
   var selections = {};
   var lastResult = null;
   var hasSubmitted = false;
@@ -116,7 +118,9 @@
     editBtn: document.getElementById("editBtn"),
     resetBtn: document.getElementById("resetBtn"),
     saveBtn: document.getElementById("saveBtn"),
-    dataSaveBtn: document.getElementById("dataSaveBtn"),
+    sheetSaveBtn: document.getElementById("sheetSaveBtn"),
+    sheetConsent: document.getElementById("sheetConsent"),
+    sheetSyncStatus: document.getElementById("sheetSyncStatus"),
     copyBtn: document.getElementById("copyBtn"),
     validationText: document.getElementById("validationText"),
     resultPlaceholder: document.getElementById("resultPlaceholder"),
@@ -132,6 +136,7 @@
     metabolismBar: document.getElementById("metabolismBar"),
     behaviorBar: document.getElementById("behaviorBar"),
     confidenceBar: document.getElementById("confidenceBar"),
+    referenceRankText: document.getElementById("referenceRankText"),
     percentileText: document.getElementById("percentileText"),
     interpretationTitle: document.getElementById("interpretationTitle"),
     interpretationText: document.getElementById("interpretationText"),
@@ -283,20 +288,24 @@
     };
   }
 
+  function calculateRankFromPercentile(percentile) {
+    return clamp(Math.round(100 - percentile), 1, 100);
+  }
+
   function classify(score) {
     if (score < 33.34) {
       return {
         label: "각성형",
         badge: "빠른 대사형",
         emoji: "⚡",
-        desc: "카페인을 빠르게 분해해요. 커피를 마셔도 비교적 빨리 처리되는 타입입니다.",
-        title: "빠른 대사 가능성이 높은 유전형 조합",
-        text: "입력된 유전자형 조합은 카페인 잔류 가능성이 낮은 범위에 위치합니다. CYP1A2 대사 레이어가 빠른 분해 방향으로 해석되며, 일반적인 섭취량에서 카페인이 비교적 빠르게 처리될 가능성이 있습니다.",
+        desc: "카페인이 몸에서 비교적 빨리 빠져나갈 가능성이 있습니다.",
+        title: "커피를 마셔도 비교적 부담이 적을 수 있어요",
+        text: "입력한 유전자형을 보면 카페인이 몸에 오래 남기보다는 비교적 빨리 처리되는 쪽에 가깝습니다. 그래서 보통 양의 커피는 크게 부담 없이 느낄 수 있지만, 사람마다 수면 상태나 스트레스, 컨디션에 따라 반응이 달라질 수 있습니다.",
         recommendations: [
-          "총 카페인 섭취량은 성인 기준 400mg/day 이하 범위에서 관리",
-          "오후 섭취 허용 여부는 실제 수면 반응을 기준으로 조정",
-          "운동 전 카페인 사용 시 심박, 불안감, 위장 반응 모니터링",
-          "두근거림이나 불면이 반복되면 즉시 감량"
+          "커피를 잘 견디는 편이어도 하루 3-4잔 이상은 습관처럼 늘리지 않는 것이 좋습니다.",
+          "오후 커피를 마신 날 잠드는 시간이 늦어지면, 다음부터는 시간을 조금 앞당겨 보세요.",
+          "운동 전 커피를 마실 때 가슴 두근거림, 속 불편함, 손 떨림이 있으면 양을 줄여보세요.",
+          "잠을 설친 날, 스트레스가 많은 날에는 평소보다 카페인이 더 강하게 느껴질 수 있습니다."
         ]
       };
     }
@@ -305,14 +314,14 @@
         label: "잠잠형",
         badge: "평균 대사형",
         emoji: "🌿",
-        desc: "카페인 대사가 평균 범위예요. 적당히 즐기면 균형이 좋은 타입입니다.",
-        title: "평균 범위의 카페인 반응 가능성",
-        text: "입력된 유전자형 조합은 중간 수준의 카페인 민감도 범위에 위치합니다. 유전적 신호만으로는 극단적인 빠른 대사 또는 느린 대사로 분류하기 어렵고, 생활습관 요인을 함께 반영하는 것이 적절합니다.",
+        desc: "대부분의 사람들과 비슷한 정도로 카페인에 반응할 가능성이 있습니다.",
+        title: "카페인 반응이 평균 범위에 가까워요",
+        text: "입력한 유전자형만 보면 카페인을 아주 빨리 처리하는 쪽도, 오래 붙잡아두는 쪽도 아닙니다.\n커피를 마셔도 괜찮은지는 유전자 결과와 함께 실제 몸 반응을 같이 보는 것이 가장 좋습니다.",
         recommendations: [
-          "하루 200-300mg 범위에서 개인 반응 확인",
-          "오후 3시 이후 섭취는 수면 질에 따라 제한",
-          "취침 6시간 전 이후 카페인 섭취 회피",
-          "수면 부족, 스트레스, 약물 복용 시 디카페인 전환 고려"
+          "하루 1-2잔 정도부터 시작해 내 몸이 편한 양을 찾아보세요.",
+          "오후 커피 후 잠이 얕아지거나 늦게 잠들면, 오후 2-3시 이후에는 줄이는 것이 좋습니다.",
+          "커피를 마신 뒤 속쓰림, 불안감, 두근거림이 있으면 양보다 농도부터 낮춰보세요.",
+          "잠이 부족한 날에는 같은 커피 한 잔도 더 예민하게 느껴질 수 있습니다."
         ]
       };
     }
@@ -320,15 +329,15 @@
       label: "잠꾸러기형",
       badge: "느린 대사형",
       emoji: "🌙",
-      desc: "카페인이 오래 남아요. 커피 한 잔에도 각성 상태가 길게 유지될 수 있습니다.",
-      title: "느린 대사 가능성이 높은 유전형 조합",
-      text: "입력된 유전자형 조합은 카페인 잔류 가능성이 높은 범위에 위치합니다. CYP1A2 기능 또는 조절 레이어에서 민감도 증가 방향의 신호가 관찰되며, 소량 섭취에서도 각성 지속, 불안감, 수면 방해가 나타날 수 있습니다.",
+      desc: "카페인이 몸에 오래 남아 한 잔도 강하게 느껴질 수 있습니다.",
+      title: "커피가 몸에 오래 남을 수 있어요",
+      text: "입력한 유전자형을 보면 카페인이 비교적 천천히 처리되는 쪽에 가깝습니다. 커피 한 잔만 마셔도 밤에 잠이 늦어지거나, 가슴이 두근거리거나, 불안하게 느껴질 수 있으니 양과 시간을 조금 더 조심해서 보는 것이 좋습니다.",
       recommendations: [
-        "하루 100mg 이하부터 보수적으로 반응 확인",
-        "가능하면 오전 중 섭취로 제한",
-        "디카페인 커피, 허브티, 물로 대체",
-        "초콜릿, 에너지드링크, 녹차 등 숨은 카페인 확인",
-        "불면, 빈맥, 불안 증상이 반복되면 전문가 상담 권장"
+        "처음에는 반 잔이나 연한 커피처럼 적은 양부터 확인해 보세요.",
+        "가능하면 오전에만 마시고, 오후에는 디카페인이나 카페인이 없는 음료를 선택해 보세요.",
+        "에너지드링크, 진한 녹차, 초콜릿에도 카페인이 들어 있을 수 있습니다.",
+        "커피를 마신 날 잠을 설치거나 두근거림이 반복되면 며칠 쉬어보는 것이 좋습니다.",
+        "불면, 심한 두근거림, 불안감이 자주 반복되면 의료진과 상담해 주세요."
       ]
     };
   }
@@ -337,26 +346,26 @@
     if (metabolismNorm === null || typeof metabolismNorm !== "number") {
       return {
         name: "입력 없음",
-        desc: "대사 레이어 SNP가 입력되지 않아 고속/중간/저속 대사자 판정을 표시할 수 없습니다."
+        desc: "카페인이 몸에서 빠져나가는 속도를 보려면 대사 관련 유전자형 입력이 필요합니다."
       };
     }
 
     var score = clamp(metabolismNorm * 100, 0, 100);
     if (score <= 33.33) {
       return {
-        name: "고속 대사자",
-        desc: "CYP1A2 대사 레이어가 빠른 카페인 분해 방향으로 해석됩니다. 예전 리포트의 각성형 축에 가까운 대사 패턴입니다."
+        name: "고속 대사형",
+        desc: "카페인이 몸에 오래 남기보다는 비교적 빨리 처리될 가능성이 있습니다."
       };
     }
     if (score <= 66.67) {
       return {
-        name: "중간 대사자",
-        desc: "CYP1A2 대사 레이어가 중간 범위에 있습니다. 유전적 대사 속도만으로는 빠름 또는 느림으로 강하게 치우치지 않습니다."
+        name: "중간 대사형",
+        desc: "카페인이 특별히 빨리 빠지거나 오래 남는 편으로 보이지는 않습니다."
       };
     }
     return {
-      name: "저속 대사자",
-      desc: "CYP1A2 대사 레이어가 느린 카페인 분해 방향으로 해석됩니다. 카페인이 오래 남을 가능성을 보수적으로 고려해야 합니다."
+      name: "저속 대사형",
+      desc: "카페인이 몸에 비교적 오래 남을 수 있어, 적은 양에도 늦은 시간까지 영향을 느낄 수 있습니다."
     };
   }
 
@@ -369,7 +378,7 @@
       sampleTypeValue: elements.sampleType.value,
       sex: elements.sex.options[elements.sex.selectedIndex].text,
       sexValue: elements.sex.value,
-      institution: elements.institution.value.trim() || "미기재"
+      institution: FIXED_INSTITUTION
     };
   }
 
@@ -381,7 +390,7 @@
       "<span>Collection date: " + info.collectionDate + "</span>",
       "<span>Specimen: " + info.sampleType + "</span>",
       "<span>Sex: " + info.sex + "</span>",
-      "<span>Institution: " + info.institution + "</span>"
+      "<span>검사기관: " + info.institution + "</span>"
     ].join("");
   }
 
@@ -421,7 +430,7 @@
       elements.validationText.textContent = message;
     } else {
       var selectedCount = genes.length - getMissingGenes().length;
-      elements.validationText.textContent = "입력 진행률 " + selectedCount + "/4 SNP. Sample ID와 모든 유전자형을 입력한 뒤 검사하기를 눌러주세요.";
+      elements.validationText.textContent = "입력 진행률 " + selectedCount + "/4. Sample ID와 모든 유전자 검사 항목을 입력한 뒤 검사하기를 눌러주세요.";
     }
     elements.validationText.classList.toggle("error", Boolean(isError));
   }
@@ -438,12 +447,12 @@
       errors.push("Report date를 입력해 주세요.");
     }
     if (missingGenes.length > 0) {
-      errors.push("미입력 SNP: " + missingGenes.map(function (gene) {
+      errors.push("아직 입력하지 않은 유전자 검사 항목: " + missingGenes.map(function (gene) {
         return gene.name + " " + gene.rsid;
       }).join(", "));
     }
     if (unknownGenes.length > 0) {
-      errors.push("'모름'으로 선택된 SNP는 계산에 사용할 수 없습니다: " + unknownGenes.map(function (gene) {
+      errors.push("'모름'으로 선택한 항목은 결과 계산에 사용할 수 없습니다: " + unknownGenes.map(function (gene) {
         return gene.name;
       }).join(", "));
     }
@@ -454,6 +463,7 @@
   function markInputChanged() {
     hasSubmitted = false;
     lastResult = null;
+    setSheetStatus("Google Sheets 저장은 결과 생성 후 실행할 수 있습니다.");
     updateReportMeta();
     renderEmpty();
     drawReferenceChart(null);
@@ -499,10 +509,12 @@
     var confidence = Math.round(coverage * 100);
     var category = classify(score);
     var metabolismSubtype = getMetabolismSubtype(result.metabolismNorm);
+    var sensitivityRank = calculateRankFromPercentile(percentile.percentile);
 
     lastResult = {
       score: score,
       percentile: percentile.percentile,
+      sensitivityRank: sensitivityRank,
       confidence: confidence,
       category: category,
       metabolismSubtype: metabolismSubtype,
@@ -526,10 +538,11 @@
     elements.confidenceScore.textContent = confidence + "%";
     elements.confidenceBar.style.width = confidence + "%";
 
-    elements.percentileText.textContent = "참조분포 백분위 " + percentile.percentile.toFixed(1) + "%";
+    elements.referenceRankText.textContent = "대한민국 평균 100명 중 " + sensitivityRank + "등";
+    elements.percentileText.textContent = "카페인 민감도가 높은 순서 기준";
     elements.detailCategory.textContent = category.label;
-    elements.detailPercentile.textContent = percentile.percentile.toFixed(1) + " percentile";
-    elements.detailInputQuality.textContent = confidence + "% / 4 SNP 입력 완료";
+    elements.detailPercentile.textContent = percentile.percentile.toFixed(1) + "% 위치";
+    elements.detailInputQuality.textContent = "4개 항목 중 " + valid.length + "개 입력";
     elements.metabolismTypeName.textContent = metabolismSubtype.name;
     elements.metabolismTypeDesc.textContent = metabolismSubtype.desc;
     elements.interpretationTitle.textContent = category.title;
@@ -567,6 +580,7 @@
     elements.metabolismBar.style.width = "0%";
     elements.behaviorBar.style.width = "0%";
     elements.confidenceBar.style.width = "0%";
+    elements.referenceRankText.textContent = "--";
     elements.percentileText.textContent = "--";
     elements.typeEmoji.textContent = "--";
     elements.typeBadge.textContent = "대기 중";
@@ -576,10 +590,10 @@
     elements.detailPercentile.textContent = "--";
     elements.detailInputQuality.textContent = "--";
     elements.metabolismTypeName.textContent = "--";
-    elements.metabolismTypeDesc.textContent = "대사 레이어 계산 후 고속/중간/저속 대사자 판정이 표시됩니다.";
+    elements.metabolismTypeDesc.textContent = "유전자형을 바탕으로 카페인이 비교적 빨리 빠지는지, 오래 남는지 보여드립니다.";
     elements.interpretationTitle.textContent = "유전자형을 선택해 주세요";
-    elements.interpretationText.textContent = "검사 정보와 4개 SNP 유전자형을 입력한 뒤 검사하기 버튼을 누르면 결과가 생성됩니다.";
-    elements.recommendList.innerHTML = "<li>검사 완료 후 개인화 문구가 표시됩니다.</li>";
+    elements.interpretationText.textContent = "검사 정보와 4개 유전자 검사 항목을 입력한 뒤 검사하기 버튼을 누르면 결과가 생성됩니다.";
+    elements.recommendList.innerHTML = "<li>검사 완료 후 카페인 섭취 가이드가 표시됩니다.</li>";
     elements.summaryGrid.innerHTML = "";
   }
 
@@ -720,12 +734,13 @@
       "Collection date: " + reportInfo.collectionDate,
       "Specimen: " + reportInfo.sampleType,
       "Sex: " + reportInfo.sex,
-      "Institution: " + reportInfo.institution,
+      "검사기관: " + reportInfo.institution,
       "",
       "점수: " + lastResult.score.toFixed(1) + "점",
       "유형: " + lastResult.category.label,
       "대사 레이어 판정: " + lastResult.metabolismSubtype.name,
-      "참조분포 위치: " + lastResult.percentile.toFixed(1) + "%",
+      "대한민국 평균 100명 중 민감도 높은 순: " + lastResult.sensitivityRank + "등",
+      "다른 사람들과 비교한 위치: " + lastResult.percentile.toFixed(1) + "%",
       layerText.join("\n"),
       "",
       "[유전자형]",
@@ -735,7 +750,7 @@
       lastResult.category.title,
       lastResult.category.text
     ];
-    lines.push("", "[권고]", lastResult.category.recommendations.map(function (item) {
+    lines.push("", "[카페인 섭취 가이드]", lastResult.category.recommendations.map(function (item) {
       return "- " + item;
     }).join("\n"));
     lines.push("", "[주의]", "연구·교육용 보조 지표이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다.");
@@ -805,6 +820,7 @@
         typeDescription: lastResult.category.desc,
         interpretation: lastResult.category.text,
         percentile: Number(lastResult.percentile.toFixed(1)),
+        sensitivityRank: lastResult.sensitivityRank,
         confidence: lastResult.confidence,
         metabolismScore: lastResult.metabolismNorm === null ? null : Number((lastResult.metabolismNorm * 100).toFixed(1)),
         regulationScore: lastResult.behaviorNorm === null ? null : Number((lastResult.behaviorNorm * 100).toFixed(1)),
@@ -817,6 +833,82 @@
         "실제 카페인 반응은 수면, 약물, 간 기능, 임신, 흡연, 스트레스, 섭취량과 섭취 시간의 영향을 받을 수 있습니다."
       ]
     };
+  }
+
+  function getGenotypeValue(rsid) {
+    var genotype = selections[rsid];
+    if (!genotype) return "미선택";
+    return genotype.code === "unknown" ? "모름" : genotype.code;
+  }
+
+  function buildSheetPayload() {
+    var data = buildReportData();
+    if (!data) return null;
+
+    return {
+      submittedAt: new Date().toISOString(),
+      sampleId: data.reportInfo.sampleId,
+      reportDate: data.reportInfo.reportDate,
+      collectionDate: data.reportInfo.collectionDate,
+      specimen: data.reportInfo.sampleType,
+      sex: data.reportInfo.sex,
+      institution: data.reportInfo.institution,
+      rs762551: getGenotypeValue("rs762551"),
+      rs2069514: getGenotypeValue("rs2069514"),
+      rs2472297: getGenotypeValue("rs2472297"),
+      rs6968865: getGenotypeValue("rs6968865"),
+      score: data.result.score,
+      category: data.result.category,
+      metabolismSubtype: data.result.metabolismSubtype.name,
+      percentile: data.result.percentile,
+      confidence: data.result.confidence,
+      metabolismScore: data.result.metabolismScore,
+      regulationScore: data.result.regulationScore,
+      consent: Boolean(elements.sheetConsent && elements.sheetConsent.checked),
+      rankOutOf100: data.result.sensitivityRank,
+      reportJson: data
+    };
+  }
+
+  function setSheetStatus(message, type) {
+    if (!elements.sheetSyncStatus) return;
+    elements.sheetSyncStatus.textContent = message;
+    elements.sheetSyncStatus.classList.toggle("error", type === "error");
+    elements.sheetSyncStatus.classList.toggle("success", type === "success");
+  }
+
+  function saveToGoogleSheets() {
+    var payload = buildSheetPayload();
+    if (!payload) {
+      setSheetStatus("먼저 검사하기 버튼을 눌러 결과를 생성해 주세요.", "error");
+      return;
+    }
+    if (!elements.sheetConsent.checked) {
+      setSheetStatus("검사 데이터 저장 동의에 체크해야 시트에 저장할 수 있습니다.", "error");
+      return;
+    }
+    if (!GOOGLE_SHEETS_ENDPOINT) {
+      setSheetStatus("Google Apps Script 배포 URL이 아직 설정되지 않았습니다. app.js의 GOOGLE_SHEETS_ENDPOINT에 URL을 넣어주세요.", "error");
+      return;
+    }
+
+    elements.sheetSaveBtn.disabled = true;
+    setSheetStatus("Google Sheets로 저장 요청을 보내는 중입니다.");
+
+    fetch(GOOGLE_SHEETS_ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
+      body: JSON.stringify(payload)
+    }).then(function () {
+      setSheetStatus("저장 요청을 보냈습니다. Google Sheets에서 새 행을 확인해 주세요. 행이 없으면 Apps Script 웹앱 URL과 공개 권한을 다시 확인해야 합니다.", "success");
+    }).catch(function () {
+      setSheetStatus("저장 요청에 실패했습니다. Apps Script URL과 배포 권한을 확인해 주세요.", "error");
+    }).finally(function () {
+      elements.sheetSaveBtn.disabled = false;
+    });
   }
 
   function escapeHtml(value) {
@@ -844,69 +936,56 @@
     URL.revokeObjectURL(url);
   }
 
-  function buildDetailedReportHtml(data) {
-    var chartImage = elements.chart.toDataURL("image/png");
-    var genotypeRows = data.genotypes.map(function (item) {
-      return [
-        "<tr>",
-        "<td>", escapeHtml(item.name), "<br><small>", escapeHtml(item.rsid), "</small></td>",
-        "<td>", escapeHtml(item.genotype), "</td>",
-        "<td>", escapeHtml(item.layer), "</td>",
-        "<td>", escapeHtml(item.effectAllele), " / ", escapeHtml(item.effectAlleleCount === null ? "-" : item.effectAlleleCount), "</td>",
-        "<td>", escapeHtml(item.evidenceScore), "</td>",
-        "<td>", escapeHtml(item.source), "<br><small>", escapeHtml(item.evidenceGrade), " · ", escapeHtml(item.weight), "</small></td>",
-        "</tr>"
-      ].join("");
-    }).join("");
-    var recommendations = data.recommendations.map(function (item) {
-      return "<li>" + escapeHtml(item) + "</li>";
-    }).join("");
-    var limitations = data.limitations.map(function (item) {
-      return "<li>" + escapeHtml(item) + "</li>";
-    }).join("");
-
-    return [
-      "<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\"><title>",
-      escapeHtml(data.reportTitle),
-      "</title><style>",
-      "body{margin:0;background:#eef3f6;color:#172033;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',Arial,sans-serif;line-height:1.55}",
-      ".page{max-width:1040px;margin:0 auto;padding:34px 24px}.paper{background:#fff;border:1px solid #dbe3ec;border-radius:10px;padding:30px;box-shadow:0 18px 46px rgba(21,32,43,.12)}",
-      "h1{margin:0 0 8px;font-size:32px}h2{margin:26px 0 10px;font-size:20px}.meta,.score-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.type-head{display:grid;grid-template-columns:1fr 220px;gap:18px;align-items:center;margin:24px 0;padding:18px;border:1px solid #d7e5e8;border-radius:10px;background:#f7fcfd}.type-head b{font-size:34px}.box{border:1px solid #dbe3ec;border-radius:8px;padding:12px;background:#f8fafb}.box span{display:block;color:#66758a;font-size:12px;font-weight:800}.box strong{display:block;margin-top:5px;font-size:15px}.score{font-size:64px;color:#006d77;font-weight:950;line-height:1}.label{color:#c44d38;font-weight:900}.chart{width:100%;border:1px solid #e2e9f0;border-radius:8px;margin-top:8px}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #dbe3ec;padding:10px;text-align:left;vertical-align:top}th{background:#f1f6f7;color:#263347}small{color:#66758a}.note{background:#fff7ed;border:1px solid #f2d6ac;border-radius:8px;padding:14px}.footer{margin-top:28px;color:#66758a;font-size:12px}",
-      "</style></head><body><main class=\"page\"><article class=\"paper\">",
-      "<h1>", escapeHtml(data.reportTitle), "</h1>",
-      "<p>Generated at ", escapeHtml(data.generatedAt), "</p>",
-      "<section class=\"meta\">",
-      metaBox("Sample ID", data.reportInfo.sampleId),
-      metaBox("Report date", data.reportInfo.reportDate),
-      metaBox("Collection date", data.reportInfo.collectionDate),
-      metaBox("Specimen", data.reportInfo.sampleType),
-      metaBox("Sex", data.reportInfo.sex),
-      metaBox("Institution", data.reportInfo.institution),
-      "</section>",
-      "<section class=\"type-head\"><div><b>", escapeHtml(data.result.emoji), " ", escapeHtml(data.result.category), "</b><p class=\"label\">", escapeHtml(data.result.badge), "</p><p>", escapeHtml(data.result.typeDescription), "</p></div>",
-      "<div class=\"box\"><span>민감도 지수</span><strong class=\"score\">", escapeHtml(data.result.score), "</strong></div></section>",
-      "<h2>결과 요약</h2><section class=\"score-grid\">",
-      metaBox("결과 유형", data.result.category),
-      metaBox("대사 레이어 판정", data.result.metabolismSubtype.name),
-      metaBox("참조분포 위치", data.result.percentile + " percentile"),
-      metaBox("입력 완성도", data.result.confidence + "%"),
-      metaBox("대사 레이어", data.result.metabolismScore === null ? "입력 없음" : data.result.metabolismScore + "점"),
-      metaBox("조절 레이어", data.result.regulationScore === null ? "입력 없음" : data.result.regulationScore + "점"),
-      "</section>",
-      "<h2>결과 해석</h2><p class=\"label\">", escapeHtml(data.result.title), "</p><p>", escapeHtml(data.result.interpretation), "</p>",
-      "<h2>참조분포</h2><img class=\"chart\" src=\"", chartImage, "\" alt=\"참조분포 그래프\">",
-      "<h2>유전자형 상세</h2><table><thead><tr><th>유전자</th><th>유전자형</th><th>레이어</th><th>효과대립유전자</th><th>반영점수</th><th>근거</th></tr></thead><tbody>",
-      genotypeRows,
-      "</tbody></table>",
-      "<h2>개인화 권고</h2><ul>", recommendations, "</ul>",
-      "<h2>한계 및 주의</h2><ul>", limitations, "</ul>",
-      "<p class=\"footer\">Caffeine Atlas research-use report prototype. Not for diagnosis or medical prescription.</p>",
-      "</article></main></body></html>"
-    ].join("");
+  function collectCurrentStyles() {
+    var css = "";
+    Array.prototype.forEach.call(document.styleSheets, function (sheet) {
+      try {
+        Array.prototype.forEach.call(sheet.cssRules || [], function (rule) {
+          css += rule.cssText + "\n";
+        });
+      } catch (error) {
+        if (sheet.href) {
+          css += "@import url(\"" + sheet.href + "\");\n";
+        }
+      }
+    });
+    return css;
   }
 
-  function metaBox(label, value) {
-    return "<div class=\"box\"><span>" + escapeHtml(label) + "</span><strong>" + escapeHtml(value) + "</strong></div>";
+  function buildDetailedReportHtml(data) {
+    var reportClone = elements.resultReport.cloneNode(true);
+    var clonedCanvas = reportClone.querySelector("#referenceChart");
+    var placeholder = reportClone.querySelector("#resultPlaceholder");
+    var editButton = reportClone.querySelector("#editBtn");
+    var saveScope = reportClone.querySelector(".save-scope-card");
+    var actions = reportClone.querySelector(".detailed-actions");
+    var chartImage = document.createElement("img");
+
+    reportClone.removeAttribute("hidden");
+    if (placeholder) placeholder.remove();
+    if (editButton) editButton.remove();
+    if (saveScope) saveScope.remove();
+    if (actions) actions.remove();
+
+    if (clonedCanvas) {
+      chartImage.src = elements.chart.toDataURL("image/png");
+      chartImage.alt = "참조분포 그래프";
+      chartImage.className = "saved-chart-image";
+      clonedCanvas.replaceWith(chartImage);
+    }
+
+    return [
+      "<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\">",
+      "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
+      "<title>", escapeHtml(data.reportTitle), "</title>",
+      "<style>", collectCurrentStyles(), "\n",
+      ".saved-report-shell{width:min(1440px,calc(100% - 32px));margin:0 auto;padding:24px 0 36px}",
+      ".saved-report-shell .report-screen{display:block}",
+      ".saved-chart-image{display:block;width:100%;height:auto;margin-top:8px}",
+      "</style></head><body><main class=\"saved-report-shell\">",
+      reportClone.outerHTML,
+      "</main></body></html>"
+    ].join("");
   }
 
   function saveDetailedReport() {
@@ -918,17 +997,6 @@
 
     var filename = "caffeine-sensitivity-" + safeFilePart(data.reportInfo.sampleId) + "-" + safeFilePart(data.reportInfo.reportDate) + ".html";
     downloadTextFile(filename, buildDetailedReportHtml(data), "text/html;charset=utf-8");
-  }
-
-  function saveResultData() {
-    var data = buildReportData();
-    if (!data) {
-      window.alert("먼저 검사하기 버튼을 눌러 결과를 생성해 주세요.");
-      return;
-    }
-
-    var filename = "caffeine-sensitivity-data-" + safeFilePart(data.reportInfo.sampleId) + ".json";
-    downloadTextFile(filename, JSON.stringify(data, null, 2), "application/json;charset=utf-8");
   }
 
   function bindEvents() {
@@ -955,12 +1023,13 @@
     elements.resetBtn.addEventListener("click", resetAll);
     elements.copyBtn.addEventListener("click", copyResult);
     elements.saveBtn.addEventListener("click", saveDetailedReport);
-    elements.dataSaveBtn.addEventListener("click", saveResultData);
+    elements.sheetSaveBtn.addEventListener("click", saveToGoogleSheets);
   }
 
   function init() {
     createGeneCards();
     bindEvents();
+    elements.institution.value = FIXED_INSTITUTION;
     elements.reportDate.valueAsDate = new Date();
     elements.collectionDate.valueAsDate = new Date();
     updateReportMeta();

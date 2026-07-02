@@ -25,7 +25,7 @@
       <div>
         <p class="eyebrow">Report generator</p>
         <h1>카페인 민감도 검사하기</h1>
-        <p class="top-summary">Sample ID와 4개 SNP 유전자형을 입력하면 점수, 레이어 분석, 참조표준 분포, 섭취 가이드를 포함한 리포트가 생성됩니다.</p>
+        <p class="top-summary">Sample ID와 4개 유전자 검사 항목을 입력하면 내 카페인 반응과 카페인 섭취 가이드가 생성됩니다.</p>
       </div>
       <div class="top-actions">
         <div class="privacy-chip">브라우저 내부 계산</div>
@@ -57,7 +57,7 @@
         <div class="section-head">
           <div>
             <h2 id="input-title">검사 정보 및 유전자형 입력</h2>
-            <p>보고서에 표시할 기본 정보와 4개 SNP 유전자형을 입력합니다.</p>
+            <p>보고서에 표시할 기본 정보와 4개 유전자 검사 항목을 입력합니다.</p>
           </div>
           <button class="tool-button ghost" id="resetBtn" type="button" title="선택 초기화">
             <span aria-hidden="true">↺</span>
@@ -97,8 +97,8 @@
             </select>
           </div>
           <div class="field">
-            <label for="institution">Institution</label>
-            <input id="institution" type="text" placeholder="예: Caffeine Atlas Lab">
+            <label for="institution">검사기관</label>
+            <input id="institution" type="text" value="동의대학교 임상병리학과 분자진단연구실" readonly>
           </div>
         </div>
 
@@ -114,10 +114,18 @@
 
         <div class="gene-grid" id="geneGrid"></div>
 
+        <label class="consent-card">
+          <input id="sheetConsent" type="checkbox">
+          <span>
+            <strong>검사 데이터 저장 동의</strong>
+            입력한 Sample ID, 검사 정보, 유전자형, 결과 점수를 연구·서비스 개선 기록으로 저장하는 데 동의합니다.
+          </span>
+        </label>
+
         <div class="submit-panel">
           <div>
             <strong>검사 준비 상태</strong>
-            <p id="validationText">Sample ID와 4개 SNP 유전자형을 모두 입력한 뒤 검사하기를 눌러주세요.</p>
+            <p id="validationText">Sample ID와 4개 유전자 검사 항목을 모두 입력한 뒤 검사하기를 눌러주세요.</p>
           </div>
           <button class="tool-button primary analyze-button" id="analyzeBtn" type="button">
             검사하기
@@ -159,7 +167,7 @@
             </div>
           </div>
           <div class="score-stage">
-            <div class="score-kicker">Integrated sensitivity index</div>
+            <div class="score-kicker">카페인 민감도 점수</div>
             <div class="score-number">
               <span id="scoreValue">--</span>
               <small>점</small>
@@ -186,27 +194,27 @@
 
         <div class="result-detail-grid">
           <div>
-            <span>Result category</span>
+            <span>결과 유형</span>
             <strong id="detailCategory">--</strong>
           </div>
           <div>
-            <span>Reference position</span>
+            <span>비슷한 사람들 중 위치</span>
             <strong id="detailPercentile">--</strong>
           </div>
           <div>
-            <span>Input quality</span>
+            <span>입력된 검사 항목</span>
             <strong id="detailInputQuality">--</strong>
           </div>
         </div>
 
         <div class="metabolism-type-card">
-          <span>Metabolism layer type</span>
+          <span>카페인이 몸에 남는 시간</span>
           <strong id="metabolismTypeName">--</strong>
-          <p id="metabolismTypeDesc">대사 레이어 계산 후 고속/중간/저속 대사자 판정이 표시됩니다.</p>
+          <p id="metabolismTypeDesc">유전자형을 바탕으로 카페인이 비교적 빨리 빠지는지, 오래 남는지 보여드립니다.</p>
         </div>
 
         <div class="layer-stack">
-          <h3>Layer decomposition</h3>
+          <h3>결과를 볼 때 참고한 항목</h3>
           <div class="layer-row">
             <span>대사 레이어</span>
             <strong id="metabolismScore">--</strong>
@@ -226,8 +234,11 @@
 
         <div class="chart-card">
           <div class="chart-head">
-            <h3>Reference distribution</h3>
-            <span id="percentileText">--</span>
+            <h3>다른 사람들과 비교한 위치</h3>
+            <div class="chart-position">
+              <strong id="referenceRankText">--</strong>
+              <span id="percentileText">--</span>
+            </div>
           </div>
           <canvas id="referenceChart" width="680" height="300" aria-label="참조표준 PRS 분포 그래프"></canvas>
         </div>
@@ -238,14 +249,14 @@
         </div>
 
         <div class="recommend-card">
-          <h3>Professional guidance</h3>
+          <h3>카페인 섭취 가이드</h3>
           <ul id="recommendList">
-            <li>결과 계산 후 개인화 문구가 표시됩니다.</li>
+            <li>결과 계산 후 카페인 섭취 가이드가 표시됩니다.</li>
           </ul>
         </div>
 
         <div class="summary-card">
-          <h3>Genotype evidence summary</h3>
+          <h3>검사 항목별 결과 요약</h3>
           <div class="summary-grid" id="summaryGrid"></div>
         </div>
 
@@ -253,20 +264,21 @@
           <h3>저장되는 항목</h3>
           <ul>
             <li>검사 정보, 검체 정보, 보고일</li>
-            <li>4개 SNP별 유전자형, 효과 대립유전자, 반영 점수, 근거 등급</li>
-            <li>최종 민감도 지수, 백분위, 레이어 점수, 그래프 이미지</li>
+            <li>4개 유전자 검사 항목별 결과와 반영 점수</li>
+            <li>최종 민감도 점수, 비교 위치, 그래프 이미지</li>
             <li>결과 해석, 섭취 가이드, 한계 및 주의 문구</li>
           </ul>
+          <p id="sheetSyncStatus" class="sync-status">Google Sheets 저장은 동의 후 결과 화면에서 실행할 수 있습니다.</p>
         </div>
 
         <div class="action-row detailed-actions">
+          <button class="tool-button primary" id="sheetSaveBtn" type="button" title="동의한 검사 데이터를 Google Sheets에 저장">
+            <span aria-hidden="true">↥</span>
+            시트에 저장
+          </button>
           <button class="tool-button primary" id="saveBtn" type="button" title="상세 리포트 저장">
             <span aria-hidden="true">↓</span>
             상세 리포트 저장
-          </button>
-          <button class="tool-button ghost" id="dataSaveBtn" type="button" title="원자료 JSON 저장">
-            <span aria-hidden="true">{ }</span>
-            원자료 저장
           </button>
           <button class="tool-button" id="copyBtn" type="button" title="결과 텍스트 복사">
             <span aria-hidden="true">⧉</span>
