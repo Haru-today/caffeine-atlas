@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>검사하기 | Caffeine Atlas</title>
+  <title>리포트 생성 | Caffeine Atlas</title>
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
   <div class="app-shell">
-    <nav class="site-nav" aria-label="검사 페이지 메뉴">
+    <nav class="site-nav" aria-label="리포트 생성 페이지 메뉴">
       <a class="brand-mark" href="./index.html">
         <span>CA</span>
         Caffeine Atlas
@@ -24,8 +24,8 @@
     <header class="analyzer-head">
       <div>
         <p class="eyebrow">Report generator</p>
-        <h1>카페인 민감도 검사하기</h1>
-        <p class="top-summary">Sample ID와 4개 유전자 검사 항목을 입력하면 내 카페인 반응과 카페인 섭취 가이드가 생성됩니다.</p>
+        <h1>카페인 반응 리포트 생성</h1>
+        <p class="top-summary">Sample ID와 4개 유전자형 항목을 입력하면 카페인 반응 가능성과 섭취 가이드가 생성됩니다.</p>
       </div>
       <div class="top-actions">
         <div class="privacy-chip">브라우저 내부 계산</div>
@@ -56,8 +56,8 @@
       <section class="input-panel input-screen" id="inputScreen" aria-labelledby="input-title">
         <div class="section-head">
           <div>
-            <h2 id="input-title">검사 정보 및 유전자형 입력</h2>
-            <p>보고서에 표시할 기본 정보와 4개 유전자 검사 항목을 입력합니다.</p>
+            <h2 id="input-title">리포트 정보 및 유전자형 입력</h2>
+            <p>보고서에 표시할 기본 정보와 4개 유전자형 항목을 입력합니다.</p>
           </div>
           <button class="tool-button ghost" id="resetBtn" type="button" title="선택 초기화">
             <span aria-hidden="true">↺</span>
@@ -97,7 +97,7 @@
             </select>
           </div>
           <div class="field">
-            <label for="institution">검사기관</label>
+            <label for="institution">운영기관</label>
             <input id="institution" type="text" value="동의대학교 임상병리학과 분자진단연구실" readonly>
           </div>
         </div>
@@ -105,7 +105,7 @@
         <div class="report-standard-panel">
           <strong>리포트 구성 기준</strong>
           <div>
-            <span>검사 정보</span>
+            <span>리포트 정보</span>
             <span>유전자형 원자료</span>
             <span>결과 요약</span>
             <span>해석 및 한계</span>
@@ -117,18 +117,18 @@
         <label class="consent-card">
           <input id="sheetConsent" type="checkbox">
           <span>
-            <strong>검사 데이터 저장 동의</strong>
-            입력한 Sample ID, 검사 정보, 유전자형, 결과 점수를 연구·서비스 개선 기록으로 저장하는 데 동의합니다.
+            <strong>리포트 데이터 저장 동의</strong>
+            입력한 Sample ID, 리포트 정보, 유전자형, 결과 점수를 연구·서비스 개선 기록으로 저장하는 데 동의합니다.
           </span>
         </label>
 
         <div class="submit-panel">
           <div>
-            <strong>검사 준비 상태</strong>
-            <p id="validationText">Sample ID와 4개 유전자 검사 항목을 모두 입력한 뒤 검사하기를 눌러주세요.</p>
+            <strong>리포트 준비 상태</strong>
+            <p id="validationText">Sample ID와 4개 유전자형 항목을 모두 입력한 뒤 리포트 생성을 눌러주세요.</p>
           </div>
           <button class="tool-button primary analyze-button" id="analyzeBtn" type="button">
-            검사하기
+            리포트 생성
           </button>
         </div>
       </section>
@@ -136,7 +136,7 @@
       <section class="report-screen" id="resultReport" hidden aria-labelledby="result-title">
         <div class="report-toolbar">
           <div>
-            <p class="eyebrow">Caffeine sensitivity report</p>
+            <p class="eyebrow">Caffeine response report</p>
             <h2 id="result-title">결과 리포트</h2>
           </div>
           <button class="tool-button ghost" id="editBtn" type="button">
@@ -146,14 +146,14 @@
 
         <div class="section-head compact report-status-head">
           <div>
-            <p id="coverageText">검사하기 버튼을 누르면 결과가 생성됩니다.</p>
+            <p id="coverageText">리포트 생성 버튼을 누르면 결과가 생성됩니다.</p>
           </div>
         </div>
 
         <div class="result-placeholder" id="resultPlaceholder">
-          <span>검사 대기</span>
-          <strong>검사 정보와 유전자형을 입력해 주세요</strong>
-          <p>결과는 자동으로 노출되지 않습니다. 필수 정보를 확인한 뒤 검사하기 버튼을 눌러야 리포트가 생성됩니다.</p>
+          <span>리포트 대기</span>
+          <strong>리포트 정보와 유전자형을 입력해 주세요</strong>
+          <p>결과는 자동으로 노출되지 않습니다. 필수 정보를 확인한 뒤 리포트 생성 버튼을 눌러야 리포트가 생성됩니다.</p>
         </div>
 
         <div class="result-content" id="resultContent" hidden>
@@ -162,8 +162,8 @@
             <span class="type-code" id="typeEmoji">--</span>
             <div>
               <span class="type-badge" id="typeBadge">대기 중</span>
-              <h3 id="typeName">검사 결과 대기</h3>
-              <p id="typeDesc">검사 정보와 유전자형을 입력하면 개인 유형이 표시됩니다.</p>
+              <h3 id="typeName">리포트 결과 대기</h3>
+              <p id="typeDesc">리포트 정보와 유전자형을 입력하면 개인 유형이 표시됩니다.</p>
             </div>
           </div>
           <div class="score-stage">
@@ -202,7 +202,7 @@
             <strong id="detailPercentile">--</strong>
           </div>
           <div>
-            <span>입력된 검사 항목</span>
+            <span>입력된 유전자형 항목</span>
             <strong id="detailInputQuality">--</strong>
           </div>
         </div>
@@ -256,15 +256,15 @@
         </div>
 
         <div class="summary-card">
-          <h3>검사 항목별 결과 요약</h3>
+          <h3>유전자형 항목별 결과 요약</h3>
           <div class="summary-grid" id="summaryGrid"></div>
         </div>
 
         <div class="save-scope-card">
           <h3>저장되는 항목</h3>
           <ul>
-            <li>검사 정보, 검체 정보, 보고일</li>
-            <li>4개 유전자 검사 항목별 결과와 반영 점수</li>
+            <li>리포트 정보, 검체 정보, 보고일</li>
+            <li>4개 유전자형 항목별 결과와 반영 점수</li>
             <li>최종 민감도 점수, 비교 위치, 그래프 이미지</li>
             <li>결과 해석, 섭취 가이드, 한계 및 주의 문구</li>
           </ul>
@@ -272,7 +272,7 @@
         </div>
 
         <div class="action-row detailed-actions">
-          <button class="tool-button primary" id="sheetSaveBtn" type="button" title="동의한 검사 데이터를 Google Sheets에 저장">
+          <button class="tool-button primary" id="sheetSaveBtn" type="button" title="동의한 리포트 데이터를 Google Sheets에 저장">
             <span aria-hidden="true">↥</span>
             시트에 저장
           </button>
@@ -286,7 +286,7 @@
           </button>
         </div>
 
-        <p class="disclaimer">본 결과는 연구·교육용 보조 지표이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다. 실제 반응은 수면, 약물, 간 기능, 임신, 흡연, 스트레스 등의 영향을 받을 수 있습니다.</p>
+        <p class="disclaimer">본 결과는 연구·교육용 해석 리포트이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다. 실제 반응은 수면, 약물, 간 기능, 임신, 흡연, 스트레스 등의 영향을 받을 수 있습니다.</p>
         </div>
       </section>
     </main>

@@ -17,16 +17,16 @@
         <a href="./index.html#service">서비스 소개</a>
         <a href="./index.html#report">리포트</a>
         <a href="./board.html" aria-current="page">자료실</a>
-        <a href="./account.html">회원 안내</a>
+        <a href="./account.html" hidden data-disabled-feature="account">회원 안내</a>
       </div>
-      <a class="nav-cta" href="./analyzer.html" target="_blank" rel="noopener">검사하기</a>
+      <a class="nav-cta" href="./analyzer.html" target="_blank" rel="noopener">리포트 생성</a>
     </nav>
 
     <header class="page-hero">
       <div>
         <p class="eyebrow">Board</p>
         <h1>공지사항 및 자료실</h1>
-        <p class="top-summary">카페인 민감도 검사 서비스의 공지와 운영 안내를 게시판 형식으로 제공합니다.</p>
+        <p class="top-summary">카페인 반응 리포트 서비스의 공지와 운영 안내를 게시판 형식으로 제공합니다.</p>
       </div>
       <div class="page-hero-actions">
         <a class="hero-button primary" href="./board-write.html">글쓰기</a>
@@ -56,11 +56,11 @@
           </div>
           <a class="board-row pinned" href="#post-open">
             <span>공지</span>
-            <strong>카페인 민감도 검사 페이지 오픈</strong>
+            <strong>카페인 반응 리포트 생성 페이지 오픈</strong>
             <small>2026.07.01</small>
             <em>128</em>
           </a>
-          <a class="board-row" href="./account.html">
+          <a class="board-row" href="./account.html" hidden data-disabled-feature="account">
             <span>회원</span>
             <strong>회원가입·로그인 기반 데이터 축적 안내</strong>
             <small>2026.07.01</small>
@@ -72,13 +72,13 @@
           <div class="detail-head">
             <span>공지</span>
             <div>
-              <h2>카페인 민감도 검사 페이지 오픈</h2>
+              <h2>카페인 반응 리포트 생성 페이지 오픈</h2>
               <p>등록일 2026.07.01 · 담당 Caffeine Atlas 운영팀</p>
             </div>
           </div>
-          <p>유전자형 입력 후 검사 결과 화면으로 전환되는 카페인 민감도 검사 페이지를 공개했습니다. 결과 리포트에서는 민감도 지수, 백분위 위치, 대사 유형, 권장 섭취 가이드, 저장 가능한 상세 결과를 확인할 수 있습니다.</p>
+          <p>유전자형 입력 후 결과 화면으로 전환되는 카페인 반응 리포트 생성 페이지를 공개했습니다. 결과 리포트에서는 민감도 지수, 백분위 위치, 대사 유형, 권장 섭취 가이드, 저장 가능한 상세 결과를 확인할 수 있습니다.</p>
           <div class="post-actions">
-            <a class="tool-button primary" href="./analyzer.html" target="_blank" rel="noopener">검사 페이지 열기</a>
+            <a class="tool-button primary" href="./analyzer.html" target="_blank" rel="noopener">리포트 생성 페이지 열기</a>
             <a class="tool-button ghost" href="#notice-list">목록으로</a>
           </div>
         </article>
@@ -89,21 +89,21 @@
         <section class="side-panel">
           <p class="eyebrow">Write</p>
           <h2>게시글 작성</h2>
-          <p>검사 운영 문의와 사용자 피드백을 메일로 보낼 수 있는 화면입니다.</p>
+          <p>리포트 운영 문의와 사용자 피드백을 메일로 보낼 수 있는 화면입니다.</p>
           <a class="tool-button primary" href="./board-write.html">글쓰기</a>
         </section>
-        <section class="side-panel">
+        <section class="side-panel" hidden data-disabled-feature="account">
           <p class="eyebrow">Account</p>
           <h2>회원 데이터 축적</h2>
-          <p>회원가입과 로그인으로 검사 결과를 누적하려면 서버, 데이터베이스, 동의 관리가 필요합니다.</p>
+          <p>회원가입과 로그인으로 리포트 결과를 누적하려면 서버, 데이터베이스, 동의 관리가 필요합니다.</p>
           <a class="tool-button ghost" href="./account.html">구축 방식 보기</a>
         </section>
         <section class="side-panel muted-panel">
           <h2>운영 안내</h2>
           <ul class="plain-list">
             <li>사용자 문의는 글쓰기 화면에서 메일로 전송할 수 있습니다.</li>
-            <li>검사 결과는 의료 진단이나 처방이 아닙니다.</li>
-            <li>실제 운영 시 문의 글과 회원 정보는 서버에 저장해야 합니다.</li>
+            <li>리포트 결과는 의료 진단이나 처방이 아닙니다.</li>
+            <li hidden data-disabled-feature="account">실제 운영 시 문의 글과 회원 정보는 서버에 저장해야 합니다.</li>
           </ul>
         </section>
       </aside>
@@ -111,7 +111,7 @@
 
     <footer class="site-footer">
       <span>Caffeine Atlas</span>
-      <p>Research-use caffeine sensitivity report prototype. Not for diagnosis or medical prescription.</p>
+      <p>Research-use caffeine response interpretation report prototype. Not for diagnosis or medical prescription.</p>
     </footer>
   </div>
 </body>

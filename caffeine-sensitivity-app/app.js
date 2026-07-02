@@ -8,16 +8,16 @@
       rsid: "rs762551",
       layer: "metabolism",
       layerLabel: "대사",
-      allele: "A",
-      description: "CYP1A2 유도성과 관련된 핵심 변이입니다. A allele은 빠른 대사형, C allele은 느린 대사형 방향으로 해석합니다.",
-      evidence: "A allele 빠른 대사",
+      allele: "C",
+      description: "CYP1A2 유도성과 관련된 핵심 변이입니다. C allele은 CYP1A2*1F carrier로 느린 대사형, AA는 빠른 대사형 방향으로 해석합니다.",
+      evidence: "C allele 느린 대사",
       source: "기능 연구",
       evidenceGrade: "High",
       weightText: "대사 82%",
       genotypes: [
-        { code: "CC", alleleCount: 0, evidenceScore: 1, label: "저속" },
+        { code: "CC", alleleCount: 2, evidenceScore: 1, label: "저속" },
         { code: "AC", alleleCount: 1, evidenceScore: 0.5, label: "중간" },
-        { code: "AA", alleleCount: 2, evidenceScore: 0, label: "고속" },
+        { code: "AA", alleleCount: 0, evidenceScore: 0, label: "고속" },
         { code: "unknown", alleleCount: null, evidenceScore: null, label: "모름" }
       ]
     },
@@ -28,15 +28,15 @@
       layer: "metabolism",
       layerLabel: "대사",
       allele: "A",
-      description: "CYP1A2 기능 보조 변수입니다. A allele이 많을수록 빠른 카페인 분해 방향으로 반영합니다.",
-      evidence: "A allele 빠른 대사",
+      description: "CYP1A2 기능 보조 변수입니다. A allele이 많을수록 카페인 잔류 가능성 증가 방향으로 보조 반영합니다.",
+      evidence: "A allele 민감도 증가 가능",
       source: "기능 연구",
       evidenceGrade: "Supportive",
       weightText: "대사 18%",
       genotypes: [
-        { code: "GG", alleleCount: 0, evidenceScore: 1, label: "A 0개" },
+        { code: "GG", alleleCount: 0, evidenceScore: 0, label: "A 0개" },
         { code: "AG", alleleCount: 1, evidenceScore: 0.5, label: "A 1개" },
-        { code: "AA", alleleCount: 2, evidenceScore: 0, label: "A 2개" },
+        { code: "AA", alleleCount: 2, evidenceScore: 1, label: "A 2개" },
         { code: "unknown", alleleCount: null, evidenceScore: null, label: "모름" }
       ]
     },
@@ -390,7 +390,7 @@
       "<span>Collection date: " + info.collectionDate + "</span>",
       "<span>Specimen: " + info.sampleType + "</span>",
       "<span>Sex: " + info.sex + "</span>",
-      "<span>검사기관: " + info.institution + "</span>"
+      "<span>운영기관: " + info.institution + "</span>"
     ].join("");
   }
 
@@ -400,7 +400,7 @@
     elements.resultContent.hidden = !visible;
     elements.resultPlaceholder.hidden = visible;
     if (!visible) {
-      elements.coverageText.textContent = "검사하기 버튼을 누르면 결과가 생성됩니다.";
+      elements.coverageText.textContent = "리포트 생성 버튼을 누르면 결과가 생성됩니다.";
     }
   }
 
@@ -430,7 +430,7 @@
       elements.validationText.textContent = message;
     } else {
       var selectedCount = genes.length - getMissingGenes().length;
-      elements.validationText.textContent = "입력 진행률 " + selectedCount + "/4. Sample ID와 모든 유전자 검사 항목을 입력한 뒤 검사하기를 눌러주세요.";
+      elements.validationText.textContent = "입력 진행률 " + selectedCount + "/4. Sample ID와 모든 유전자형 항목을 입력한 뒤 리포트 생성을 눌러주세요.";
     }
     elements.validationText.classList.toggle("error", Boolean(isError));
   }
@@ -447,7 +447,7 @@
       errors.push("Report date를 입력해 주세요.");
     }
     if (missingGenes.length > 0) {
-      errors.push("아직 입력하지 않은 유전자 검사 항목: " + missingGenes.map(function (gene) {
+      errors.push("아직 입력하지 않은 유전자형 항목: " + missingGenes.map(function (gene) {
         return gene.name + " " + gene.rsid;
       }).join(", "));
     }
@@ -484,7 +484,7 @@
     }
 
     hasSubmitted = true;
-    updateValidationMessage("검사가 완료되었습니다. 결과 리포트 화면으로 이동합니다.", false);
+    updateValidationMessage("리포트가 생성되었습니다. 결과 화면으로 이동합니다.", false);
     render();
     setResultVisible(true);
     window.location.hash = "resultReport";
@@ -584,16 +584,16 @@
     elements.percentileText.textContent = "--";
     elements.typeEmoji.textContent = "--";
     elements.typeBadge.textContent = "대기 중";
-    elements.typeName.textContent = "검사 결과 대기";
-    elements.typeDesc.textContent = "검사 정보와 유전자형을 입력하면 개인 유형이 표시됩니다.";
+    elements.typeName.textContent = "리포트 결과 대기";
+    elements.typeDesc.textContent = "리포트 정보와 유전자형을 입력하면 개인 유형이 표시됩니다.";
     elements.detailCategory.textContent = "--";
     elements.detailPercentile.textContent = "--";
     elements.detailInputQuality.textContent = "--";
     elements.metabolismTypeName.textContent = "--";
     elements.metabolismTypeDesc.textContent = "유전자형을 바탕으로 카페인이 비교적 빨리 빠지는지, 오래 남는지 보여드립니다.";
     elements.interpretationTitle.textContent = "유전자형을 선택해 주세요";
-    elements.interpretationText.textContent = "검사 정보와 4개 유전자 검사 항목을 입력한 뒤 검사하기 버튼을 누르면 결과가 생성됩니다.";
-    elements.recommendList.innerHTML = "<li>검사 완료 후 카페인 섭취 가이드가 표시됩니다.</li>";
+    elements.interpretationText.textContent = "리포트 정보와 4개 유전자형 항목을 입력한 뒤 리포트 생성 버튼을 누르면 결과가 생성됩니다.";
+    elements.recommendList.innerHTML = "<li>리포트 생성 후 카페인 섭취 가이드가 표시됩니다.</li>";
     elements.summaryGrid.innerHTML = "";
   }
 
@@ -728,13 +728,13 @@
       ].join(" / ");
     });
     var lines = [
-      "카페인 민감도 유전자 분석 리포트",
+      "카페인 반응 근거 기반 해석 리포트",
       "Sample ID: " + reportInfo.sampleId,
       "Report date: " + reportInfo.reportDate,
       "Collection date: " + reportInfo.collectionDate,
       "Specimen: " + reportInfo.sampleType,
       "Sex: " + reportInfo.sex,
-      "검사기관: " + reportInfo.institution,
+      "운영기관: " + reportInfo.institution,
       "",
       "점수: " + lastResult.score.toFixed(1) + "점",
       "유형: " + lastResult.category.label,
@@ -753,7 +753,7 @@
     lines.push("", "[카페인 섭취 가이드]", lastResult.category.recommendations.map(function (item) {
       return "- " + item;
     }).join("\n"));
-    lines.push("", "[주의]", "연구·교육용 보조 지표이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다.");
+    lines.push("", "[주의]", "연구·교육용 해석 리포트이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다.");
     return lines.join("\n");
   }
 
@@ -808,7 +808,7 @@
 
     var reportInfo = getReportInfo();
     return {
-      reportTitle: "카페인 민감도 유전자 분석 리포트",
+      reportTitle: "카페인 반응 근거 기반 해석 리포트",
       generatedAt: new Date().toISOString(),
       reportInfo: reportInfo,
       result: {
@@ -829,7 +829,7 @@
       genotypes: getGenotypeRecords(),
       recommendations: lastResult.category.recommendations,
       limitations: [
-        "본 결과는 연구·교육용 보조 지표이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다.",
+        "본 결과는 연구·교육용 해석 리포트이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다.",
         "실제 카페인 반응은 수면, 약물, 간 기능, 임신, 흡연, 스트레스, 섭취량과 섭취 시간의 영향을 받을 수 있습니다."
       ]
     };
@@ -880,11 +880,11 @@
   function saveToGoogleSheets() {
     var payload = buildSheetPayload();
     if (!payload) {
-      setSheetStatus("먼저 검사하기 버튼을 눌러 결과를 생성해 주세요.", "error");
+      setSheetStatus("먼저 리포트 생성 버튼을 눌러 결과를 생성해 주세요.", "error");
       return;
     }
     if (!elements.sheetConsent.checked) {
-      setSheetStatus("검사 데이터 저장 동의에 체크해야 시트에 저장할 수 있습니다.", "error");
+      setSheetStatus("리포트 데이터 저장 동의에 체크해야 시트에 저장할 수 있습니다.", "error");
       return;
     }
     if (!GOOGLE_SHEETS_ENDPOINT) {
@@ -991,7 +991,7 @@
   function saveDetailedReport() {
     var data = buildReportData();
     if (!data) {
-      window.alert("먼저 검사하기 버튼을 눌러 결과를 생성해 주세요.");
+      window.alert("먼저 리포트 생성 버튼을 눌러 결과를 생성해 주세요.");
       return;
     }
 
