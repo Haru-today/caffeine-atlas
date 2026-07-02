@@ -25,7 +25,7 @@
       <div>
         <p class="eyebrow">Board write</p>
         <h1>게시글 작성</h1>
-        <p class="top-summary">검사 운영 문의, 자료 요청, 문헌 추가 요청을 남기는 화면입니다.</p>
+        <p class="top-summary">검사 운영 문의와 사용자 피드백을 메일로 보내는 화면입니다.</p>
       </div>
       <div class="page-hero-actions">
         <a class="hero-button primary" href="./board.html">자료실 목록</a>
@@ -46,9 +46,8 @@
               <span>분류</span>
               <select name="category" required>
                 <option value="문의">문의</option>
-                <option value="자료 요청">자료 요청</option>
-                <option value="문헌 제안">문헌 제안</option>
                 <option value="기관 도입">기관 도입</option>
+                <option value="피드백">피드백</option>
               </select>
             </label>
             <label class="field">
@@ -66,23 +65,19 @@
               <input name="email" type="email" placeholder="reply@example.com">
             </label>
             <label class="field">
-              <span>비밀번호</span>
-              <input name="password" type="password" placeholder="수정·삭제용 비밀번호">
+              <span>연락처</span>
+              <input name="phone" type="tel" placeholder="선택 입력">
             </label>
           </div>
           <label class="field">
             <span>내용</span>
-            <textarea name="content" rows="10" placeholder="문의 내용이나 요청 자료를 적어주세요." required></textarea>
-          </label>
-          <label class="field">
-            <span>첨부파일명</span>
-            <input name="fileName" type="text" placeholder="예: 참고문헌.pdf">
+            <textarea name="content" rows="10" placeholder="문의 내용이나 피드백을 적어주세요." required></textarea>
           </label>
           <div class="form-notice">
-            현재 화면은 정적 프로토타입입니다. 임시저장한 글은 이 브라우저에만 저장되며, 실제 서비스에서는 서버와 데이터베이스에 저장해야 합니다.
+            보내기 버튼을 누르면 메일 앱이 열립니다. 첨부파일이 필요한 경우 메일 앱에서 직접 추가해주세요.
           </div>
           <div class="post-actions">
-            <button class="tool-button primary" type="submit">임시저장</button>
+            <button class="tool-button primary" type="submit">메일로 보내기</button>
             <button class="tool-button ghost" type="reset">초기화</button>
             <a class="tool-button ghost" href="./board.html">목록으로</a>
           </div>
@@ -92,13 +87,11 @@
       <aside class="write-panel">
         <div class="section-head compact">
           <div>
-            <p class="eyebrow">Drafts</p>
-            <h2>임시저장 글</h2>
+            <p class="eyebrow">Mail</p>
+            <h2>문의 메일</h2>
           </div>
         </div>
-        <div id="draftList" class="draft-list" aria-live="polite">
-          <p class="empty-state">아직 저장된 글이 없습니다.</p>
-        </div>
+        <p class="form-notice">작성한 내용은 <strong>20221600@office.deu.ac.kr</strong>로 전송됩니다. 메일 앱이 열리면 내용을 확인한 뒤 발송해주세요.</p>
       </aside>
     </main>
 
@@ -109,78 +102,27 @@
   </div>
 
   <script>
-    const draftKey = "caffeineAtlasBoardDrafts";
     const form = document.querySelector("[data-board-form]");
-    const draftList = document.querySelector("#draftList");
-
-    function readDrafts() {
-      try {
-        return JSON.parse(localStorage.getItem(draftKey) || "[]");
-      } catch (error) {
-        return [];
-      }
-    }
-
-    function writeDrafts(drafts) {
-      localStorage.setItem(draftKey, JSON.stringify(drafts));
-    }
-
-    function escapeHtml(value) {
-      return String(value || "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    function renderDrafts() {
-      const drafts = readDrafts();
-      if (!drafts.length) {
-        draftList.innerHTML = '<p class="empty-state">아직 저장된 글이 없습니다.</p>';
-        return;
-      }
-
-      draftList.innerHTML = drafts.map((draft, index) => `
-        <article class="draft-card">
-          <span>${escapeHtml(draft.category)}</span>
-          <strong>${escapeHtml(draft.title)}</strong>
-          <small>${escapeHtml(draft.author)} · ${escapeHtml(draft.savedAt)}</small>
-          <p>${escapeHtml(draft.content)}</p>
-          <button class="tool-button ghost" type="button" data-delete="${index}">삭제</button>
-        </article>
-      `).join("");
-    }
+    const recipient = "20221600@office.deu.ac.kr";
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       const data = new FormData(form);
-      const drafts = readDrafts();
-      const now = new Date();
-      drafts.unshift({
-        category: data.get("category"),
-        author: data.get("author"),
-        title: data.get("title"),
-        email: data.get("email"),
-        fileName: data.get("fileName"),
-        content: data.get("content"),
-        savedAt: now.toLocaleString("ko-KR")
-      });
-      writeDrafts(drafts.slice(0, 12));
-      form.reset();
-      renderDrafts();
-    });
+      const category = data.get("category") || "문의";
+      const title = data.get("title") || "문의";
+      const body = [
+        `분류: ${category}`,
+        `작성자: ${data.get("author") || ""}`,
+        `이메일: ${data.get("email") || ""}`,
+        `연락처: ${data.get("phone") || ""}`,
+        "",
+        "문의 내용",
+        data.get("content") || ""
+      ].join("\n");
 
-    draftList.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-delete]");
-      if (!button) return;
-      const drafts = readDrafts();
-      drafts.splice(Number(button.dataset.delete), 1);
-      writeDrafts(drafts);
-      renderDrafts();
+      const subject = `[Caffeine Atlas ${category}] ${title}`;
+      window.location.href = `mailto:${recipient}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     });
-
-    renderDrafts();
   </script>
 </body>
 </html>
