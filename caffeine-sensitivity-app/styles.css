@@ -1632,6 +1632,76 @@ canvas {
   font-weight: 950;
 }
 
+.model-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.model-card {
+  display: grid;
+  gap: 10px;
+  min-height: 236px;
+  padding: 18px;
+  border: 1px solid #dbe4eb;
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.model-card > span {
+  width: fit-content;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #edf6f6;
+  color: var(--teal-dark);
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.model-card h3 {
+  margin-bottom: 0;
+  font-size: 19px;
+}
+
+.model-card p {
+  margin-bottom: 0;
+  color: #47576c;
+  font-size: 15px;
+  line-height: 1.68;
+}
+
+.weight-list {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.weight-list div {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 10px;
+  border: 1px solid #dbe4eb;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.weight-list strong {
+  color: #263347;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.weight-list em {
+  flex: 0 0 auto;
+  color: var(--teal-dark);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 950;
+}
+
 .flow-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2375,6 +2445,7 @@ canvas {
   .test-card-grid,
   .flow-grid,
   .evidence-grid,
+  .model-grid,
   .step-list,
   .stack-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2423,6 +2494,7 @@ canvas {
   .test-card-grid,
   .flow-grid,
   .evidence-grid,
+  .model-grid,
   .form-grid,
   .auth-split,
   .step-list,
