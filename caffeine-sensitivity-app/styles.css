@@ -83,6 +83,11 @@ a {
   text-decoration: none;
 }
 
+[hidden],
+[data-disabled-feature="account"] {
+  display: none !important;
+}
+
 .brand-mark {
   display: inline-flex;
   align-items: center;
