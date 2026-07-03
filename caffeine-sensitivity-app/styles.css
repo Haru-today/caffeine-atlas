@@ -93,23 +93,17 @@ a {
 .brand-mark {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  flex: 0 0 auto;
   color: var(--ink);
   font-size: 15px;
   font-weight: 950;
 }
 
-.brand-mark span {
-  display: inline-flex;
-  width: 34px;
-  height: 34px;
-  justify-content: center;
-  align-items: center;
-  border-radius: 8px;
-  background: var(--teal-dark);
-  color: #fff;
-  font-size: 13px;
-  letter-spacing: 0;
+.brand-mark img {
+  display: block;
+  width: clamp(170px, 16vw, 238px);
+  max-width: 100%;
+  height: auto;
 }
 
 .nav-links {
@@ -1369,6 +1363,10 @@ canvas {
   .nav-links {
     flex-wrap: wrap;
     gap: 12px;
+  }
+
+  .brand-mark img {
+    width: min(230px, 100%);
   }
 
   .nav-cta {
