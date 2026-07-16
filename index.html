@@ -37,6 +37,10 @@
       box-sizing: border-box;
     }
 
+    [hidden] {
+      display: none !important;
+    }
+
     html {
       scroll-behavior: smooth;
     }
@@ -68,7 +72,7 @@
     h1 {
       max-width: 880px;
       margin-bottom: 16px;
-      font-size: clamp(34px, 5.2vw, 72px);
+      font-size: clamp(34px, 4.8vw, 64px);
       line-height: 1.05;
     }
 
@@ -132,6 +136,21 @@
       color: #405265;
       font-size: 14px;
       font-weight: 850;
+    }
+
+    .nav-toggle {
+      display: none;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 20px;
     }
 
     .nav-links a:hover {
@@ -394,23 +413,79 @@
       color: #263347;
     }
 
-    .roadmap {
+    .route-tool {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
+      grid-template-columns: minmax(0, 0.75fr) minmax(320px, 1fr);
+      gap: 18px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fbfc;
     }
 
-    .roadmap-item strong {
-      display: inline-flex;
-      width: 30px;
-      height: 30px;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 12px;
+    .route-options {
+      display: grid;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .route-option {
+      min-height: 48px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
       border-radius: 8px;
-      background: var(--ink);
-      color: #fff;
-      font-size: 13px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      text-align: left;
+      font-weight: 850;
+    }
+
+    .route-option[aria-pressed="true"] {
+      border-color: var(--teal);
+      background: #e8f4f4;
+      color: var(--teal-dark);
+    }
+
+    .route-result {
+      display: grid;
+      align-content: center;
+      min-height: 190px;
+      padding: 18px;
+      border-left: 4px solid var(--teal);
+      background: #fff;
+    }
+
+    .route-result p {
+      margin-bottom: 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .route-result .service-actions {
+      margin-top: 18px;
+    }
+
+    .privacy-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+    }
+
+    .privacy-item {
+      padding: 18px 18px 4px;
+      border-right: 1px solid var(--line);
+    }
+
+    .privacy-item:last-child {
+      border-right: 0;
+    }
+
+    .privacy-item p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
     }
 
     .support-section {
@@ -441,23 +516,18 @@
     }
 
     @media (max-width: 1080px) {
-      .site-nav,
       .section-head,
       .hero-inner,
-      .support-section {
+      .support-section,
+      .route-tool {
         grid-template-columns: 1fr;
       }
 
-      .site-nav {
-        display: grid;
-      }
-
       .nav-links {
-        justify-content: flex-start;
+        gap: 12px;
       }
 
-      .status-strip,
-      .roadmap {
+      .status-strip {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
@@ -473,31 +543,82 @@
       }
 
       .site-nav {
-        position: static;
+        position: sticky;
+        top: 8px;
+        flex-wrap: wrap;
+      }
+
+      .nav-toggle {
+        display: inline-flex;
       }
 
       .nav-links {
-        gap: 10px;
+        display: none;
+        width: 100%;
+        order: 3;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        padding-top: 8px;
+        border-top: 1px solid var(--line);
         font-size: 13px;
       }
 
+      .nav-links.open {
+        display: flex;
+      }
+
+      .nav-links a:not(.nav-cta) {
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+      }
+
+      .nav-cta {
+        justify-content: center;
+      }
+
+      .hero {
+        min-height: 0;
+      }
+
       .hero-inner {
+        min-height: 610px;
         padding: 24px;
       }
 
       h1 {
-        font-size: clamp(31px, 12vw, 45px);
+        font-size: 40px;
+        line-height: 1.08;
       }
 
       .hero-copy p:not(.eyebrow) {
         font-size: 16px;
       }
 
-      .status-strip,
       .service-grid,
       .feature-grid,
-      .roadmap {
+      .privacy-grid {
         grid-template-columns: 1fr;
+      }
+
+      .platform-panel {
+        display: none;
+      }
+
+      .privacy-item {
+        padding: 16px 0;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .privacy-item:last-child {
+        border-bottom: 0;
+      }
+
+      .route-result {
+        min-height: 0;
+        border-left-width: 3px;
       }
 
       .service-card {
@@ -506,6 +627,26 @@
 
       .footer {
         display: grid;
+      }
+    }
+
+    @media (max-width: 420px) {
+      h1 {
+        font-size: 36px;
+      }
+
+      .brand > span:last-child {
+        max-width: 210px;
+        font-size: 15px;
+      }
+
+      .hero-inner {
+        min-height: 580px;
+        padding: 20px;
+      }
+
+      .hero-actions .button {
+        width: 100%;
       }
     }
   </style>
@@ -526,10 +667,12 @@
         <span class="brand-mark">PH</span>
         <span>Personal Health Atlas</span>
       </a>
-      <div class="nav-links">
+      <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="메뉴 열기">☰</button>
+      <div class="nav-links" id="navLinks">
         <a href="#services">서비스</a>
-        <a href="#platform">통합 방향</a>
-        <a href="#features">추가 기능</a>
+        <a href="#platform">이용 흐름</a>
+        <a href="#guide">선택 도우미</a>
+        <a href="#privacy">데이터 안내</a>
         <a href="#support">문의</a>
         <a class="nav-cta" href="#services">시작하기</a>
       </div>
@@ -543,26 +686,26 @@
             <h1>건강검진과 유전 정보를 하나의 흐름으로 읽습니다.</h1>
             <p>건강검진 결과 해석, 추천 검진, 카페인 민감도 리포트를 한 곳에서 시작하는 개인 건강 데이터 포털입니다.</p>
             <div class="hero-actions">
-              <a class="button primary" href="https://haru-today.github.io/labinsight/" target="_blank" rel="noopener">건강검진 시스템 열기</a>
+              <a class="button primary" href="https://haru-today.github.io/labinsight/">건강검진 시스템 열기</a>
               <a class="button outline" href="./caffeine-sensitivity-app/index.html">카페인 분석 열기</a>
             </div>
           </div>
 
           <div class="platform-panel" aria-label="빠른 실행">
-            <a class="quick-link" href="https://haru-today.github.io/labinsight/" target="_blank" rel="noopener">
+            <a class="quick-link" href="https://haru-today.github.io/labinsight/">
               <span>LabInsight</span>
               <strong>건강검진 결과 해석</strong>
-              <small>검진 수치 입력, OCR 데모, 위험도 리포트, 추천 검진과 예약 흐름을 확인합니다.</small>
+              <small>검진 수치 입력, OCR 데모, 참고 범위 확인, 추천 검진과 예약 흐름을 체험합니다.</small>
             </a>
             <a class="quick-link" href="./caffeine-sensitivity-app/analyzer.html">
               <span>Caffeine Atlas</span>
               <strong>카페인 민감도 리포트</strong>
               <small>CYP1A2와 AHR 관련 유전자형으로 카페인 반응 가능성을 계산합니다.</small>
             </a>
-            <a class="quick-link" href="#features">
-              <span>Next</span>
-              <strong>통합 기능 제안</strong>
-              <small>사용자 프로필, 결과 이력, 맞춤형 행동 가이드까지 확장할 수 있습니다.</small>
+            <a class="quick-link" href="#guide">
+              <span>Guide</span>
+              <strong>어디서 시작할지 선택</strong>
+              <small>지금 가지고 있는 결과에 맞춰 가장 짧은 이용 경로를 안내합니다.</small>
             </a>
           </div>
         </div>
@@ -582,8 +725,8 @@
           <strong>카페인 민감도 유전자 리포트</strong>
         </div>
         <div class="status-card">
-          <span>Direction</span>
-          <strong>개인 건강 데이터 기반 통합 인사이트</strong>
+          <span>Privacy</span>
+          <strong>외부 저장은 별도 동의 후 실행</strong>
         </div>
       </section>
 
@@ -591,9 +734,9 @@
         <div class="section-head">
           <div>
             <p class="eyebrow">Services</p>
-            <h2>기존 기능은 살리고, 시작 화면만 하나로 묶었습니다.</h2>
+            <h2>필요한 서비스로 바로 이동하세요.</h2>
           </div>
-          <p>지금 단계에서는 두 프로젝트를 무리하게 합치기보다, 통합 홈페이지에서 각각의 완성된 기능으로 자연스럽게 이동하게 만드는 구성이 가장 안정적입니다.</p>
+          <p>두 서비스는 목적이 다릅니다. 건강검진 결과가 있다면 LabInsight로, 유전자형 결과가 있다면 Caffeine Atlas로 시작하면 됩니다.</p>
         </div>
 
         <div class="service-grid">
@@ -601,9 +744,9 @@
             <div>
               <span>Health check report</span>
               <h3>LabInsight 건강검진 시스템</h3>
-              <p>건강검진 수치를 입력하면 항목별 상태, 위험도 점수, 생활관리 가이드, 추천 검진과 병원 예약 데모까지 이어집니다.</p>
+              <p>건강검진 수치를 입력하면 참고 범위 확인, 생활관리 질문, 추천 검진과 샘플 예약 흐름까지 이어집니다.</p>
               <div class="service-actions">
-                <a class="button dark" href="https://haru-today.github.io/labinsight/" target="_blank" rel="noopener">시스템 열기</a>
+                <a class="button dark" href="https://haru-today.github.io/labinsight/">시스템 열기</a>
               </div>
             </div>
             <span class="service-badge">검진 결과</span>
@@ -652,39 +795,53 @@
         </div>
       </section>
 
-      <section class="section" id="features">
+      <section class="section" id="guide">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Recommended features</p>
-            <h2>기능적으로는 이 네 가지를 추가하면 좋습니다.</h2>
+            <p class="eyebrow">Start guide</p>
+            <h2>지금 가진 결과에 맞춰 시작하세요.</h2>
           </div>
-          <p>단순히 홈페이지를 합치는 것보다, 사용자가 자신의 결과를 다시 보고 비교할 수 있게 만드는 쪽이 서비스 가치가 큽니다.</p>
+          <p>건강 정보는 입력하지 않습니다. 선택한 상황에 맞는 서비스 경로만 안내합니다.</p>
         </div>
 
-        <div class="roadmap">
-          <article class="roadmap-item">
-            <strong>1</strong>
-            <span>Unified profile</span>
-            <h3>통합 사용자 프로필</h3>
-            <p>나이, 성별, 생활습관, 검진일, 유전자형을 한 번만 입력하고 두 서비스에서 같이 쓰게 합니다.</p>
+        <div class="route-tool">
+          <div class="route-options" aria-label="보유 결과 선택">
+            <button class="route-option" type="button" data-route="health" aria-pressed="true">건강검진 결과지가 있어요</button>
+            <button class="route-option" type="button" data-route="caffeine" aria-pressed="false">카페인 유전자형 결과가 있어요</button>
+            <button class="route-option" type="button" data-route="both" aria-pressed="false">두 결과를 모두 확인하고 싶어요</button>
+          </div>
+          <div class="route-result" aria-live="polite">
+            <p class="eyebrow">Recommended route</p>
+            <h3 id="routeTitle">건강검진 결과부터 확인하세요.</h3>
+            <p id="routeDescription">수치를 직접 입력하거나 결과지 OCR 데모를 사용해 참고 범위와 다음 상담 질문을 확인합니다.</p>
+            <div class="service-actions">
+              <a class="button dark" id="routePrimary" href="https://haru-today.github.io/labinsight/">LabInsight 시작</a>
+              <a class="button text" id="routeSecondary" href="./caffeine-sensitivity-app/analyzer.html" hidden>Caffeine Atlas 이어보기</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="privacy">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Data and limitations</p>
+            <h2>데이터 처리 범위를 먼저 확인하세요.</h2>
+          </div>
+          <p>현재 공개 버전은 연구·교육용 프로토타입입니다. 실제 진료, 검사기관 연동, 병원 예약을 제공하지 않습니다.</p>
+        </div>
+        <div class="privacy-grid">
+          <article class="privacy-item">
+            <h3>카페인 결과</h3>
+            <p>유전자형 계산은 브라우저 안에서 진행됩니다. Google Sheets 저장은 사용자가 동의하고 저장 버튼을 누를 때만 실행됩니다.</p>
           </article>
-          <article class="roadmap-item">
-            <strong>2</strong>
-            <span>Timeline</span>
-            <h3>결과 이력 비교</h3>
-            <p>검진 결과와 카페인 리포트를 날짜별로 저장해 변화 추이를 확인하게 합니다.</p>
+          <article class="privacy-item">
+            <h3>건강검진 결과</h3>
+            <p>참고 범위는 검사기관, 성별, 연령에 따라 다를 수 있습니다. 원본 결과지의 참고치와 의료진 설명을 우선하세요.</p>
           </article>
-          <article class="roadmap-item">
-            <strong>3</strong>
-            <span>Combined guide</span>
-            <h3>통합 건강 가이드</h3>
-            <p>혈압, 수면, 카페인 민감도, 간 기능을 함께 보고 개인화된 실천 항목을 제안합니다.</p>
-          </article>
-          <article class="roadmap-item">
-            <strong>4</strong>
-            <span>Export</span>
-            <h3>PDF 리포트 내보내기</h3>
-            <p>검진 해석과 카페인 민감도 결과를 하나의 요약 PDF로 저장하고 상담 자료로 활용합니다.</p>
+          <article class="privacy-item">
+            <h3>예약 데모</h3>
+            <p>공개 페이지의 병원과 예약 정보는 샘플이며 실제 기관으로 전송되지 않습니다. 브라우저 데모 데이터만 생성됩니다.</p>
           </article>
         </div>
       </section>
@@ -710,5 +867,67 @@
       <span>Health insight portal prototype. Not for diagnosis or medical prescription.</span>
     </footer>
   </div>
+  <script>
+    (function () {
+      var navToggle = document.getElementById("navToggle");
+      var navLinks = document.getElementById("navLinks");
+      var routeButtons = document.querySelectorAll("[data-route]");
+      var routeTitle = document.getElementById("routeTitle");
+      var routeDescription = document.getElementById("routeDescription");
+      var routePrimary = document.getElementById("routePrimary");
+      var routeSecondary = document.getElementById("routeSecondary");
+      var routes = {
+        health: {
+          title: "건강검진 결과부터 확인하세요.",
+          description: "수치를 직접 입력하거나 결과지 OCR 데모를 사용해 참고 범위와 다음 상담 질문을 확인합니다.",
+          primaryLabel: "LabInsight 시작",
+          primaryHref: "https://haru-today.github.io/labinsight/",
+          secondary: false
+        },
+        caffeine: {
+          title: "카페인 유전자형 리포트로 시작하세요.",
+          description: "CYP1A2와 AHR 관련 유전자형을 선택해 민감도 지수, 참조 분포 비교와 섭취 가이드를 확인합니다.",
+          primaryLabel: "Caffeine Atlas 시작",
+          primaryHref: "./caffeine-sensitivity-app/analyzer.html",
+          secondary: false
+        },
+        both: {
+          title: "현재 수치를 먼저 보고, 유전자 반응을 이어서 확인하세요.",
+          description: "LabInsight에서 건강검진 결과를 확인한 뒤 Caffeine Atlas에서 카페인 반응 가능성을 보조 정보로 살펴보는 순서가 좋습니다.",
+          primaryLabel: "LabInsight 시작",
+          primaryHref: "https://haru-today.github.io/labinsight/",
+          secondary: true
+        }
+      };
+
+      navToggle.addEventListener("click", function () {
+        var open = navLinks.classList.toggle("open");
+        navToggle.setAttribute("aria-expanded", String(open));
+        navToggle.setAttribute("aria-label", open ? "메뉴 닫기" : "메뉴 열기");
+      });
+
+      navLinks.addEventListener("click", function (event) {
+        if (event.target.tagName === "A") {
+          navLinks.classList.remove("open");
+          navToggle.setAttribute("aria-expanded", "false");
+          navToggle.setAttribute("aria-label", "메뉴 열기");
+        }
+      });
+
+      routeButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var route = routes[button.getAttribute("data-route")];
+          routeButtons.forEach(function (item) {
+            item.setAttribute("aria-pressed", String(item === button));
+          });
+          routeTitle.textContent = route.title;
+          routeDescription.textContent = route.description;
+          routePrimary.textContent = route.primaryLabel;
+          routePrimary.href = route.primaryHref;
+          routeSecondary.hidden = !route.secondary;
+        });
+      });
+    }());
+  </script>
 </body>
 </html>
