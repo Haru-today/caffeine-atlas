@@ -3,30 +3,712 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="refresh" content="0; url=./caffeine-sensitivity-app/index.html">
-  <title>Caffeine Atlas</title>
-  <link rel="canonical" href="./caffeine-sensitivity-app/index.html">
+  <title>Personal Health Atlas | 건강검진·카페인 민감도 통합 포털</title>
+  <meta name="description" content="Personal Health Atlas는 건강검진 결과 해석과 카페인 민감도 유전자 리포트를 하나로 연결하는 개인 건강 데이터 해석 포털입니다.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://haru-today.github.io/caffeine-atlas/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Personal Health Atlas">
+  <meta property="og:title" content="Personal Health Atlas | 건강검진·카페인 민감도 통합 포털">
+  <meta property="og:description" content="건강검진 수치와 유전자 정보를 이해 가능한 다음 행동으로 바꾸는 통합 포털입니다.">
+  <meta property="og:url" content="https://haru-today.github.io/caffeine-atlas/">
+  <meta property="og:image" content="https://haru-today.github.io/caffeine-atlas/caffeine-sensitivity-app/assets/hero-caffeine-genetics.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Personal Health Atlas | 건강검진·카페인 민감도 통합 포털">
+  <meta name="twitter:description" content="건강검진 수치와 유전자 정보를 이해 가능한 다음 행동으로 바꾸는 통합 포털입니다.">
+  <meta name="twitter:image" content="https://haru-today.github.io/caffeine-atlas/caffeine-sensitivity-app/assets/hero-caffeine-genetics.png">
   <style>
+    :root {
+      --bg: #f3f6f8;
+      --surface: #ffffff;
+      --surface-soft: #eef5f5;
+      --ink: #14202c;
+      --muted: #5c6a78;
+      --line: #d8e0e7;
+      --teal: #006d77;
+      --teal-dark: #014f57;
+      --coral: #c44d38;
+      --amber: #b8860b;
+      --blue: #2d638f;
+      --shadow: 0 18px 48px rgba(20, 32, 44, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       margin: 0;
-      display: grid;
-      min-height: 100vh;
-      place-items: center;
-      background: #f2f5f7;
-      color: #15202b;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(243, 246, 248, 0.96)),
+        url("./caffeine-sensitivity-app/assets/hero-caffeine-genetics.png") center top / cover fixed;
+      color: var(--ink);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      letter-spacing: 0;
+      word-break: keep-all;
+      overflow-wrap: break-word;
     }
 
     a {
-      color: #014f57;
-      font-weight: 800;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 880px;
+      margin-bottom: 16px;
+      font-size: clamp(34px, 5.2vw, 72px);
+      line-height: 1.05;
+    }
+
+    h2 {
+      margin-bottom: 8px;
+      font-size: clamp(24px, 2.6vw, 38px);
+      line-height: 1.22;
+    }
+
+    h3 {
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+
+    .page-shell {
+      width: min(1440px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 22px 0 34px;
+    }
+
+    .site-nav {
+      position: sticky;
+      z-index: 10;
+      top: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border: 1px solid rgba(216, 224, 231, 0.95);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 10px 30px rgba(20, 32, 44, 0.08);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      font-weight: 950;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--ink);
+      color: #fff;
+      font-size: 15px;
+    }
+
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 18px;
+      color: #405265;
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .nav-links a:hover {
+      color: var(--teal-dark);
+    }
+
+    .nav-cta {
+      display: inline-flex;
+      min-height: 38px;
+      padding: 0 14px;
+      align-items: center;
+      border-radius: 8px;
+      background: var(--teal-dark);
+      color: #fff;
+      font-weight: 950;
+    }
+
+    .hero {
+      position: relative;
+      min-height: min(720px, calc(100vh - 98px));
+      overflow: hidden;
+      margin-bottom: 14px;
+      border: 1px solid rgba(216, 224, 231, 0.95);
+      border-radius: 8px;
+      background: #14202c;
+      box-shadow: var(--shadow);
+    }
+
+    .hero::before {
+      position: absolute;
+      inset: 0;
+      content: "";
+      background:
+        linear-gradient(90deg, rgba(9, 22, 31, 0.92) 0%, rgba(9, 22, 31, 0.72) 46%, rgba(9, 22, 31, 0.24) 100%),
+        url("./caffeine-sensitivity-app/assets/hero-caffeine-genetics.png") center / cover;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
+      gap: 24px;
+      min-height: inherit;
+      align-items: center;
+      padding: clamp(26px, 5vw, 64px);
+      color: #fff;
+    }
+
+    .eyebrow {
+      margin-bottom: 8px;
+      color: var(--teal-dark);
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .hero .eyebrow {
+      color: #9bd7d8;
+    }
+
+    .hero-copy p:not(.eyebrow) {
+      max-width: 760px;
+      color: rgba(255, 255, 255, 0.84);
+      font-size: 18px;
+      line-height: 1.72;
+    }
+
+    .hero-actions,
+    .service-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .button {
+      display: inline-flex;
+      min-height: 46px;
+      padding: 0 18px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-weight: 950;
+    }
+
+    .button.primary {
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .button.dark {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .button.outline {
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      color: #fff;
+    }
+
+    .button.text {
+      min-height: auto;
+      padding: 0;
+      color: var(--teal-dark);
+    }
+
+    .platform-panel {
+      display: grid;
+      gap: 10px;
+    }
+
+    .quick-link {
+      display: grid;
+      gap: 8px;
+      min-height: 128px;
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.26);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px);
+    }
+
+    .quick-link span {
+      color: #9bd7d8;
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .quick-link strong {
+      font-size: 20px;
+    }
+
+    .quick-link small {
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .status-card,
+    .service-card,
+    .feature-card,
+    .roadmap-item,
+    .support-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 8px 24px rgba(20, 32, 44, 0.06);
+    }
+
+    .status-card {
+      min-height: 78px;
+      padding: 14px;
+    }
+
+    .status-card span,
+    .service-card span,
+    .feature-card span,
+    .roadmap-item span {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .status-card strong {
+      color: #263347;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .section {
+      margin-bottom: 18px;
+      padding: clamp(20px, 3vw, 30px);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 0.6fr);
+      gap: 20px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .section-head p:not(.eyebrow),
+    .service-card p,
+    .feature-card p,
+    .roadmap-item p,
+    .support-card p {
+      margin-bottom: 0;
+      color: #47576a;
+      font-size: 15px;
+      line-height: 1.68;
+    }
+
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .service-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      min-height: 260px;
+      padding: 18px;
+    }
+
+    .service-card h3 {
+      font-size: 24px;
+    }
+
+    .service-card.health {
+      border-top: 5px solid var(--blue);
+    }
+
+    .service-card.caffeine {
+      border-top: 5px solid var(--teal);
+    }
+
+    .service-badge {
+      align-self: start;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: var(--surface-soft);
+      color: var(--teal-dark);
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .feature-card,
+    .roadmap-item,
+    .support-card {
+      padding: 16px;
+    }
+
+    .feature-card h3,
+    .roadmap-item h3 {
+      color: #263347;
+    }
+
+    .roadmap {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .roadmap-item strong {
+      display: inline-flex;
+      width: 30px;
+      height: 30px;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      background: var(--ink);
+      color: #fff;
+      font-size: 13px;
+    }
+
+    .support-section {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.45fr);
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .support-card {
+      display: grid;
+      align-content: start;
+      gap: 12px;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      padding: 22px 4px 0;
+      color: #52606f;
+      font-size: 13px;
+    }
+
+    .footer strong {
+      color: var(--ink);
+    }
+
+    @media (max-width: 1080px) {
+      .site-nav,
+      .section-head,
+      .hero-inner,
+      .support-section {
+        grid-template-columns: 1fr;
+      }
+
+      .site-nav {
+        display: grid;
+      }
+
+      .nav-links {
+        justify-content: flex-start;
+      }
+
+      .status-strip,
+      .roadmap {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .feature-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page-shell {
+        width: min(100% - 20px, 1440px);
+        padding-top: 10px;
+      }
+
+      .site-nav {
+        position: static;
+      }
+
+      .nav-links {
+        gap: 10px;
+        font-size: 13px;
+      }
+
+      .hero-inner {
+        padding: 24px;
+      }
+
+      h1 {
+        font-size: clamp(31px, 12vw, 45px);
+      }
+
+      .hero-copy p:not(.eyebrow) {
+        font-size: 16px;
+      }
+
+      .status-strip,
+      .service-grid,
+      .feature-grid,
+      .roadmap {
+        grid-template-columns: 1fr;
+      }
+
+      .service-card {
+        grid-template-columns: 1fr;
+      }
+
+      .footer {
+        display: grid;
+      }
     }
   </style>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Personal Health Atlas",
+      "url": "https://haru-today.github.io/caffeine-atlas/",
+      "description": "건강검진 결과 해석과 카페인 민감도 유전자 리포트를 하나로 연결하는 개인 건강 데이터 해석 포털입니다."
+    }
+  </script>
 </head>
 <body>
-  <main>
-    <p>Caffeine Atlas 홈페이지로 이동 중입니다.</p>
-    <p><a href="./caffeine-sensitivity-app/index.html">바로 열기</a></p>
-  </main>
+  <div class="page-shell">
+    <nav class="site-nav" aria-label="주요 메뉴">
+      <a class="brand" href="#top" aria-label="Personal Health Atlas 홈">
+        <span class="brand-mark">PH</span>
+        <span>Personal Health Atlas</span>
+      </a>
+      <div class="nav-links">
+        <a href="#services">서비스</a>
+        <a href="#platform">통합 방향</a>
+        <a href="#features">추가 기능</a>
+        <a href="#support">문의</a>
+        <a class="nav-cta" href="#services">시작하기</a>
+      </div>
+    </nav>
+
+    <main id="top">
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="hero-copy">
+            <p class="eyebrow">Unified health insight portal</p>
+            <h1>건강검진과 유전 정보를 하나의 흐름으로 읽습니다.</h1>
+            <p>건강검진 결과 해석, 추천 검진, 카페인 민감도 리포트를 한 곳에서 시작하는 개인 건강 데이터 포털입니다.</p>
+            <div class="hero-actions">
+              <a class="button primary" href="https://haru-today.github.io/labinsight/" target="_blank" rel="noopener">건강검진 시스템 열기</a>
+              <a class="button outline" href="./caffeine-sensitivity-app/index.html">카페인 분석 열기</a>
+            </div>
+          </div>
+
+          <div class="platform-panel" aria-label="빠른 실행">
+            <a class="quick-link" href="https://haru-today.github.io/labinsight/" target="_blank" rel="noopener">
+              <span>LabInsight</span>
+              <strong>건강검진 결과 해석</strong>
+              <small>검진 수치 입력, OCR 데모, 위험도 리포트, 추천 검진과 예약 흐름을 확인합니다.</small>
+            </a>
+            <a class="quick-link" href="./caffeine-sensitivity-app/analyzer.html">
+              <span>Caffeine Atlas</span>
+              <strong>카페인 민감도 리포트</strong>
+              <small>CYP1A2와 AHR 관련 유전자형으로 카페인 반응 가능성을 계산합니다.</small>
+            </a>
+            <a class="quick-link" href="#features">
+              <span>Next</span>
+              <strong>통합 기능 제안</strong>
+              <small>사용자 프로필, 결과 이력, 맞춤형 행동 가이드까지 확장할 수 있습니다.</small>
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <section class="status-strip" aria-label="통합 포털 요약">
+        <div class="status-card">
+          <span>Portal</span>
+          <strong>두 서비스를 하나의 진입점으로 연결</strong>
+        </div>
+        <div class="status-card">
+          <span>Health check</span>
+          <strong>검진 수치 해석과 추천 검진</strong>
+        </div>
+        <div class="status-card">
+          <span>Genetics</span>
+          <strong>카페인 민감도 유전자 리포트</strong>
+        </div>
+        <div class="status-card">
+          <span>Direction</span>
+          <strong>개인 건강 데이터 기반 통합 인사이트</strong>
+        </div>
+      </section>
+
+      <section class="section" id="services">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Services</p>
+            <h2>기존 기능은 살리고, 시작 화면만 하나로 묶었습니다.</h2>
+          </div>
+          <p>지금 단계에서는 두 프로젝트를 무리하게 합치기보다, 통합 홈페이지에서 각각의 완성된 기능으로 자연스럽게 이동하게 만드는 구성이 가장 안정적입니다.</p>
+        </div>
+
+        <div class="service-grid">
+          <article class="service-card health">
+            <div>
+              <span>Health check report</span>
+              <h3>LabInsight 건강검진 시스템</h3>
+              <p>건강검진 수치를 입력하면 항목별 상태, 위험도 점수, 생활관리 가이드, 추천 검진과 병원 예약 데모까지 이어집니다.</p>
+              <div class="service-actions">
+                <a class="button dark" href="https://haru-today.github.io/labinsight/" target="_blank" rel="noopener">시스템 열기</a>
+              </div>
+            </div>
+            <span class="service-badge">검진 결과</span>
+          </article>
+
+          <article class="service-card caffeine">
+            <div>
+              <span>Caffeine response report</span>
+              <h3>Caffeine Atlas 민감도 분석</h3>
+              <p>CYP1A2와 AHR 관련 유전자형을 바탕으로 카페인 민감도 지수, 백분위, 섭취 가이드를 제공합니다.</p>
+              <div class="service-actions">
+                <a class="button dark" href="./caffeine-sensitivity-app/index.html">홈페이지 열기</a>
+                <a class="button text" href="./caffeine-sensitivity-app/analyzer.html">리포트 만들기</a>
+              </div>
+            </div>
+            <span class="service-badge">유전자 정보</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="platform">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Platform direction</p>
+            <h2>통합의 핵심은 데이터 해석의 흐름입니다.</h2>
+          </div>
+          <p>건강검진은 현재 상태를 보여주고, 유전자 정보는 개인의 반응 가능성을 설명합니다. 두 데이터를 함께 보면 사용자가 다음에 무엇을 확인하고 관리해야 하는지 더 쉽게 이해할 수 있습니다.</p>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card">
+            <span>Step 01</span>
+            <h3>검진 결과 이해</h3>
+            <p>혈당, 지질, 간 기능, 혈압 등 현재 수치를 먼저 정리합니다.</p>
+          </article>
+          <article class="feature-card">
+            <span>Step 02</span>
+            <h3>개인 반응 해석</h3>
+            <p>카페인 민감도처럼 유전자 기반 생활 반응 가능성을 보조 정보로 봅니다.</p>
+          </article>
+          <article class="feature-card">
+            <span>Step 03</span>
+            <h3>다음 행동 추천</h3>
+            <p>추가 검진, 생활관리, 상담 질문, 추적 기록으로 이어지게 만듭니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="features">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Recommended features</p>
+            <h2>기능적으로는 이 네 가지를 추가하면 좋습니다.</h2>
+          </div>
+          <p>단순히 홈페이지를 합치는 것보다, 사용자가 자신의 결과를 다시 보고 비교할 수 있게 만드는 쪽이 서비스 가치가 큽니다.</p>
+        </div>
+
+        <div class="roadmap">
+          <article class="roadmap-item">
+            <strong>1</strong>
+            <span>Unified profile</span>
+            <h3>통합 사용자 프로필</h3>
+            <p>나이, 성별, 생활습관, 검진일, 유전자형을 한 번만 입력하고 두 서비스에서 같이 쓰게 합니다.</p>
+          </article>
+          <article class="roadmap-item">
+            <strong>2</strong>
+            <span>Timeline</span>
+            <h3>결과 이력 비교</h3>
+            <p>검진 결과와 카페인 리포트를 날짜별로 저장해 변화 추이를 확인하게 합니다.</p>
+          </article>
+          <article class="roadmap-item">
+            <strong>3</strong>
+            <span>Combined guide</span>
+            <h3>통합 건강 가이드</h3>
+            <p>혈압, 수면, 카페인 민감도, 간 기능을 함께 보고 개인화된 실천 항목을 제안합니다.</p>
+          </article>
+          <article class="roadmap-item">
+            <strong>4</strong>
+            <span>Export</span>
+            <h3>PDF 리포트 내보내기</h3>
+            <p>검진 해석과 카페인 민감도 결과를 하나의 요약 PDF로 저장하고 상담 자료로 활용합니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section support-section" id="support">
+        <div>
+          <p class="eyebrow">Research prototype</p>
+          <h2>연구·교육용 개인 건강 데이터 해석 포털</h2>
+          <p>본 포털은 건강검진 결과와 유전자 정보를 이해하기 쉽게 정리하는 프로토타입입니다. 진단, 치료, 처방은 반드시 의료진과 상담해야 합니다.</p>
+        </div>
+        <div class="support-card">
+          <span class="eyebrow">Contact</span>
+          <h3>문의</h3>
+          <p>동의대학교 임상병리학과 분자진단연구실</p>
+          <p>동의대학교 바이오헬스혁신융합대학사업단</p>
+          <p><a href="mailto:20221600@office.deu.ac.kr">20221600@office.deu.ac.kr</a></p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <strong>Personal Health Atlas</strong>
+      <span>Health insight portal prototype. Not for diagnosis or medical prescription.</span>
+    </footer>
+  </div>
 </body>
 </html>
