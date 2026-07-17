@@ -1212,11 +1212,11 @@ a {
   font-weight: 900;
 }
 
-canvas {
+.chart-card canvas {
   display: block;
-  width: 100%;
+  width: min(100%, 760px);
   height: auto;
-  margin-top: 8px;
+  margin: 14px auto 0;
 }
 
 .recommend-card ul {

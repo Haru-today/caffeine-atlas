@@ -103,6 +103,7 @@
   var selections = {};
   var lastResult = null;
   var hasSubmitted = false;
+  var chartResizeTimer = null;
 
   var elements = {
     geneGrid: document.getElementById("geneGrid"),
@@ -540,6 +541,9 @@
     updateValidationMessage("리포트가 생성되었습니다. 결과 화면으로 이동합니다.", false);
     render();
     setResultVisible(true);
+    window.requestAnimationFrame(function () {
+      drawReferenceChart(lastResult && typeof lastResult.score === "number" ? lastResult.score : null);
+    });
     window.location.hash = "resultReport";
     elements.resultReport.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -695,18 +699,24 @@
   function drawReferenceChart(userScore) {
     var canvas = elements.chart;
     var ctx = canvas.getContext("2d");
-    var width = canvas.width;
-    var height = canvas.height;
-    var padLeft = 58;
-    var padRight = 28;
-    var padTop = 26;
-    var padBottom = 52;
+    var measuredWidth = Math.round(canvas.getBoundingClientRect().width);
+    var width = measuredWidth > 0 ? measuredWidth : 760;
+    var height = Math.round(width * 300 / 680);
+    var pixelRatio = Math.min(window.devicePixelRatio || 1, 3);
+    var compact = width < 500;
+    var padLeft = compact ? 38 : 58;
+    var padRight = compact ? 12 : 28;
+    var padTop = compact ? 22 : 26;
+    var padBottom = compact ? 38 : 52;
     var chartW = width - padLeft - padRight;
     var chartH = height - padTop - padBottom;
     var maxLevel = referenceBins.reduce(function (max, bin) {
       return Math.max(max, bin.level);
     }, 1);
 
+    canvas.width = Math.round(width * pixelRatio);
+    canvas.height = Math.round(height * pixelRatio);
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
@@ -714,7 +724,7 @@
     ctx.strokeStyle = "#e2e9f0";
     ctx.lineWidth = 1;
     ctx.fillStyle = "#657487";
-    ctx.font = "12px sans-serif";
+    ctx.font = (compact ? "10px" : "12px") + " sans-serif";
     ctx.textAlign = "right";
     for (var i = 0; i <= 4; i += 1) {
       var y = padTop + chartH - (i / 4) * chartH;
@@ -724,25 +734,54 @@
       ctx.stroke();
     }
 
-    var barGap = 10;
-    var barW = (chartW - barGap * (referenceBins.length - 1)) / referenceBins.length;
-    referenceBins.forEach(function (bin, index) {
-      var x = padLeft + index * (barW + barGap);
-      var h = Math.max(2, (bin.level / maxLevel) * chartH);
-      var y = padTop + chartH - h;
+    var points = referenceBins.map(function (bin) {
+      return {
+        x: padLeft + normalizeReference(bin.raw) / 100 * chartW,
+        y: padTop + chartH - (bin.level / maxLevel) * chartH
+      };
+    });
+
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, padTop + chartH);
+    points.forEach(function (point) {
+      ctx.lineTo(point.x, point.y);
+    });
+    ctx.lineTo(points[points.length - 1].x, padTop + chartH);
+    ctx.closePath();
+    var areaGradient = ctx.createLinearGradient(0, padTop, 0, padTop + chartH);
+    areaGradient.addColorStop(0, "rgba(8, 127, 140, 0.28)");
+    areaGradient.addColorStop(1, "rgba(8, 127, 140, 0.04)");
+    ctx.fillStyle = areaGradient;
+    ctx.fill();
+
+    ctx.beginPath();
+    points.forEach(function (point, index) {
+      if (index === 0) {
+        ctx.moveTo(point.x, point.y);
+      } else {
+        ctx.lineTo(point.x, point.y);
+      }
+    });
+    ctx.strokeStyle = "#087f8c";
+    ctx.lineWidth = 4;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.stroke();
+
+    points.forEach(function (point, index) {
       ctx.fillStyle = "#087f8c";
-      ctx.fillRect(x, y, barW, h);
-      ctx.fillStyle = "#045c66";
-      ctx.fillRect(x, y, barW, 4);
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = "#657487";
       ctx.textAlign = "center";
-      ctx.font = "12px sans-serif";
-      ctx.fillText(Math.round(normalizeReference(bin.raw)), x + barW / 2, height - 24);
+      ctx.font = (compact ? "10px" : "12px") + " sans-serif";
+      ctx.fillText(Math.round(normalizeReference(referenceBins[index].raw)), point.x, height - 24);
     });
 
     ctx.fillStyle = "#334155";
     ctx.textAlign = "center";
-    ctx.font = "bold 13px sans-serif";
+    ctx.font = "bold " + (compact ? "10px" : "13px") + " sans-serif";
     ctx.fillText("민감도 점수 환산값", padLeft + chartW / 2, height - 7);
 
     ctx.save();
@@ -752,24 +791,59 @@
     ctx.restore();
 
     if (typeof userScore === "number") {
-      var markerX = padLeft + clamp(userScore, 0, 100) / 100 * chartW;
+      var safeScore = clamp(userScore, 0, 100);
+      var markerX = padLeft + safeScore / 100 * chartW;
+      var markerLevel = getReferenceLevelAtScore(safeScore);
+      var markerY = padTop + chartH - (markerLevel / maxLevel) * chartH;
+      ctx.strokeStyle = "#d95d39";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath();
+      ctx.moveTo(markerX, markerY);
+      ctx.lineTo(markerX, padTop + chartH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = "#ffffff";
       ctx.strokeStyle = "#d95d39";
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(markerX, padTop - 2);
-      ctx.lineTo(markerX, padTop + chartH + 4);
+      ctx.arc(markerX, markerY, 8, 0, Math.PI * 2);
+      ctx.fill();
       ctx.stroke();
 
-      var label = "나 " + userScore.toFixed(1);
-      ctx.font = "bold 13px sans-serif";
-      var labelW = ctx.measureText(label).width + 18;
+      var label = "내 위치 " + userScore.toFixed(1);
+      var labelFontSize = compact ? 10 : 13;
+      var labelHeight = compact ? 20 : 24;
+      ctx.font = "bold " + labelFontSize + "px sans-serif";
+      var labelW = ctx.measureText(label).width + (compact ? 12 : 18);
       var labelX = clamp(markerX - labelW / 2, padLeft, width - padRight - labelW);
+      var labelY = Math.max(3, markerY - (compact ? 28 : 34));
       ctx.fillStyle = "#d95d39";
-      ctx.fillRect(labelX, 4, labelW, 22);
+      ctx.fillRect(labelX, labelY, labelW, labelHeight);
       ctx.fillStyle = "#fff";
       ctx.textAlign = "center";
-      ctx.fillText(label, labelX + labelW / 2, 19);
+      ctx.fillText(label, labelX + labelW / 2, labelY + labelHeight - (compact ? 6 : 7));
     }
+  }
+
+  function getReferenceLevelAtScore(score) {
+    var safeScore = clamp(score, 0, 100);
+    var normalizedBins = referenceBins.map(function (bin) {
+      return { score: normalizeReference(bin.raw), level: bin.level };
+    });
+
+    for (var i = 0; i < normalizedBins.length - 1; i += 1) {
+      var current = normalizedBins[i];
+      var next = normalizedBins[i + 1];
+      if (safeScore <= next.score) {
+        var span = next.score - current.score;
+        var ratio = span ? (safeScore - current.score) / span : 0;
+        return current.level + (next.level - current.level) * ratio;
+      }
+    }
+
+    return normalizedBins[normalizedBins.length - 1].level;
   }
 
   function resetAll() {
@@ -1081,9 +1155,14 @@
     var info = data.reportInfo;
     var result = data.result;
     var logoUrl = new URL("./assets/caffeine-atlas-logo-wordmark.png", window.location.href).href;
-    var chartBars = referenceBins.map(function (bin) {
-      return '<i style="height:' + (bin.level * 14) + '%"></i>';
-    }).join("");
+    var maxReferenceLevel = referenceBins.reduce(function (max, bin) {
+      return Math.max(max, bin.level);
+    }, 1);
+    var pdfChartPoints = referenceBins.map(function (bin) {
+      var x = normalizeReference(bin.raw);
+      var y = 54 - (bin.level / maxReferenceLevel) * 44;
+      return x.toFixed(1) + "," + y.toFixed(1);
+    }).join(" ");
     var genotypeRows = data.genotypes.map(function (item) {
       return [
         "<tr><td><strong>", escapeHtml(item.name), "</strong><small>", escapeHtml(item.rsid), "</small></td>",
@@ -1101,7 +1180,24 @@
     var pdfScoreUnit = hasScore ? "<small> 점</small>" : "";
     var pdfRankText = typeof result.sensitivityRank === "number" ? "100명 중 " + result.sensitivityRank + "등" : "산출 없음";
     var pdfPercentileText = typeof result.percentile === "number" ? result.percentile.toFixed(1) + "%" : "산출 없음";
-    var pdfMarker = hasScore ? "<b class=\"histogram-marker\"></b>" : "";
+    var pdfMarker = "";
+    if (hasScore) {
+      var pdfMarkerX = clamp(result.score, 0, 100);
+      var pdfMarkerY = 54 - (getReferenceLevelAtScore(pdfMarkerX) / maxReferenceLevel) * 44;
+      pdfMarker = [
+        '<line class="distribution-guide" x1="', pdfMarkerX, '" y1="', pdfMarkerY.toFixed(1), '" x2="', pdfMarkerX, '" y2="54"></line>',
+        '<circle class="distribution-marker" cx="', pdfMarkerX, '" cy="', pdfMarkerY.toFixed(1), '" r="3.2"></circle>'
+      ].join("");
+    }
+    var pdfDistributionChart = [
+      '<svg class="distribution-chart" viewBox="0 0 100 60" role="img" aria-label="참조분포 선형 그래프와 내 위치">',
+      '<line class="distribution-grid" x1="0" y1="21" x2="100" y2="21"></line>',
+      '<line class="distribution-grid" x1="0" y1="38" x2="100" y2="38"></line>',
+      '<polygon class="distribution-area" points="0,54 ', pdfChartPoints, ' 100,54"></polygon>',
+      '<polyline class="distribution-line" points="', pdfChartPoints, '"></polyline>',
+      pdfMarker,
+      '</svg>'
+    ].join("");
 
     return [
       "<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\">",
@@ -1115,7 +1211,7 @@
       ".pdf-meta{display:grid;grid-template-columns:1.05fr .85fr .85fr .8fr 1.45fr;border:1px solid #d6e0e3}.pdf-meta div{min-width:0;padding:2.4mm 2.7mm;border-right:1px solid #d6e0e3}.pdf-meta div:last-child{border-right:0}.pdf-meta span,.metric span{display:block;color:#647981;font-size:6.8pt;font-weight:800;text-transform:uppercase}.pdf-meta strong{display:block;margin-top:1mm;font-size:8.2pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
       ".pdf-summary{display:grid;grid-template-columns:1.1fr .9fr;gap:4mm}.type-panel,.score-panel,.pdf-card{border:1px solid #d6e0e3;background:#fff;padding:3.5mm}.type-panel{border-left:3mm solid #148589}.type-panel .badge{color:#0d696c;font-size:7.5pt;font-weight:900}.type-panel h2{margin:1.2mm 0 1mm;font-size:16pt}.type-panel p{margin:0;color:#52676f;font-size:8pt;line-height:1.5}.score-row{display:flex;justify-content:space-between;align-items:flex-end}.score-label{color:#60767d;font-size:7.5pt;font-weight:800}.score-value{color:#d45b38;font-size:24pt;font-weight:950;line-height:1}.score-value small{font-size:9pt}.gauge{position:relative;height:4mm;margin-top:2.5mm;background:linear-gradient(90deg,#188b91 0 33.33%,#e5ad3c 33.33% 66.67%,#d85d39 66.67%);border-radius:2mm}.gauge:after{content:'';position:absolute;left:var(--score);top:-1.4mm;width:1.4mm;height:6.8mm;background:#172f38;transform:translateX(-50%)}.gauge.is-unscored:after{display:none}.gauge-scale{display:flex;justify-content:space-between;margin-top:1mm;color:#657980;font-size:6.4pt;font-weight:800}",
       ".metrics{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #d6e0e3}.metric{padding:2.4mm 3mm;border-right:1px solid #d6e0e3}.metric:last-child{border-right:0}.metric strong{display:block;margin-top:1mm;color:#173f47;font-size:10pt}",
-      ".pdf-main{display:grid;grid-template-columns:.9fr 1.1fr;gap:4mm}.pdf-card h3{margin:0 0 2.2mm;color:#183e47;font-size:9.5pt}.chart-summary{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2mm}.chart-summary strong{color:#d45b38;font-size:12pt}.chart-summary span{color:#60747c;font-size:6.8pt}.histogram{position:relative;height:27mm;display:flex;align-items:flex-end;gap:2mm;padding:2mm 3mm 4mm;border-bottom:1px solid #9fb0b6;background:linear-gradient(#f7fafb 1px,transparent 1px);background-size:100% 25%}.histogram i{flex:1;display:block;min-height:2px;background:#a7cbd0}.histogram-marker{position:absolute;left:var(--score);top:0;bottom:0;width:1.2mm;background:#d45b38;transform:translateX(-50%)}.histogram-marker:before{content:'MY';position:absolute;top:0;left:50%;transform:translateX(-50%);padding:.6mm 1.2mm;background:#d45b38;color:#fff;font-size:5.5pt;font-weight:900}.chart-axis{display:flex;justify-content:space-between;margin-top:1mm;color:#6a7d84;font-size:6pt}.layer-list{display:grid;gap:2mm}.layer{display:grid;grid-template-columns:24mm 12mm 1fr;gap:2mm;align-items:center;font-size:7pt}.layer strong{text-align:right}.layer-track{height:2mm;background:#e8edef}.layer-track i{display:block;height:100%;background:#148589}.layer:nth-child(2) .layer-track i{background:#dfa936}.layer:nth-child(3) .layer-track i{background:#3a78a0}",
+      ".pdf-main{display:grid;grid-template-columns:.9fr 1.1fr;gap:4mm}.pdf-card h3{margin:0 0 2.2mm;color:#183e47;font-size:9.5pt}.chart-summary{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2mm}.chart-summary strong{color:#d45b38;font-size:12pt}.chart-summary span{color:#60747c;font-size:6.8pt}.distribution-chart{display:block;width:100%;height:27mm;border-bottom:1px solid #9fb0b6}.distribution-grid{stroke:#e3eaec;stroke-width:.45}.distribution-area{fill:#dceff0}.distribution-line{fill:none;stroke:#148589;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}.distribution-guide{stroke:#d45b38;stroke-width:1;stroke-dasharray:2 1.5}.distribution-marker{fill:#fff;stroke:#d45b38;stroke-width:1.6}.chart-axis{display:flex;justify-content:space-between;margin-top:1mm;color:#6a7d84;font-size:6pt}.layer-list{display:grid;gap:2mm}.layer{display:grid;grid-template-columns:24mm 12mm 1fr;gap:2mm;align-items:center;font-size:7pt}.layer strong{text-align:right}.layer-track{height:2mm;background:#e8edef}.layer-track i{display:block;height:100%;background:#148589}.layer:nth-child(2) .layer-track i{background:#dfa936}.layer:nth-child(3) .layer-track i{background:#3a78a0}",
       "table{width:100%;border-collapse:collapse;font-size:7pt}th{padding:1.6mm;text-align:left;color:#587078;background:#eef4f5;border-bottom:1px solid #cbd8dc}td{padding:1.5mm;border-bottom:1px solid #e2e9eb}td small{display:block;margin-top:.5mm;color:#71848b;font-size:5.8pt}tbody tr:last-child td{border-bottom:0}",
       ".pdf-content{display:grid;grid-template-columns:1fr 1fr;gap:4mm}.interpretation{border-left:2mm solid #d45b38}.interpretation h3,.guide h3{margin:0 0 1.5mm;color:#183e47;font-size:9.5pt}.interpretation strong{display:block;margin-bottom:1mm;font-size:8.2pt}.interpretation p{margin:0;color:#4f646c;font-size:7pt;line-height:1.45;white-space:pre-line}.guide ul{margin:0;padding-left:4mm}.guide li{margin:0 0 1mm;color:#4f646c;font-size:6.8pt;line-height:1.35}.guide li:last-child{margin-bottom:0}",
       ".pdf-footer{margin-top:auto;padding-top:3mm;border-top:1px solid #cfdadd;display:grid;grid-template-columns:1fr auto;gap:5mm;align-items:end}.notice strong{display:block;margin-bottom:1mm;color:#173f47;font-size:7pt}.notice p{margin:0;color:#687b82;font-size:6.2pt;line-height:1.45}.footer-mark{text-align:right;color:#6c7f86;font-size:6pt;white-space:nowrap}.footer-mark strong{display:block;color:#173f47;font-size:7pt}",
@@ -1127,7 +1223,7 @@
       "<section class=\"pdf-meta\"><div><span>Sample ID</span><strong>", escapeHtml(info.sampleId), "</strong></div><div><span>Report date</span><strong>", escapeHtml(info.reportDate), "</strong></div><div><span>Collection</span><strong>", escapeHtml(info.collectionDate), "</strong></div><div><span>Specimen / Sex</span><strong>", escapeHtml(info.sampleType), " / ", escapeHtml(info.sex), "</strong></div><div><span>Institution</span><strong>", escapeHtml(info.institution), "</strong></div></section>",
       "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", escapeHtml(result.category), "</h2><p>", escapeHtml(result.typeDescription), "</p></div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div><div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>각성형</span><span>잠잠형</span><span>잠꾸러기형</span></div></div></section>",
       "<section class=\"metrics\"><div class=\"metric\"><span>Result type</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>Metabolism</span><strong>", escapeHtml(result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>Reference rank</span><strong>", pdfRankText, "</strong></div><div class=\"metric\"><span>Confidence</span><strong>", result.confidence, "%</strong></div></section>",
-      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><div><h3>Reference distribution</h3><span>민감도가 높은 순서 기준</span></div><strong>", pdfPercentileText, "</strong></div><div class=\"histogram\">", chartBars, pdfMarker, "</div><div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>신뢰도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
+      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><div><h3>Reference distribution</h3><span>선 위의 점이 내 위치입니다</span></div><strong>", pdfPercentileText, "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>신뢰도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
       "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>Score</th></tr></thead><tbody>", genotypeRows, "</tbody></table></div></section>",
       "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3><strong>", escapeHtml(result.title), "</strong><p>", escapeHtml(result.interpretation), "</p></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드</h3><ul>", recommendations, "</ul></div></section>",
       "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.join(" ")), "</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
@@ -1178,6 +1274,12 @@
     elements.saveBtn.addEventListener("click", saveDetailedReport);
     elements.pdfBtn.addEventListener("click", savePdfReport);
     elements.sheetSaveBtn.addEventListener("click", saveToGoogleSheets);
+    window.addEventListener("resize", function () {
+      window.clearTimeout(chartResizeTimer);
+      chartResizeTimer = window.setTimeout(function () {
+        drawReferenceChart(lastResult && typeof lastResult.score === "number" ? lastResult.score : null);
+      }, 120);
+    });
   }
 
   function init() {
