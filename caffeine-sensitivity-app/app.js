@@ -664,7 +664,7 @@
     elements.metabolismTypeName.textContent = "--";
     elements.metabolismTypeDesc.textContent = "유전자형을 바탕으로 카페인이 비교적 빨리 빠지는지, 오래 남는지 보여드립니다.";
     elements.interpretationTitle.textContent = "유전자형을 선택해 주세요";
-    elements.interpretationText.textContent = "리포트 정보와 4개 유전자형 항목을 입력한 뒤 리포트 생성 버튼을 누르면 결과가 생성됩니다.";
+    elements.interpretationText.textContent = "리포트 정보와 4개 유전자형 항목을 선택한 뒤 리포트 생성 버튼을 누르면 결과가 생성됩니다.";
     elements.recommendList.innerHTML = "<li>리포트 생성 후 카페인 섭취 가이드가 표시됩니다.</li>";
     elements.summaryGrid.innerHTML = "";
   }
