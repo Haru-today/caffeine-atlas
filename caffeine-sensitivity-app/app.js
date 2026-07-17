@@ -119,6 +119,7 @@
     editBtn: document.getElementById("editBtn"),
     resetBtn: document.getElementById("resetBtn"),
     saveBtn: document.getElementById("saveBtn"),
+    pdfBtn: document.getElementById("pdfBtn"),
     sheetSaveBtn: document.getElementById("sheetSaveBtn"),
     sheetConsent: document.getElementById("sheetConsent"),
     sheetSyncStatus: document.getElementById("sheetSyncStatus"),
@@ -1035,6 +1036,79 @@
     downloadTextFile(filename, buildDetailedReportHtml(data), "text/html;charset=utf-8");
   }
 
+  function formatPdfScore(value) {
+    return value === null || typeof value !== "number" ? "--" : value.toFixed(1);
+  }
+
+  function buildPdfReportHtml(data) {
+    var info = data.reportInfo;
+    var result = data.result;
+    var logoUrl = new URL("./assets/caffeine-atlas-logo-wordmark.png", window.location.href).href;
+    var chartBars = referenceBins.map(function (bin) {
+      return '<i style="height:' + (bin.level * 14) + '%"></i>';
+    }).join("");
+    var genotypeRows = data.genotypes.map(function (item) {
+      return [
+        "<tr><td><strong>", escapeHtml(item.name), "</strong><small>", escapeHtml(item.rsid), "</small></td>",
+        "<td>", escapeHtml(item.genotype), "</td>",
+        "<td>", escapeHtml(item.layer), "</td>",
+        "<td>", escapeHtml(item.evidenceScore), "</td></tr>"
+      ].join("");
+    }).join("");
+    var recommendations = data.recommendations.slice(0, 4).map(function (item) {
+      return "<li>" + escapeHtml(item) + "</li>";
+    }).join("");
+    var filename = "Caffeine-Atlas-Report-" + safeFilePart(info.sampleId) + "-" + safeFilePart(info.reportDate);
+
+    return [
+      "<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\">",
+      "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">",
+      "<title>", escapeHtml(filename), "</title><style>",
+      "@page{size:A4 portrait;margin:0}",
+      "*{box-sizing:border-box}html,body{margin:0;background:#e9eef2;color:#17222c;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;letter-spacing:0}",
+      "body{padding:18px}.pdf-sheet{width:210mm;height:297mm;margin:0 auto;background:#fff;padding:10mm 12mm 9mm;box-shadow:0 12px 40px rgba(13,31,40,.14);display:flex;flex-direction:column;gap:4.2mm;overflow:hidden}",
+      ".pdf-controls{width:210mm;margin:0 auto 12px;display:flex;justify-content:flex-end;gap:8px}.pdf-controls button{border:1px solid #bac7ce;background:#fff;color:#17313a;padding:9px 14px;font-weight:800;cursor:pointer}.pdf-controls .primary{border-color:#126f72;background:#126f72;color:#fff}",
+      ".pdf-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:3.5mm;border-bottom:1.5px solid #163e46}.pdf-brand img{display:block;width:52mm;height:auto}.pdf-brand p{margin:1.5mm 0 0;color:#587079;font-size:7.5pt;font-weight:700}.pdf-title{text-align:right}.pdf-title h1{margin:0;color:#173e47;font-size:18pt}.pdf-title p{margin:1.5mm 0 0;color:#60737b;font-size:7.5pt}",
+      ".pdf-meta{display:grid;grid-template-columns:1.05fr .85fr .85fr .8fr 1.45fr;border:1px solid #d6e0e3}.pdf-meta div{min-width:0;padding:2.4mm 2.7mm;border-right:1px solid #d6e0e3}.pdf-meta div:last-child{border-right:0}.pdf-meta span,.metric span{display:block;color:#647981;font-size:6.8pt;font-weight:800;text-transform:uppercase}.pdf-meta strong{display:block;margin-top:1mm;font-size:8.2pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+      ".pdf-summary{display:grid;grid-template-columns:1.1fr .9fr;gap:4mm}.type-panel,.score-panel,.pdf-card{border:1px solid #d6e0e3;background:#fff;padding:3.5mm}.type-panel{border-left:3mm solid #148589}.type-panel .badge{color:#0d696c;font-size:7.5pt;font-weight:900}.type-panel h2{margin:1.2mm 0 1mm;font-size:16pt}.type-panel p{margin:0;color:#52676f;font-size:8pt;line-height:1.5}.score-row{display:flex;justify-content:space-between;align-items:flex-end}.score-label{color:#60767d;font-size:7.5pt;font-weight:800}.score-value{color:#d45b38;font-size:24pt;font-weight:950;line-height:1}.score-value small{font-size:9pt}.gauge{position:relative;height:4mm;margin-top:2.5mm;background:linear-gradient(90deg,#188b91 0 33.33%,#e5ad3c 33.33% 66.67%,#d85d39 66.67%);border-radius:2mm}.gauge:after{content:'';position:absolute;left:var(--score);top:-1.4mm;width:1.4mm;height:6.8mm;background:#172f38;transform:translateX(-50%)}.gauge-scale{display:flex;justify-content:space-between;margin-top:1mm;color:#657980;font-size:6.4pt;font-weight:800}",
+      ".metrics{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #d6e0e3}.metric{padding:2.4mm 3mm;border-right:1px solid #d6e0e3}.metric:last-child{border-right:0}.metric strong{display:block;margin-top:1mm;color:#173f47;font-size:10pt}",
+      ".pdf-main{display:grid;grid-template-columns:.9fr 1.1fr;gap:4mm}.pdf-card h3{margin:0 0 2.2mm;color:#183e47;font-size:9.5pt}.chart-summary{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2mm}.chart-summary strong{color:#d45b38;font-size:12pt}.chart-summary span{color:#60747c;font-size:6.8pt}.histogram{position:relative;height:27mm;display:flex;align-items:flex-end;gap:2mm;padding:2mm 3mm 4mm;border-bottom:1px solid #9fb0b6;background:linear-gradient(#f7fafb 1px,transparent 1px);background-size:100% 25%}.histogram i{flex:1;display:block;min-height:2px;background:#a7cbd0}.histogram-marker{position:absolute;left:var(--score);top:0;bottom:0;width:1.2mm;background:#d45b38;transform:translateX(-50%)}.histogram-marker:before{content:'MY';position:absolute;top:0;left:50%;transform:translateX(-50%);padding:.6mm 1.2mm;background:#d45b38;color:#fff;font-size:5.5pt;font-weight:900}.chart-axis{display:flex;justify-content:space-between;margin-top:1mm;color:#6a7d84;font-size:6pt}.layer-list{display:grid;gap:2mm}.layer{display:grid;grid-template-columns:24mm 12mm 1fr;gap:2mm;align-items:center;font-size:7pt}.layer strong{text-align:right}.layer-track{height:2mm;background:#e8edef}.layer-track i{display:block;height:100%;background:#148589}.layer:nth-child(2) .layer-track i{background:#dfa936}.layer:nth-child(3) .layer-track i{background:#3a78a0}",
+      "table{width:100%;border-collapse:collapse;font-size:7pt}th{padding:1.6mm;text-align:left;color:#587078;background:#eef4f5;border-bottom:1px solid #cbd8dc}td{padding:1.5mm;border-bottom:1px solid #e2e9eb}td small{display:block;margin-top:.5mm;color:#71848b;font-size:5.8pt}tbody tr:last-child td{border-bottom:0}",
+      ".pdf-content{display:grid;grid-template-columns:1fr 1fr;gap:4mm}.interpretation{border-left:2mm solid #d45b38}.interpretation h3,.guide h3{margin:0 0 1.5mm;color:#183e47;font-size:9.5pt}.interpretation strong{display:block;margin-bottom:1mm;font-size:8.2pt}.interpretation p{margin:0;color:#4f646c;font-size:7pt;line-height:1.45;white-space:pre-line}.guide ul{margin:0;padding-left:4mm}.guide li{margin:0 0 1mm;color:#4f646c;font-size:6.8pt;line-height:1.35}.guide li:last-child{margin-bottom:0}",
+      ".pdf-footer{margin-top:auto;padding-top:3mm;border-top:1px solid #cfdadd;display:grid;grid-template-columns:1fr auto;gap:5mm;align-items:end}.notice strong{display:block;margin-bottom:1mm;color:#173f47;font-size:7pt}.notice p{margin:0;color:#687b82;font-size:6.2pt;line-height:1.45}.footer-mark{text-align:right;color:#6c7f86;font-size:6pt;white-space:nowrap}.footer-mark strong{display:block;color:#173f47;font-size:7pt}",
+      "@media print{html,body{width:210mm;height:297mm;background:#fff}body{padding:0}.pdf-controls{display:none}.pdf-sheet{margin:0;box-shadow:none;page-break-after:avoid}}",
+      "</style></head><body>",
+      "<div class=\"pdf-controls\"><button onclick=\"window.close()\">닫기</button><button class=\"primary\" onclick=\"window.print()\">PDF로 저장</button></div>",
+      "<main class=\"pdf-sheet\" style=\"--score:", result.score, "%\">",
+      "<header class=\"pdf-header\"><div class=\"pdf-brand\"><img src=\"", escapeHtml(logoUrl), "\" alt=\"Caffeine Atlas\"><p>Evidence-based caffeine response interpretation</p></div><div class=\"pdf-title\"><h1>Caffeine Atlas Report</h1><p>", escapeHtml(data.generatedAt), "</p></div></header>",
+      "<section class=\"pdf-meta\"><div><span>Sample ID</span><strong>", escapeHtml(info.sampleId), "</strong></div><div><span>Report date</span><strong>", escapeHtml(info.reportDate), "</strong></div><div><span>Collection</span><strong>", escapeHtml(info.collectionDate), "</strong></div><div><span>Specimen / Sex</span><strong>", escapeHtml(info.sampleType), " / ", escapeHtml(info.sex), "</strong></div><div><span>Institution</span><strong>", escapeHtml(info.institution), "</strong></div></section>",
+      "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", escapeHtml(result.category), "</h2><p>", escapeHtml(result.typeDescription), "</p></div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", result.score.toFixed(1), "<small> 점</small></strong></div><div class=\"gauge\"></div><div class=\"gauge-scale\"><span>각성형</span><span>잠잠형</span><span>잠꾸러기형</span></div></div></section>",
+      "<section class=\"metrics\"><div class=\"metric\"><span>Result type</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>Metabolism</span><strong>", escapeHtml(result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>Reference rank</span><strong>100명 중 ", result.sensitivityRank, "등</strong></div><div class=\"metric\"><span>Confidence</span><strong>", result.confidence, "%</strong></div></section>",
+      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><div><h3>Reference distribution</h3><span>민감도가 높은 순서 기준</span></div><strong>", result.percentile.toFixed(1), "%</strong></div><div class=\"histogram\">", chartBars, "<b class=\"histogram-marker\"></b></div><div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>신뢰도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
+      "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>Score</th></tr></thead><tbody>", genotypeRows, "</tbody></table></div></section>",
+      "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3><strong>", escapeHtml(result.title), "</strong><p>", escapeHtml(result.interpretation), "</p></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드</h3><ul>", recommendations, "</ul></div></section>",
+      "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.join(" ")), "</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
+      "</main><script>window.addEventListener('load',function(){if(navigator.webdriver)return;var ready=document.fonts?document.fonts.ready:Promise.resolve();ready.then(function(){setTimeout(function(){window.print()},350)})});<\/script></body></html>"
+    ].join("");
+  }
+
+  function savePdfReport() {
+    var data = buildReportData();
+    if (!data) {
+      window.alert("먼저 리포트 생성 버튼을 눌러 결과를 생성해 주세요.");
+      return;
+    }
+
+    var printWindow = window.open("", "_blank", "width=920,height=1120");
+    if (!printWindow) {
+      window.alert("PDF 리포트 창을 열 수 없습니다. 브라우저의 팝업 차단을 해제한 뒤 다시 시도해 주세요.");
+      return;
+    }
+    printWindow.document.open();
+    printWindow.document.write(buildPdfReportHtml(data));
+    printWindow.document.close();
+  }
+
   function bindEvents() {
     elements.geneGrid.addEventListener("click", function (event) {
       var button = event.target.closest(".gt-button");
@@ -1059,6 +1133,7 @@
     elements.resetBtn.addEventListener("click", resetAll);
     elements.copyBtn.addEventListener("click", copyResult);
     elements.saveBtn.addEventListener("click", saveDetailedReport);
+    elements.pdfBtn.addEventListener("click", savePdfReport);
     elements.sheetSaveBtn.addEventListener("click", saveToGoogleSheets);
   }
 
