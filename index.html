@@ -30,6 +30,8 @@
       --coral: #c44d38;
       --amber: #b8860b;
       --blue: #2d638f;
+      --mint: #dff2ef;
+      --rose: #f6e8e3;
       --shadow: 0 18px 48px rgba(20, 32, 44, 0.12);
     }
 
@@ -48,7 +50,7 @@
     body {
       margin: 0;
       background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(243, 246, 248, 0.96)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(243, 246, 248, 0.97) 34%, #edf3f4 100%),
         url("./caffeine-sensitivity-app/assets/hero-caffeine-genetics.png") center top / cover fixed;
       color: var(--ink);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
@@ -74,6 +76,7 @@
       margin-bottom: 16px;
       font-size: clamp(34px, 4.8vw, 64px);
       line-height: 1.05;
+      text-wrap: balance;
     }
 
     h2 {
@@ -128,6 +131,18 @@
       font-size: 15px;
     }
 
+    .brand-text {
+      display: grid;
+      gap: 2px;
+      line-height: 1.05;
+    }
+
+    .brand-text small {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
     .nav-links {
       display: flex;
       flex-wrap: wrap;
@@ -168,9 +183,14 @@
       font-weight: 950;
     }
 
+    .nav-cta:hover {
+      color: #fff;
+      background: var(--ink);
+    }
+
     .hero {
       position: relative;
-      min-height: min(720px, calc(100vh - 98px));
+      min-height: min(760px, calc(100vh - 92px));
       overflow: hidden;
       margin-bottom: 14px;
       border: 1px solid rgba(216, 224, 231, 0.95);
@@ -184,8 +204,16 @@
       inset: 0;
       content: "";
       background:
-        linear-gradient(90deg, rgba(9, 22, 31, 0.92) 0%, rgba(9, 22, 31, 0.72) 46%, rgba(9, 22, 31, 0.24) 100%),
+        linear-gradient(90deg, rgba(9, 22, 31, 0.93) 0%, rgba(9, 22, 31, 0.72) 46%, rgba(9, 22, 31, 0.2) 100%),
         url("./caffeine-sensitivity-app/assets/hero-caffeine-genetics.png") center / cover;
+    }
+
+    .hero::after {
+      position: absolute;
+      inset: auto 0 0;
+      height: 34%;
+      content: "";
+      background: linear-gradient(0deg, rgba(9, 22, 31, 0.58), transparent);
     }
 
     .hero-inner {
@@ -198,6 +226,27 @@
       align-items: center;
       padding: clamp(26px, 5vw, 64px);
       color: #fff;
+    }
+
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .hero-badges span {
+      display: inline-flex;
+      min-height: 32px;
+      padding: 0 10px;
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.26);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.88);
+      font-size: 12px;
+      font-weight: 850;
+      backdrop-filter: blur(10px);
     }
 
     .eyebrow {
@@ -219,6 +268,38 @@
       line-height: 1.72;
     }
 
+    .hero-stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      max-width: 700px;
+      margin-top: 26px;
+    }
+
+    .hero-stat {
+      min-height: 86px;
+      padding: 13px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.11);
+      backdrop-filter: blur(12px);
+    }
+
+    .hero-stat strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .hero-stat span {
+      display: block;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 13px;
+      font-weight: 750;
+      line-height: 1.45;
+    }
+
     .hero-actions,
     .service-actions {
       display: flex;
@@ -235,6 +316,11 @@
       justify-content: center;
       border-radius: 8px;
       font-weight: 950;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
     }
 
     .button.primary {
@@ -245,6 +331,10 @@
     .button.dark {
       background: var(--ink);
       color: #fff;
+    }
+
+    .button.dark:hover {
+      box-shadow: 0 12px 24px rgba(20, 32, 44, 0.16);
     }
 
     .button.outline {
@@ -272,6 +362,19 @@
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.12);
       backdrop-filter: blur(16px);
+      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    .quick-link:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.64);
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .quick-link.featured {
+      border-color: rgba(255, 255, 255, 0.72);
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--ink);
     }
 
     .quick-link span {
@@ -279,6 +382,10 @@
       font-size: 12px;
       font-weight: 950;
       text-transform: uppercase;
+    }
+
+    .quick-link.featured span {
+      color: var(--teal-dark);
     }
 
     .quick-link strong {
@@ -289,6 +396,10 @@
       color: rgba(255, 255, 255, 0.78);
       font-size: 14px;
       line-height: 1.55;
+    }
+
+    .quick-link.featured small {
+      color: #4b5b68;
     }
 
     .status-strip {
@@ -312,6 +423,7 @@
     .status-card {
       min-height: 78px;
       padding: 14px;
+      background: linear-gradient(180deg, #fff, #f7fbfb);
     }
 
     .status-card span,
@@ -339,6 +451,11 @@
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.94);
       box-shadow: var(--shadow);
+    }
+
+    .section.featured-section {
+      background:
+        linear-gradient(135deg, rgba(223, 242, 239, 0.92), rgba(255, 255, 255, 0.94) 50%, rgba(246, 232, 227, 0.66));
     }
 
     .section-head {
@@ -372,10 +489,36 @@
       gap: 16px;
       min-height: 260px;
       padding: 18px;
+      transition: transform 160ms ease, box-shadow 160ms ease;
+    }
+
+    .service-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 18px 38px rgba(20, 32, 44, 0.11);
     }
 
     .service-card h3 {
       font-size: 24px;
+    }
+
+    .service-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .service-meta i {
+      display: inline-flex;
+      min-height: 30px;
+      padding: 0 9px;
+      align-items: center;
+      border-radius: 999px;
+      background: #eef5f6;
+      color: #435466;
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 850;
     }
 
     .service-card.health {
@@ -406,6 +549,11 @@
     .roadmap-item,
     .support-card {
       padding: 16px;
+    }
+
+    .feature-card {
+      min-height: 180px;
+      background: linear-gradient(180deg, #fff, #f8fbfb);
     }
 
     .feature-card h3,
@@ -441,6 +589,11 @@
       font-weight: 850;
     }
 
+    .route-option:hover {
+      border-color: rgba(0, 109, 119, 0.36);
+      background: #f3faf9;
+    }
+
     .route-option[aria-pressed="true"] {
       border-color: var(--teal);
       background: #e8f4f4;
@@ -454,6 +607,11 @@
       padding: 18px;
       border-left: 4px solid var(--teal);
       background: #fff;
+    }
+
+    .route-result h3 {
+      font-size: 24px;
+      line-height: 1.28;
     }
 
     .route-result p {
@@ -534,6 +692,10 @@
       .feature-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+
+      .hero-stat-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 760px) {
@@ -583,17 +745,26 @@
       }
 
       .hero-inner {
-        min-height: 610px;
+        min-height: 0;
         padding: 24px;
       }
 
       h1 {
-        font-size: 40px;
+        font-size: 36px;
         line-height: 1.08;
       }
 
       .hero-copy p:not(.eyebrow) {
         font-size: 16px;
+      }
+
+      .hero-stat-grid {
+        grid-template-columns: 1fr;
+        margin-top: 18px;
+      }
+
+      .hero-stat {
+        min-height: 0;
       }
 
       .service-grid,
@@ -641,12 +812,16 @@
       }
 
       .hero-inner {
-        min-height: 580px;
+        min-height: 0;
         padding: 20px;
       }
 
       .hero-actions .button {
         width: 100%;
+      }
+
+      .hero-badges span {
+        min-height: 30px;
       }
     }
   </style>
@@ -665,7 +840,10 @@
     <nav class="site-nav" aria-label="주요 메뉴">
       <a class="brand" href="#top" aria-label="Personal Health Atlas 홈">
         <span class="brand-mark">PH</span>
-        <span>Personal Health Atlas</span>
+        <span class="brand-text">
+          <span>Personal Health Atlas</span>
+          <small>Health check + genetics portal</small>
+        </span>
       </a>
       <button class="nav-toggle" id="navToggle" type="button" aria-expanded="false" aria-controls="navLinks" aria-label="메뉴 열기">☰</button>
       <div class="nav-links" id="navLinks">
@@ -683,16 +861,35 @@
         <div class="hero-inner">
           <div class="hero-copy">
             <p class="eyebrow">Unified health insight portal</p>
-            <h1>건강검진과 유전 정보를 하나의 흐름으로 읽습니다.</h1>
-            <p>건강검진 결과 해석, 추천 검진, 카페인 민감도 리포트를 한 곳에서 시작하는 개인 건강 데이터 포털입니다.</p>
+            <div class="hero-badges" aria-label="포털 핵심 기능">
+              <span>건강검진 결과 해석</span>
+              <span>추천 검진 안내</span>
+              <span>카페인 유전자 리포트</span>
+            </div>
+            <h1>개인 건강 데이터를 한눈에 읽는 통합 포털</h1>
+            <p>건강검진 수치와 카페인 민감도 유전자 정보를 연결해, 지금 확인할 것과 다음 행동을 더 쉽게 정리합니다.</p>
             <div class="hero-actions">
               <a class="button primary" href="https://haru-today.github.io/labinsight/">건강검진 시스템 열기</a>
               <a class="button outline" href="./caffeine-sensitivity-app/index.html">카페인 분석 열기</a>
             </div>
+            <div class="hero-stat-grid" aria-label="포털 구성 요약">
+              <div class="hero-stat">
+                <strong>2</strong>
+                <span>LabInsight와 Caffeine Atlas를 하나의 시작점으로 연결</span>
+              </div>
+              <div class="hero-stat">
+                <strong>4 SNP</strong>
+                <span>CYP1A2와 AHR 기반 카페인 민감도 해석</span>
+              </div>
+              <div class="hero-stat">
+                <strong>0-100</strong>
+                <span>이해하기 쉬운 점수와 다음 행동 중심 안내</span>
+              </div>
+            </div>
           </div>
 
           <div class="platform-panel" aria-label="빠른 실행">
-            <a class="quick-link" href="https://haru-today.github.io/labinsight/">
+            <a class="quick-link featured" href="https://haru-today.github.io/labinsight/">
               <span>LabInsight</span>
               <strong>건강검진 결과 해석</strong>
               <small>검진 수치 입력, OCR 데모, 참고 범위 확인, 추천 검진과 예약 흐름을 체험합니다.</small>
@@ -730,13 +927,13 @@
         </div>
       </section>
 
-      <section class="section" id="services">
+      <section class="section featured-section" id="services">
         <div class="section-head">
           <div>
             <p class="eyebrow">Services</p>
-            <h2>필요한 서비스로 바로 이동하세요.</h2>
+            <h2>필요한 분석을 바로 시작하세요.</h2>
           </div>
-          <p>두 서비스는 목적이 다릅니다. 건강검진 결과가 있다면 LabInsight로, 유전자형 결과가 있다면 Caffeine Atlas로 시작하면 됩니다.</p>
+          <p>검진 결과는 현재 상태를, 유전자 정보는 개인 반응 가능성을 설명합니다. 포털은 두 흐름을 구분해서 보여주고 필요한 서비스로 바로 연결합니다.</p>
         </div>
 
         <div class="service-grid">
@@ -745,6 +942,11 @@
               <span>Health check report</span>
               <h3>LabInsight 건강검진 시스템</h3>
               <p>건강검진 수치를 입력하면 참고 범위 확인, 생활관리 질문, 추천 검진과 샘플 예약 흐름까지 이어집니다.</p>
+              <div class="service-meta" aria-label="LabInsight 주요 기능">
+                <i>검진 수치</i>
+                <i>OCR 데모</i>
+                <i>추천 검진</i>
+              </div>
               <div class="service-actions">
                 <a class="button dark" href="https://haru-today.github.io/labinsight/">시스템 열기</a>
               </div>
@@ -757,6 +959,11 @@
               <span>Caffeine response report</span>
               <h3>Caffeine Atlas 민감도 분석</h3>
               <p>CYP1A2와 AHR 관련 유전자형을 바탕으로 카페인 민감도 지수, 백분위, 섭취 가이드를 제공합니다.</p>
+              <div class="service-meta" aria-label="Caffeine Atlas 주요 기능">
+                <i>4개 SNP</i>
+                <i>민감도 점수</i>
+                <i>섭취 가이드</i>
+              </div>
               <div class="service-actions">
                 <a class="button dark" href="./caffeine-sensitivity-app/index.html">홈페이지 열기</a>
                 <a class="button text" href="./caffeine-sensitivity-app/analyzer.html">리포트 만들기</a>
@@ -771,9 +978,9 @@
         <div class="section-head">
           <div>
             <p class="eyebrow">Platform direction</p>
-            <h2>통합의 핵심은 데이터 해석의 흐름입니다.</h2>
+            <h2>흩어진 결과를 다음 행동으로 연결합니다.</h2>
           </div>
-          <p>건강검진은 현재 상태를 보여주고, 유전자 정보는 개인의 반응 가능성을 설명합니다. 두 데이터를 함께 보면 사용자가 다음에 무엇을 확인하고 관리해야 하는지 더 쉽게 이해할 수 있습니다.</p>
+          <p>검사 결과를 단순히 보여주는 데서 멈추지 않고, 사용자가 어떤 정보부터 확인해야 하는지와 어떤 질문을 준비해야 하는지를 안내합니다.</p>
         </div>
 
         <div class="feature-grid">
