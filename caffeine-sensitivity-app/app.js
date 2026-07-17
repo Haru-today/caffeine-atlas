@@ -378,11 +378,33 @@
     };
   }
 
+  function getInsufficientCategory(confirmedCount) {
+    var hasSupportingData = confirmedCount > 0;
+    return {
+      label: "정보 부족형",
+      badge: "유형 판정 보류",
+      emoji: "?",
+      desc: hasSupportingData
+        ? "확인된 보조 유전자형은 있지만 핵심 CYP1A2*1F가 '모름'이어서 카페인 민감도 유형을 판정하지 않았습니다."
+        : "확인된 유전자형이 없어 카페인 민감도 유형을 판정하지 않았습니다.",
+      title: "핵심 유전자형을 확인하면 유형을 계산할 수 있어요",
+      text: hasSupportingData
+        ? "확인된 " + confirmedCount + "개 유전자형의 레이어 값은 리포트에 표시하지만, 핵심 대사 표지자인 CYP1A2*1F rs762551가 '모름'이므로 최종 민감도 점수와 비교 위치는 산출하지 않았습니다."
+        : "4개 유전자형이 모두 '모름'으로 입력되어 민감도 점수와 비교 위치를 산출하지 않았습니다. 임의의 평균값으로 대체하지 않고, 입력 내용과 일반적인 카페인 섭취 주의사항을 담은 정보 부족 리포트를 제공합니다.",
+      recommendations: [
+        "유전자형을 확인하기 전에는 카페인을 적은 양부터 섭취하고 실제 몸 반응을 살펴보세요.",
+        "오후나 저녁에는 카페인을 줄이고, 수면에 영향이 있으면 섭취 시간을 앞당겨 보세요.",
+        "두근거림, 불안감, 속 불편함이 나타나면 섭취를 중단하거나 양을 줄여보세요.",
+        "유형 결과가 필요하면 먼저 핵심 표지자인 CYP1A2*1F rs762551 유전자형을 확인해 다시 입력해 주세요."
+      ]
+    };
+  }
+
   function getMetabolismSubtype(metabolismNorm) {
     if (metabolismNorm === null || typeof metabolismNorm !== "number") {
       return {
-        name: "입력 없음",
-        desc: "카페인이 몸에서 빠져나가는 속도를 보려면 대사 관련 유전자형 입력이 필요합니다."
+        name: "판정 보류",
+        desc: "확인된 대사 관련 유전자형이 없어 카페인이 몸에서 빠져나가는 속도를 판정하지 않았습니다."
       };
     }
 
@@ -466,7 +488,9 @@
       elements.validationText.textContent = message;
     } else {
       var selectedCount = genes.length - getMissingGenes().length;
-      elements.validationText.textContent = "입력 진행률 " + selectedCount + "/4. Sample ID와 모든 유전자형 항목을 입력한 뒤 리포트 생성을 눌러주세요.";
+      var unknownCount = getUnknownGenes().length;
+      var confirmedCount = selectedCount - unknownCount;
+      elements.validationText.textContent = "입력 진행률 " + selectedCount + "/4 (확인 " + confirmedCount + "개, 모름 " + unknownCount + "개). '모름'도 선택할 수 있으며, 핵심 CYP1A2*1F가 '모름'이면 유형 판정은 보류됩니다.";
     }
     elements.validationText.classList.toggle("error", Boolean(isError));
   }
@@ -474,7 +498,6 @@
   function validateSubmission() {
     var errors = [];
     var missingGenes = getMissingGenes();
-    var unknownGenes = getUnknownGenes();
 
     if (!elements.sampleId.value.trim()) {
       errors.push("Sample ID를 입력해 주세요.");
@@ -487,12 +510,6 @@
         return gene.name + " " + gene.rsid;
       }).join(", "));
     }
-    if (unknownGenes.length > 0) {
-      errors.push("'모름'으로 선택한 항목은 결과 계산에 사용할 수 없습니다: " + unknownGenes.map(function (gene) {
-        return gene.name;
-      }).join(", "));
-    }
-
     return errors;
   }
 
@@ -529,9 +546,10 @@
 
   function render() {
     var valid = getValidSelections();
+    var unknownCount = getUnknownGenes().length;
     updateReportMeta();
 
-    if (!hasSubmitted || valid.length === 0) {
+    if (!hasSubmitted) {
       lastResult = null;
       renderEmpty();
       drawReferenceChart(null);
@@ -539,13 +557,27 @@
     }
 
     var result = computeEvidenceModel(valid);
-    var score = clamp(result.finalNorm * 100, 0, 100);
-    var percentile = calculatePercentile(score);
+    var hasCoreGenotype = valid.some(function (item) {
+      return item.gene.id === "rs762551";
+    });
+    var hasScore = hasCoreGenotype && result.finalNorm !== null && typeof result.finalNorm === "number";
+    var score = hasScore ? clamp(result.finalNorm * 100, 0, 100) : null;
+    var percentile = hasScore ? calculatePercentile(score) : { percentile: null, total: 0 };
     var coverage = valid.length / genes.length;
     var confidence = Math.round(coverage * 100);
-    var category = classify(score);
-    var metabolismSubtype = getMetabolismSubtype(result.metabolismNorm);
-    var sensitivityRank = calculateRankFromPercentile(percentile.percentile);
+    var category = hasScore ? classify(score) : getInsufficientCategory(valid.length);
+    var metabolismSubtype = hasCoreGenotype
+      ? getMetabolismSubtype(result.metabolismNorm)
+      : {
+        name: "판정 보류",
+        desc: "핵심 대사 표지자인 CYP1A2*1F rs762551가 '모름'이어서 카페인이 몸에 남는 시간을 판정하지 않았습니다."
+      };
+    var sensitivityRank = hasScore ? calculateRankFromPercentile(percentile.percentile) : null;
+    var coverageNote = unknownCount > 0 && hasScore
+      ? "'모름' " + unknownCount + "개는 제외하고 확인된 " + valid.length + "개 유전자형만 반영한 제한적 결과입니다."
+      : "";
+    var typeDescription = coverageNote ? category.desc + " " + coverageNote : category.desc;
+    var interpretation = coverageNote ? category.text + "\n\n" + coverageNote : category.text;
 
     lastResult = {
       score: score,
@@ -553,42 +585,45 @@
       sensitivityRank: sensitivityRank,
       confidence: confidence,
       category: category,
+      typeDescription: typeDescription,
+      interpretation: interpretation,
       metabolismSubtype: metabolismSubtype,
       valid: valid,
       metabolismNorm: result.metabolismNorm,
       behaviorNorm: result.behaviorNorm
     };
 
-    elements.scoreValue.textContent = score.toFixed(1);
-    elements.scoreLabel.textContent = category.label;
+    elements.scoreValue.textContent = hasScore ? score.toFixed(1) : "--";
+    elements.scoreLabel.textContent = hasScore ? category.label : "산출 없음";
     elements.typeEmoji.textContent = category.emoji;
     elements.typeBadge.textContent = category.badge;
     elements.typeName.textContent = category.label;
-    elements.typeDesc.textContent = category.desc;
-    elements.coverageText.textContent = "분석 완성도 " + confidence + "% (" + valid.length + "/4 유전자 입력)";
-    elements.gaugeFill.style.width = score.toFixed(2) + "%";
-    elements.gaugeMarker.style.left = score.toFixed(2) + "%";
+    elements.typeDesc.textContent = typeDescription;
+    elements.coverageText.textContent = "분석 완성도 " + confidence + "% (확인 " + valid.length + "/4 · 모름 " + unknownCount + "/4)";
+    elements.gaugeFill.style.width = hasScore ? score.toFixed(2) + "%" : "0%";
+    elements.gaugeMarker.style.left = hasScore ? score.toFixed(2) + "%" : "0%";
+    elements.gaugeMarker.hidden = !hasScore;
 
     setLayer("metabolism", result.metabolismNorm);
     setLayer("behavior", result.behaviorNorm);
     elements.confidenceScore.textContent = confidence + "%";
     elements.confidenceBar.style.width = confidence + "%";
 
-    elements.referenceRankText.textContent = "대한민국 평균 100명 중 " + sensitivityRank + "등";
-    elements.percentileText.textContent = "카페인 민감도가 높은 순서 기준";
+    elements.referenceRankText.textContent = hasScore ? "대한민국 평균 100명 중 " + sensitivityRank + "등" : "비교 불가";
+    elements.percentileText.textContent = hasScore ? "카페인 민감도가 높은 순서 기준" : "확인된 유전자형 없음";
     elements.detailCategory.textContent = category.label;
-    elements.detailPercentile.textContent = percentile.percentile.toFixed(1) + "% 위치";
-    elements.detailInputQuality.textContent = "4개 항목 중 " + valid.length + "개 입력";
+    elements.detailPercentile.textContent = hasScore ? percentile.percentile.toFixed(1) + "% 위치" : "산출 없음";
+    elements.detailInputQuality.textContent = "확인 " + valid.length + "개 · 모름 " + unknownCount + "개";
     elements.metabolismTypeName.textContent = metabolismSubtype.name;
     elements.metabolismTypeDesc.textContent = metabolismSubtype.desc;
     elements.interpretationTitle.textContent = category.title;
-    elements.interpretationText.textContent = category.text;
+    elements.interpretationText.textContent = interpretation;
     elements.recommendList.innerHTML = category.recommendations.map(function (item) {
       return "<li>" + item + "</li>";
     }).join("");
 
     renderSummary();
-    drawReferenceChart(score);
+    drawReferenceChart(hasScore ? score : null);
   }
 
   function setLayer(layer, norm) {
@@ -610,6 +645,7 @@
     elements.coverageText.textContent = "선택한 유전자형이 결과에 반영됩니다.";
     elements.gaugeFill.style.width = "0%";
     elements.gaugeMarker.style.left = "0%";
+    elements.gaugeMarker.hidden = false;
     elements.metabolismScore.textContent = "--";
     elements.behaviorScore.textContent = "--";
     elements.confidenceScore.textContent = "--";
@@ -772,11 +808,11 @@
       "Sex: " + reportInfo.sex,
       "운영기관: " + reportInfo.institution,
       "",
-      "점수: " + lastResult.score.toFixed(1) + "점",
+      "점수: " + (typeof lastResult.score === "number" ? lastResult.score.toFixed(1) + "점" : "산출 없음"),
       "유형: " + lastResult.category.label,
       "대사 레이어 판정: " + lastResult.metabolismSubtype.name,
-      "대한민국 평균 100명 중 민감도 높은 순: " + lastResult.sensitivityRank + "등",
-      "다른 사람들과 비교한 위치: " + lastResult.percentile.toFixed(1) + "%",
+      "대한민국 평균 100명 중 민감도 높은 순: " + (typeof lastResult.sensitivityRank === "number" ? lastResult.sensitivityRank + "등" : "산출 없음"),
+      "다른 사람들과 비교한 위치: " + (typeof lastResult.percentile === "number" ? lastResult.percentile.toFixed(1) + "%" : "산출 없음"),
       layerText.join("\n"),
       "",
       "[유전자형]",
@@ -784,7 +820,7 @@
       "",
       "[해석]",
       lastResult.category.title,
-      lastResult.category.text
+      lastResult.interpretation
     ];
     lines.push("", "[카페인 섭취 가이드]", lastResult.category.recommendations.map(function (item) {
       return "- " + item;
@@ -849,14 +885,14 @@
       timeZone: KOREA_TIME_ZONE,
       reportInfo: reportInfo,
       result: {
-        score: Number(lastResult.score.toFixed(1)),
+        score: typeof lastResult.score === "number" ? Number(lastResult.score.toFixed(1)) : null,
         category: lastResult.category.label,
         title: lastResult.category.title,
         badge: lastResult.category.badge,
         emoji: lastResult.category.emoji,
-        typeDescription: lastResult.category.desc,
-        interpretation: lastResult.category.text,
-        percentile: Number(lastResult.percentile.toFixed(1)),
+        typeDescription: lastResult.typeDescription,
+        interpretation: lastResult.interpretation,
+        percentile: typeof lastResult.percentile === "number" ? Number(lastResult.percentile.toFixed(1)) : null,
         sensitivityRank: lastResult.sensitivityRank,
         confidence: lastResult.confidence,
         metabolismScore: lastResult.metabolismNorm === null ? null : Number((lastResult.metabolismNorm * 100).toFixed(1)),
@@ -867,8 +903,9 @@
       recommendations: lastResult.category.recommendations,
       limitations: [
         "본 결과는 연구·교육용 해석 리포트이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다.",
-        "실제 카페인 반응은 수면, 약물, 간 기능, 임신, 흡연, 스트레스, 섭취량과 섭취 시간의 영향을 받을 수 있습니다."
-      ]
+        "실제 카페인 반응은 수면, 약물, 간 기능, 임신, 흡연, 스트레스, 섭취량과 섭취 시간의 영향을 받을 수 있습니다.",
+        lastResult.confidence < 100 ? "'모름'으로 선택한 유전자형은 점수에서 제외했으며, 분석 완성도가 낮을수록 결과의 불확실성이 큽니다." : ""
+      ].filter(Boolean)
     };
   }
 
@@ -1059,6 +1096,12 @@
       return "<li>" + escapeHtml(item) + "</li>";
     }).join("");
     var filename = "Caffeine-Atlas-Report-" + safeFilePart(info.sampleId) + "-" + safeFilePart(info.reportDate);
+    var hasScore = typeof result.score === "number";
+    var pdfScoreText = hasScore ? result.score.toFixed(1) : "--";
+    var pdfScoreUnit = hasScore ? "<small> 점</small>" : "";
+    var pdfRankText = typeof result.sensitivityRank === "number" ? "100명 중 " + result.sensitivityRank + "등" : "산출 없음";
+    var pdfPercentileText = typeof result.percentile === "number" ? result.percentile.toFixed(1) + "%" : "산출 없음";
+    var pdfMarker = hasScore ? "<b class=\"histogram-marker\"></b>" : "";
 
     return [
       "<!doctype html><html lang=\"ko\"><head><meta charset=\"utf-8\">",
@@ -1070,7 +1113,7 @@
       ".pdf-controls{width:210mm;margin:0 auto 12px;display:flex;justify-content:flex-end;gap:8px}.pdf-controls button{border:1px solid #bac7ce;background:#fff;color:#17313a;padding:9px 14px;font-weight:800;cursor:pointer}.pdf-controls .primary{border-color:#126f72;background:#126f72;color:#fff}",
       ".pdf-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:3.5mm;border-bottom:1.5px solid #163e46}.pdf-brand img{display:block;width:52mm;height:auto}.pdf-brand p{margin:1.5mm 0 0;color:#587079;font-size:7.5pt;font-weight:700}.pdf-title{text-align:right}.pdf-title h1{margin:0;color:#173e47;font-size:18pt}.pdf-title p{margin:1.5mm 0 0;color:#60737b;font-size:7.5pt}",
       ".pdf-meta{display:grid;grid-template-columns:1.05fr .85fr .85fr .8fr 1.45fr;border:1px solid #d6e0e3}.pdf-meta div{min-width:0;padding:2.4mm 2.7mm;border-right:1px solid #d6e0e3}.pdf-meta div:last-child{border-right:0}.pdf-meta span,.metric span{display:block;color:#647981;font-size:6.8pt;font-weight:800;text-transform:uppercase}.pdf-meta strong{display:block;margin-top:1mm;font-size:8.2pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
-      ".pdf-summary{display:grid;grid-template-columns:1.1fr .9fr;gap:4mm}.type-panel,.score-panel,.pdf-card{border:1px solid #d6e0e3;background:#fff;padding:3.5mm}.type-panel{border-left:3mm solid #148589}.type-panel .badge{color:#0d696c;font-size:7.5pt;font-weight:900}.type-panel h2{margin:1.2mm 0 1mm;font-size:16pt}.type-panel p{margin:0;color:#52676f;font-size:8pt;line-height:1.5}.score-row{display:flex;justify-content:space-between;align-items:flex-end}.score-label{color:#60767d;font-size:7.5pt;font-weight:800}.score-value{color:#d45b38;font-size:24pt;font-weight:950;line-height:1}.score-value small{font-size:9pt}.gauge{position:relative;height:4mm;margin-top:2.5mm;background:linear-gradient(90deg,#188b91 0 33.33%,#e5ad3c 33.33% 66.67%,#d85d39 66.67%);border-radius:2mm}.gauge:after{content:'';position:absolute;left:var(--score);top:-1.4mm;width:1.4mm;height:6.8mm;background:#172f38;transform:translateX(-50%)}.gauge-scale{display:flex;justify-content:space-between;margin-top:1mm;color:#657980;font-size:6.4pt;font-weight:800}",
+      ".pdf-summary{display:grid;grid-template-columns:1.1fr .9fr;gap:4mm}.type-panel,.score-panel,.pdf-card{border:1px solid #d6e0e3;background:#fff;padding:3.5mm}.type-panel{border-left:3mm solid #148589}.type-panel .badge{color:#0d696c;font-size:7.5pt;font-weight:900}.type-panel h2{margin:1.2mm 0 1mm;font-size:16pt}.type-panel p{margin:0;color:#52676f;font-size:8pt;line-height:1.5}.score-row{display:flex;justify-content:space-between;align-items:flex-end}.score-label{color:#60767d;font-size:7.5pt;font-weight:800}.score-value{color:#d45b38;font-size:24pt;font-weight:950;line-height:1}.score-value small{font-size:9pt}.gauge{position:relative;height:4mm;margin-top:2.5mm;background:linear-gradient(90deg,#188b91 0 33.33%,#e5ad3c 33.33% 66.67%,#d85d39 66.67%);border-radius:2mm}.gauge:after{content:'';position:absolute;left:var(--score);top:-1.4mm;width:1.4mm;height:6.8mm;background:#172f38;transform:translateX(-50%)}.gauge.is-unscored:after{display:none}.gauge-scale{display:flex;justify-content:space-between;margin-top:1mm;color:#657980;font-size:6.4pt;font-weight:800}",
       ".metrics{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #d6e0e3}.metric{padding:2.4mm 3mm;border-right:1px solid #d6e0e3}.metric:last-child{border-right:0}.metric strong{display:block;margin-top:1mm;color:#173f47;font-size:10pt}",
       ".pdf-main{display:grid;grid-template-columns:.9fr 1.1fr;gap:4mm}.pdf-card h3{margin:0 0 2.2mm;color:#183e47;font-size:9.5pt}.chart-summary{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2mm}.chart-summary strong{color:#d45b38;font-size:12pt}.chart-summary span{color:#60747c;font-size:6.8pt}.histogram{position:relative;height:27mm;display:flex;align-items:flex-end;gap:2mm;padding:2mm 3mm 4mm;border-bottom:1px solid #9fb0b6;background:linear-gradient(#f7fafb 1px,transparent 1px);background-size:100% 25%}.histogram i{flex:1;display:block;min-height:2px;background:#a7cbd0}.histogram-marker{position:absolute;left:var(--score);top:0;bottom:0;width:1.2mm;background:#d45b38;transform:translateX(-50%)}.histogram-marker:before{content:'MY';position:absolute;top:0;left:50%;transform:translateX(-50%);padding:.6mm 1.2mm;background:#d45b38;color:#fff;font-size:5.5pt;font-weight:900}.chart-axis{display:flex;justify-content:space-between;margin-top:1mm;color:#6a7d84;font-size:6pt}.layer-list{display:grid;gap:2mm}.layer{display:grid;grid-template-columns:24mm 12mm 1fr;gap:2mm;align-items:center;font-size:7pt}.layer strong{text-align:right}.layer-track{height:2mm;background:#e8edef}.layer-track i{display:block;height:100%;background:#148589}.layer:nth-child(2) .layer-track i{background:#dfa936}.layer:nth-child(3) .layer-track i{background:#3a78a0}",
       "table{width:100%;border-collapse:collapse;font-size:7pt}th{padding:1.6mm;text-align:left;color:#587078;background:#eef4f5;border-bottom:1px solid #cbd8dc}td{padding:1.5mm;border-bottom:1px solid #e2e9eb}td small{display:block;margin-top:.5mm;color:#71848b;font-size:5.8pt}tbody tr:last-child td{border-bottom:0}",
@@ -1079,12 +1122,12 @@
       "@media print{html,body{width:210mm;height:297mm;background:#fff}body{padding:0}.pdf-controls{display:none}.pdf-sheet{margin:0;box-shadow:none;page-break-after:avoid}}",
       "</style></head><body>",
       "<div class=\"pdf-controls\"><button onclick=\"window.close()\">닫기</button><button class=\"primary\" onclick=\"window.print()\">PDF로 저장</button></div>",
-      "<main class=\"pdf-sheet\" style=\"--score:", result.score, "%\">",
+      "<main class=\"pdf-sheet\" style=\"--score:", hasScore ? result.score : 0, "%\">",
       "<header class=\"pdf-header\"><div class=\"pdf-brand\"><img src=\"", escapeHtml(logoUrl), "\" alt=\"Caffeine Atlas\"><p>Evidence-based caffeine response interpretation</p></div><div class=\"pdf-title\"><h1>Caffeine Atlas Report</h1><p>", escapeHtml(data.generatedAt), "</p></div></header>",
       "<section class=\"pdf-meta\"><div><span>Sample ID</span><strong>", escapeHtml(info.sampleId), "</strong></div><div><span>Report date</span><strong>", escapeHtml(info.reportDate), "</strong></div><div><span>Collection</span><strong>", escapeHtml(info.collectionDate), "</strong></div><div><span>Specimen / Sex</span><strong>", escapeHtml(info.sampleType), " / ", escapeHtml(info.sex), "</strong></div><div><span>Institution</span><strong>", escapeHtml(info.institution), "</strong></div></section>",
-      "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", escapeHtml(result.category), "</h2><p>", escapeHtml(result.typeDescription), "</p></div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", result.score.toFixed(1), "<small> 점</small></strong></div><div class=\"gauge\"></div><div class=\"gauge-scale\"><span>각성형</span><span>잠잠형</span><span>잠꾸러기형</span></div></div></section>",
-      "<section class=\"metrics\"><div class=\"metric\"><span>Result type</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>Metabolism</span><strong>", escapeHtml(result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>Reference rank</span><strong>100명 중 ", result.sensitivityRank, "등</strong></div><div class=\"metric\"><span>Confidence</span><strong>", result.confidence, "%</strong></div></section>",
-      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><div><h3>Reference distribution</h3><span>민감도가 높은 순서 기준</span></div><strong>", result.percentile.toFixed(1), "%</strong></div><div class=\"histogram\">", chartBars, "<b class=\"histogram-marker\"></b></div><div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>신뢰도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
+      "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", escapeHtml(result.category), "</h2><p>", escapeHtml(result.typeDescription), "</p></div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div><div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>각성형</span><span>잠잠형</span><span>잠꾸러기형</span></div></div></section>",
+      "<section class=\"metrics\"><div class=\"metric\"><span>Result type</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>Metabolism</span><strong>", escapeHtml(result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>Reference rank</span><strong>", pdfRankText, "</strong></div><div class=\"metric\"><span>Confidence</span><strong>", result.confidence, "%</strong></div></section>",
+      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><div><h3>Reference distribution</h3><span>민감도가 높은 순서 기준</span></div><strong>", pdfPercentileText, "</strong></div><div class=\"histogram\">", chartBars, pdfMarker, "</div><div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>신뢰도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
       "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>Score</th></tr></thead><tbody>", genotypeRows, "</tbody></table></div></section>",
       "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3><strong>", escapeHtml(result.title), "</strong><p>", escapeHtml(result.interpretation), "</p></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드</h3><ul>", recommendations, "</ul></div></section>",
       "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.join(" ")), "</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
