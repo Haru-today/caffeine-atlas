@@ -18,7 +18,7 @@
           <span>통합 포털</span>
         </a>
         <a href="./index.html">홈</a>
-        <a href="#report-form">유전자형 입력</a>
+        <a href="#report-form">리포트 생성</a>
         <a href="#resultReport">결과</a>
       </div>
       <a class="nav-cta" href="./index.html">홈으로</a>
@@ -28,7 +28,7 @@
       <div>
         <p class="eyebrow">Report generator</p>
         <h1>카페인 반응 리포트 생성</h1>
-        <p class="top-summary">Sample ID와 4개 유전자형 항목을 선택하면 카페인 반응 가능성과 섭취 가이드가 생성됩니다. 확인할 수 없는 항목은 ‘모름’으로 진행할 수 있습니다.</p>
+        <p class="top-summary">한 명씩 직접 입력하거나 지정 엑셀 양식으로 여러 명을 한 번에 분석할 수 있습니다. 확인할 수 없는 유전자형은 ‘모름’으로 진행할 수 있습니다.</p>
       </div>
       <div class="top-actions">
         <div class="privacy-chip">브라우저 내부 계산</div>
@@ -67,6 +67,17 @@
             초기화
           </button>
         </div>
+
+        <div class="input-mode-switch" role="tablist" aria-label="리포트 입력 방식">
+          <button class="input-mode-button active" id="singleModeBtn" type="button" role="tab" aria-selected="true" aria-controls="singleModePanel">
+            1명 직접 입력
+          </button>
+          <button class="input-mode-button" id="batchModeBtn" type="button" role="tab" aria-selected="false" aria-controls="batchModePanel">
+            엑셀 일괄 업로드
+          </button>
+        </div>
+
+        <div id="singleModePanel" role="tabpanel" aria-labelledby="singleModeBtn">
 
         <div class="sample-card detailed-form">
           <div class="field">
@@ -137,6 +148,86 @@
             리포트 생성
           </button>
         </div>
+        </div>
+
+        <section class="batch-panel" id="batchModePanel" role="tabpanel" aria-labelledby="batchModeBtn" hidden>
+          <div class="batch-intro">
+            <div>
+              <p class="eyebrow">Batch report generator</p>
+              <h3>여러 명의 결과를 한 번에 처리</h3>
+              <p>지정 양식에 Sample ID와 4개 유전자형을 입력한 뒤 업로드하면, 브라우저에서 일괄 분석하고 유효한 결과를 Google Sheets에 한 번에 저장합니다.</p>
+            </div>
+            <a class="tool-button ghost" href="./assets/caffeine-atlas-batch-template.xlsx" download>
+              <span aria-hidden="true">↓</span>
+              엑셀 양식 다운로드
+            </a>
+          </div>
+
+          <ol class="batch-steps" aria-label="엑셀 일괄 처리 순서">
+            <li><strong>1</strong><span>양식 다운로드</span></li>
+            <li><strong>2</strong><span>대상자 정보 입력</span></li>
+            <li><strong>3</strong><span>파일 업로드</span></li>
+            <li><strong>4</strong><span>일괄 분석·저장</span></li>
+          </ol>
+
+          <div class="batch-upload-card">
+            <label class="batch-file-field" for="batchFile">
+              <span>작성한 엑셀 파일</span>
+              <input id="batchFile" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
+              <small>2행의 예시는 자동으로 제외됩니다. ‘일괄 입력’ 시트의 3행부터 최대 200명까지 입력해 주세요.</small>
+            </label>
+            <div class="batch-file-summary" id="batchFileSummary">
+              <span>선택된 파일 없음</span>
+              <strong>엑셀 파일을 선택해 주세요</strong>
+            </div>
+          </div>
+
+          <label class="consent-card batch-consent-card">
+            <input id="batchConsent" type="checkbox">
+            <span>
+              <strong>일괄 저장 동의 확인</strong>
+              파일에 포함된 모든 대상자에게 결과 분석 및 Google Sheets 저장에 필요한 동의를 확인했으며, 민감정보 처리 권한이 있음을 확인합니다.
+            </span>
+          </label>
+
+          <div class="submit-panel batch-submit-panel">
+            <div>
+              <strong>일괄 처리 준비 상태</strong>
+              <p id="batchStatus">양식을 작성한 뒤 엑셀 파일을 선택해 주세요. 파일 내용은 분석 전까지 외부로 전송되지 않습니다.</p>
+            </div>
+            <button class="tool-button primary analyze-button" id="batchAnalyzeSaveBtn" type="button" disabled>
+              일괄 분석 및 시트 저장
+            </button>
+          </div>
+
+          <div class="batch-results" id="batchResults" hidden>
+            <div class="batch-results-head">
+              <div>
+                <p class="eyebrow">Batch results</p>
+                <h3>일괄 처리 결과</h3>
+              </div>
+              <div class="batch-result-counts" id="batchResultCounts"></div>
+            </div>
+            <div class="batch-table-wrap">
+              <table class="batch-table">
+                <thead>
+                  <tr>
+                    <th>행</th>
+                    <th>Sample ID</th>
+                    <th>처리 상태</th>
+                    <th>민감도 점수</th>
+                    <th>결과 유형</th>
+                    <th>대사 판정</th>
+                    <th>입력 완성도</th>
+                    <th>확인 사항</th>
+                  </tr>
+                </thead>
+                <tbody id="batchResultsBody"></tbody>
+              </table>
+            </div>
+            <p class="sync-status" id="batchSheetStatus">Google Sheets 저장 상태가 여기에 표시됩니다.</p>
+          </div>
+        </section>
       </section>
 
       <section class="report-screen" id="resultReport" hidden aria-labelledby="result-title">
@@ -302,6 +393,7 @@
     </main>
   </div>
 
-  <script src="./app.js?v=reference-line-20260718"></script>
+  <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
+  <script src="./app.js?v=batch-upload-20260804-v3"></script>
 </body>
 </html>
