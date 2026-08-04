@@ -100,10 +100,27 @@
   var GOOGLE_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxkjHn8rhkkRL-hcnTHyrUcHD0ldsEL8PKAwFXUmkrum06PiGbKD50zOKF1tG-qdI-G/exec";
   var FIXED_INSTITUTION = "동의대학교 임상병리학과 분자진단연구실";
   var KOREA_TIME_ZONE = "Asia/Seoul";
+  var BATCH_SHEET_NAME = "일괄 입력";
+  var BATCH_EXAMPLE_SAMPLE_ID = "예시-저장안됨";
+  var MAX_BATCH_ROWS = 200;
+  var BATCH_HEADERS = [
+    "Sample ID",
+    "리포트 날짜",
+    "채취일",
+    "검체 종류",
+    "성별",
+    "CYP1A2*1F rs762551",
+    "CYP1A2*1C rs2069514",
+    "CYP1A1-CYP1A2 rs2472297",
+    "AHR rs6968865"
+  ];
   var selections = {};
   var lastResult = null;
   var hasSubmitted = false;
   var chartResizeTimer = null;
+  var batchFile = null;
+  var batchRows = [];
+  var batchResults = [];
 
   var elements = {
     geneGrid: document.getElementById("geneGrid"),
@@ -125,6 +142,19 @@
     sheetConsent: document.getElementById("sheetConsent"),
     sheetSyncStatus: document.getElementById("sheetSyncStatus"),
     copyBtn: document.getElementById("copyBtn"),
+    singleModeBtn: document.getElementById("singleModeBtn"),
+    batchModeBtn: document.getElementById("batchModeBtn"),
+    singleModePanel: document.getElementById("singleModePanel"),
+    batchModePanel: document.getElementById("batchModePanel"),
+    batchFile: document.getElementById("batchFile"),
+    batchFileSummary: document.getElementById("batchFileSummary"),
+    batchConsent: document.getElementById("batchConsent"),
+    batchAnalyzeSaveBtn: document.getElementById("batchAnalyzeSaveBtn"),
+    batchStatus: document.getElementById("batchStatus"),
+    batchResults: document.getElementById("batchResults"),
+    batchResultCounts: document.getElementById("batchResultCounts"),
+    batchResultsBody: document.getElementById("batchResultsBody"),
+    batchSheetStatus: document.getElementById("batchSheetStatus"),
     validationText: document.getElementById("validationText"),
     resultPlaceholder: document.getElementById("resultPlaceholder"),
     resultContent: document.getElementById("resultContent"),
@@ -300,15 +330,64 @@
     };
   }
 
-  function getValidSelections() {
+  function getValidSelectionsFor(selectionMap) {
     var valid = [];
     genes.forEach(function (gene) {
-      var genotype = selections[gene.id];
+      var genotype = selectionMap[gene.id];
       if (genotype && genotype.code !== "unknown" && genotype.evidenceScore !== null) {
         valid.push({ gene: gene, genotype: genotype });
       }
     });
     return valid;
+  }
+
+  function getValidSelections() {
+    return getValidSelectionsFor(selections);
+  }
+
+  function getUnknownCountFor(selectionMap) {
+    return genes.filter(function (gene) {
+      return selectionMap[gene.id] && selectionMap[gene.id].code === "unknown";
+    }).length;
+  }
+
+  function buildComputedResult(selectionMap) {
+    var valid = getValidSelectionsFor(selectionMap);
+    var unknownCount = getUnknownCountFor(selectionMap);
+    var result = computeEvidenceModel(valid);
+    var hasCoreGenotype = valid.some(function (item) {
+      return item.gene.id === "rs762551";
+    });
+    var hasScore = hasCoreGenotype && result.finalNorm !== null && typeof result.finalNorm === "number";
+    var score = hasScore ? clamp(result.finalNorm * 100, 0, 100) : null;
+    var percentile = hasScore ? calculatePercentile(score) : { percentile: null, total: 0 };
+    var confidence = Math.round((valid.length / genes.length) * 100);
+    var category = hasScore ? classify(score) : getInsufficientCategory(valid.length);
+    var metabolismSubtype = hasCoreGenotype
+      ? getMetabolismSubtype(result.metabolismNorm)
+      : {
+        name: "판정 보류",
+        desc: "핵심 대사 표지자인 CYP1A2*1F rs762551가 '모름'이어서 카페인이 몸에 남는 시간을 판정하지 않았습니다."
+      };
+    var sensitivityRank = hasScore ? calculateRankFromPercentile(percentile.percentile) : null;
+    var coverageNote = unknownCount > 0 && hasScore
+      ? "'모름' " + unknownCount + "개는 제외하고 확인된 " + valid.length + "개 유전자형만 반영한 제한적 결과입니다."
+      : "";
+
+    return {
+      score: score,
+      percentile: percentile.percentile,
+      sensitivityRank: sensitivityRank,
+      confidence: confidence,
+      category: category,
+      typeDescription: coverageNote ? category.desc + " " + coverageNote : category.desc,
+      interpretation: coverageNote ? category.text + "\n\n" + coverageNote : category.text,
+      metabolismSubtype: metabolismSubtype,
+      valid: valid,
+      unknownCount: unknownCount,
+      metabolismNorm: result.metabolismNorm,
+      behaviorNorm: result.behaviorNorm
+    };
   }
 
   function calculatePercentile(score) {
@@ -549,8 +628,6 @@
   }
 
   function render() {
-    var valid = getValidSelections();
-    var unknownCount = getUnknownGenes().length;
     updateReportMeta();
 
     if (!hasSubmitted) {
@@ -560,68 +637,41 @@
       return;
     }
 
-    var result = computeEvidenceModel(valid);
-    var hasCoreGenotype = valid.some(function (item) {
-      return item.gene.id === "rs762551";
-    });
-    var hasScore = hasCoreGenotype && result.finalNorm !== null && typeof result.finalNorm === "number";
-    var score = hasScore ? clamp(result.finalNorm * 100, 0, 100) : null;
-    var percentile = hasScore ? calculatePercentile(score) : { percentile: null, total: 0 };
-    var coverage = valid.length / genes.length;
-    var confidence = Math.round(coverage * 100);
-    var category = hasScore ? classify(score) : getInsufficientCategory(valid.length);
-    var metabolismSubtype = hasCoreGenotype
-      ? getMetabolismSubtype(result.metabolismNorm)
-      : {
-        name: "판정 보류",
-        desc: "핵심 대사 표지자인 CYP1A2*1F rs762551가 '모름'이어서 카페인이 몸에 남는 시간을 판정하지 않았습니다."
-      };
-    var sensitivityRank = hasScore ? calculateRankFromPercentile(percentile.percentile) : null;
-    var coverageNote = unknownCount > 0 && hasScore
-      ? "'모름' " + unknownCount + "개는 제외하고 확인된 " + valid.length + "개 유전자형만 반영한 제한적 결과입니다."
-      : "";
-    var typeDescription = coverageNote ? category.desc + " " + coverageNote : category.desc;
-    var interpretation = coverageNote ? category.text + "\n\n" + coverageNote : category.text;
-
-    lastResult = {
-      score: score,
-      percentile: percentile.percentile,
-      sensitivityRank: sensitivityRank,
-      confidence: confidence,
-      category: category,
-      typeDescription: typeDescription,
-      interpretation: interpretation,
-      metabolismSubtype: metabolismSubtype,
-      valid: valid,
-      metabolismNorm: result.metabolismNorm,
-      behaviorNorm: result.behaviorNorm
-    };
+    lastResult = buildComputedResult(selections);
+    var valid = lastResult.valid;
+    var unknownCount = lastResult.unknownCount;
+    var score = lastResult.score;
+    var hasScore = typeof score === "number";
+    var category = lastResult.category;
+    var confidence = lastResult.confidence;
+    var sensitivityRank = lastResult.sensitivityRank;
+    var metabolismSubtype = lastResult.metabolismSubtype;
 
     elements.scoreValue.textContent = hasScore ? score.toFixed(1) : "--";
     elements.scoreLabel.textContent = hasScore ? category.label : "산출 없음";
     elements.typeEmoji.textContent = category.emoji;
     elements.typeBadge.textContent = category.badge;
     elements.typeName.textContent = category.label;
-    elements.typeDesc.textContent = typeDescription;
+    elements.typeDesc.textContent = lastResult.typeDescription;
     elements.coverageText.textContent = "분석 완성도 " + confidence + "% (확인 " + valid.length + "/4 · 모름 " + unknownCount + "/4)";
     elements.gaugeFill.style.width = hasScore ? score.toFixed(2) + "%" : "0%";
     elements.gaugeMarker.style.left = hasScore ? score.toFixed(2) + "%" : "0%";
     elements.gaugeMarker.hidden = !hasScore;
 
-    setLayer("metabolism", result.metabolismNorm);
-    setLayer("behavior", result.behaviorNorm);
+    setLayer("metabolism", lastResult.metabolismNorm);
+    setLayer("behavior", lastResult.behaviorNorm);
     elements.confidenceScore.textContent = confidence + "%";
     elements.confidenceBar.style.width = confidence + "%";
 
     elements.referenceRankText.textContent = hasScore ? "대한민국 평균 100명 중 " + sensitivityRank + "등" : "비교 불가";
     elements.percentileText.textContent = hasScore ? "카페인 민감도가 높은 순서 기준" : "확인된 유전자형 없음";
     elements.detailCategory.textContent = category.label;
-    elements.detailPercentile.textContent = hasScore ? percentile.percentile.toFixed(1) + "% 위치" : "산출 없음";
+    elements.detailPercentile.textContent = hasScore ? lastResult.percentile.toFixed(1) + "% 위치" : "산출 없음";
     elements.detailInputQuality.textContent = "확인 " + valid.length + "개 · 모름 " + unknownCount + "개";
     elements.metabolismTypeName.textContent = metabolismSubtype.name;
     elements.metabolismTypeDesc.textContent = metabolismSubtype.desc;
     elements.interpretationTitle.textContent = category.title;
-    elements.interpretationText.textContent = interpretation;
+    elements.interpretationText.textContent = lastResult.interpretation;
     elements.recommendList.innerHTML = category.recommendations.map(function (item) {
       return "<li>" + item + "</li>";
     }).join("");
@@ -926,9 +976,9 @@
     return (clamp(norm * 100, 0, 100)).toFixed(1) + "점";
   }
 
-  function getGenotypeRecords() {
+  function getGenotypeRecordsFor(selectionMap) {
     return genes.map(function (gene) {
-      var genotype = selections[gene.id];
+      var genotype = selectionMap[gene.id];
       var hasValue = genotype && genotype.code !== "unknown";
       return {
         geneId: gene.id,
@@ -947,50 +997,61 @@
     });
   }
 
-  function buildReportData() {
-    if (!lastResult) {
-      return null;
-    }
+  function getGenotypeRecords() {
+    return getGenotypeRecordsFor(selections);
+  }
 
-    var reportInfo = getReportInfo();
+  function buildReportDataFor(result, reportInfo, selectionMap) {
+    if (!result) return null;
+
     return {
       reportTitle: "카페인 반응 근거 기반 해석 리포트",
       generatedAt: getKoreaDateTimeString(),
       timeZone: KOREA_TIME_ZONE,
       reportInfo: reportInfo,
       result: {
-        score: typeof lastResult.score === "number" ? Number(lastResult.score.toFixed(1)) : null,
-        category: lastResult.category.label,
-        title: lastResult.category.title,
-        badge: lastResult.category.badge,
-        emoji: lastResult.category.emoji,
-        typeDescription: lastResult.typeDescription,
-        interpretation: lastResult.interpretation,
-        percentile: typeof lastResult.percentile === "number" ? Number(lastResult.percentile.toFixed(1)) : null,
-        sensitivityRank: lastResult.sensitivityRank,
-        confidence: lastResult.confidence,
-        metabolismScore: lastResult.metabolismNorm === null ? null : Number((lastResult.metabolismNorm * 100).toFixed(1)),
-        regulationScore: lastResult.behaviorNorm === null ? null : Number((lastResult.behaviorNorm * 100).toFixed(1)),
-        metabolismSubtype: lastResult.metabolismSubtype
+        score: typeof result.score === "number" ? Number(result.score.toFixed(1)) : null,
+        category: result.category.label,
+        title: result.category.title,
+        badge: result.category.badge,
+        emoji: result.category.emoji,
+        typeDescription: result.typeDescription,
+        interpretation: result.interpretation,
+        percentile: typeof result.percentile === "number" ? Number(result.percentile.toFixed(1)) : null,
+        sensitivityRank: result.sensitivityRank,
+        confidence: result.confidence,
+        metabolismScore: result.metabolismNorm === null ? null : Number((result.metabolismNorm * 100).toFixed(1)),
+        regulationScore: result.behaviorNorm === null ? null : Number((result.behaviorNorm * 100).toFixed(1)),
+        metabolismSubtype: result.metabolismSubtype
       },
-      genotypes: getGenotypeRecords(),
-      recommendations: lastResult.category.recommendations,
+      genotypes: getGenotypeRecordsFor(selectionMap),
+      recommendations: result.category.recommendations,
       limitations: [
         "본 결과는 연구·교육용 해석 리포트이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다.",
         "실제 카페인 반응은 수면, 약물, 간 기능, 임신, 흡연, 스트레스, 섭취량과 섭취 시간의 영향을 받을 수 있습니다.",
-        lastResult.confidence < 100 ? "'모름'으로 선택한 유전자형은 점수에서 제외했으며, 분석 완성도가 낮을수록 결과의 불확실성이 큽니다." : ""
+        result.confidence < 100 ? "'모름'으로 선택한 유전자형은 점수에서 제외했으며, 분석 완성도가 낮을수록 결과의 불확실성이 큽니다." : ""
       ].filter(Boolean)
     };
   }
 
-  function getGenotypeValue(rsid) {
-    var genotype = selections[rsid];
+  function buildReportData() {
+    if (!lastResult) {
+      return null;
+    }
+    return buildReportDataFor(lastResult, getReportInfo(), selections);
+  }
+
+  function getGenotypeValueFor(selectionMap, rsid) {
+    var genotype = selectionMap[rsid];
     if (!genotype) return "미선택";
     return genotype.code === "unknown" ? "모름" : genotype.code;
   }
 
-  function buildSheetPayload() {
-    var data = buildReportData();
+  function getGenotypeValue(rsid) {
+    return getGenotypeValueFor(selections, rsid);
+  }
+
+  function buildSheetPayloadFor(data, selectionMap, consent) {
     if (!data) return null;
 
     return {
@@ -1001,10 +1062,10 @@
       specimen: data.reportInfo.sampleType,
       sex: data.reportInfo.sex,
       institution: data.reportInfo.institution,
-      rs762551: getGenotypeValue("rs762551"),
-      rs2069514: getGenotypeValue("rs2069514"),
-      rs2472297: getGenotypeValue("rs2472297"),
-      rs6968865: getGenotypeValue("rs6968865"),
+      rs762551: getGenotypeValueFor(selectionMap, "rs762551"),
+      rs2069514: getGenotypeValueFor(selectionMap, "rs2069514"),
+      rs2472297: getGenotypeValueFor(selectionMap, "rs2472297"),
+      rs6968865: getGenotypeValueFor(selectionMap, "rs6968865"),
       score: data.result.score,
       category: data.result.category,
       metabolismSubtype: data.result.metabolismSubtype.name,
@@ -1012,10 +1073,15 @@
       confidence: data.result.confidence,
       metabolismScore: data.result.metabolismScore,
       regulationScore: data.result.regulationScore,
-      consent: Boolean(elements.sheetConsent && elements.sheetConsent.checked),
+      consent: Boolean(consent),
       rankOutOf100: data.result.sensitivityRank,
       reportJson: data
     };
+  }
+
+  function buildSheetPayload() {
+    var data = buildReportData();
+    return buildSheetPayloadFor(data, selections, elements.sheetConsent && elements.sheetConsent.checked);
   }
 
   function setSheetStatus(message, type) {
@@ -1056,6 +1122,426 @@
       setSheetStatus("저장 요청에 실패했습니다. Apps Script URL과 배포 권한을 확인해 주세요.", "error");
     }).finally(function () {
       elements.sheetSaveBtn.disabled = false;
+    });
+  }
+
+  function setInputMode(mode) {
+    var isBatch = mode === "batch";
+    elements.singleModeBtn.classList.toggle("active", !isBatch);
+    elements.batchModeBtn.classList.toggle("active", isBatch);
+    elements.singleModeBtn.setAttribute("aria-selected", String(!isBatch));
+    elements.batchModeBtn.setAttribute("aria-selected", String(isBatch));
+    elements.singleModePanel.hidden = isBatch;
+    elements.batchModePanel.hidden = !isBatch;
+    elements.resetBtn.hidden = isBatch;
+  }
+
+  function setBatchStatus(message, type) {
+    elements.batchStatus.textContent = message;
+    elements.batchStatus.classList.toggle("error", type === "error");
+    elements.batchStatus.classList.toggle("success", type === "success");
+  }
+
+  function setBatchSheetStatus(message, type) {
+    elements.batchSheetStatus.textContent = message;
+    elements.batchSheetStatus.classList.toggle("error", type === "error");
+    elements.batchSheetStatus.classList.toggle("success", type === "success");
+  }
+
+  function resetBatchOutput() {
+    batchRows = [];
+    batchResults = [];
+    elements.batchResults.hidden = true;
+    elements.batchResultCounts.innerHTML = "";
+    elements.batchResultsBody.innerHTML = "";
+    setBatchSheetStatus("Google Sheets 저장 상태가 여기에 표시됩니다.");
+  }
+
+  function handleBatchFileChange() {
+    batchFile = elements.batchFile.files && elements.batchFile.files[0] ? elements.batchFile.files[0] : null;
+    resetBatchOutput();
+
+    if (!batchFile) {
+      elements.batchFileSummary.innerHTML = "<span>선택된 파일 없음</span><strong>엑셀 파일을 선택해 주세요</strong>";
+      elements.batchAnalyzeSaveBtn.disabled = true;
+      setBatchStatus("양식을 작성한 뒤 엑셀 파일을 선택해 주세요. 파일 내용은 분석 전까지 외부로 전송되지 않습니다.");
+      return;
+    }
+
+    var extension = batchFile.name.split(".").pop().toLowerCase();
+    if (extension !== "xlsx" && extension !== "xls") {
+      elements.batchFileSummary.innerHTML = "<span>지원하지 않는 파일</span><strong>" + escapeHtml(batchFile.name) + "</strong>";
+      elements.batchAnalyzeSaveBtn.disabled = true;
+      setBatchStatus(".xlsx 또는 .xls 형식의 엑셀 파일만 업로드할 수 있습니다.", "error");
+      return;
+    }
+
+    elements.batchFileSummary.innerHTML = [
+      "<span>선택된 파일 · ", formatFileSize(batchFile.size), "</span>",
+      "<strong>", escapeHtml(batchFile.name), "</strong>"
+    ].join("");
+    elements.batchAnalyzeSaveBtn.disabled = false;
+    setBatchStatus("파일이 선택되었습니다. 동의를 확인한 뒤 일괄 분석 및 시트 저장을 실행해 주세요.");
+  }
+
+  function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  function padDatePart(value) {
+    return String(value).padStart(2, "0");
+  }
+
+  function isValidDateParts(year, month, day) {
+    var date = new Date(Date.UTC(year, month - 1, day));
+    return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+  }
+
+  function normalizeBatchDate(value, required) {
+    if (value === null || value === undefined || String(value).trim() === "") {
+      return required ? null : "--";
+    }
+
+    if (Object.prototype.toString.call(value) === "[object Date]" && !Number.isNaN(value.getTime())) {
+      return value.getFullYear() + "-" + padDatePart(value.getMonth() + 1) + "-" + padDatePart(value.getDate());
+    }
+
+    if (typeof value === "number" && window.XLSX && window.XLSX.SSF) {
+      var parsedSerial = window.XLSX.SSF.parse_date_code(value);
+      if (parsedSerial && isValidDateParts(parsedSerial.y, parsedSerial.m, parsedSerial.d)) {
+        return parsedSerial.y + "-" + padDatePart(parsedSerial.m) + "-" + padDatePart(parsedSerial.d);
+      }
+    }
+
+    var text = String(value).trim();
+    var match = text.match(/^(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})$/);
+    if (!match) return null;
+    var year = Number(match[1]);
+    var month = Number(match[2]);
+    var day = Number(match[3]);
+    if (!isValidDateParts(year, month, day)) return null;
+    return year + "-" + padDatePart(month) + "-" + padDatePart(day);
+  }
+
+  function normalizeSpecimen(value) {
+    var text = String(value || "").trim();
+    var key = text.toLowerCase();
+    var options = {
+      "구강상피세포": { label: "구강상피세포", value: "Buccal swab" },
+      "buccal swab": { label: "구강상피세포", value: "Buccal swab" },
+      "타액": { label: "타액", value: "Saliva" },
+      "saliva": { label: "타액", value: "Saliva" },
+      "혈액": { label: "혈액", value: "Blood" },
+      "blood": { label: "혈액", value: "Blood" },
+      "기존 유전자형 데이터": { label: "기존 유전자형 데이터", value: "Raw genotype data" },
+      "raw genotype data": { label: "기존 유전자형 데이터", value: "Raw genotype data" }
+    };
+    return options[key] || null;
+  }
+
+  function normalizeSex(value) {
+    var text = String(value || "").trim();
+    var key = text.toLowerCase();
+    var options = {
+      "미기재": { label: "미기재", value: "Not provided" },
+      "not provided": { label: "미기재", value: "Not provided" },
+      "여성": { label: "여성", value: "Female" },
+      "female": { label: "여성", value: "Female" },
+      "남성": { label: "남성", value: "Male" },
+      "male": { label: "남성", value: "Male" },
+      "기타": { label: "기타", value: "Other" },
+      "other": { label: "기타", value: "Other" }
+    };
+    return options[key] || null;
+  }
+
+  function normalizeGenotype(gene, value) {
+    var text = String(value === null || value === undefined ? "" : value).trim().toUpperCase();
+    if (text === "모름" || text === "UNKNOWN") return getGenotype(gene, "unknown");
+    text = text.replace(/[\s/|_-]+/g, "");
+
+    var direct = getGenotype(gene, text);
+    if (direct) return direct;
+    if (text.length === 2) {
+      return getGenotype(gene, text.charAt(1) + text.charAt(0));
+    }
+    return null;
+  }
+
+  function getBatchCell(row, headerMap, header) {
+    return row[headerMap[header]];
+  }
+
+  function parseBatchRow(row, rowNumber, headerMap, seenSampleIds) {
+    var errors = [];
+    var sampleId = String(getBatchCell(row, headerMap, "Sample ID") || "").trim();
+    var reportDate = normalizeBatchDate(getBatchCell(row, headerMap, "리포트 날짜"), true);
+    var collectionRaw = getBatchCell(row, headerMap, "채취일");
+    var collectionDate = normalizeBatchDate(collectionRaw, false);
+    var specimen = normalizeSpecimen(getBatchCell(row, headerMap, "검체 종류"));
+    var sex = normalizeSex(getBatchCell(row, headerMap, "성별"));
+    var selectionMap = {};
+
+    if (!sampleId) {
+      errors.push("Sample ID 누락");
+    } else if (sampleId.length > 120) {
+      errors.push("Sample ID가 120자를 초과함");
+    } else if (seenSampleIds[sampleId]) {
+      errors.push("파일 안에서 Sample ID 중복 (" + seenSampleIds[sampleId] + "행과 동일)");
+    } else {
+      seenSampleIds[sampleId] = rowNumber;
+    }
+
+    if (!reportDate) errors.push("리포트 날짜 형식 오류 (YYYY-MM-DD)");
+    if (collectionRaw !== null && collectionRaw !== undefined && String(collectionRaw).trim() !== "" && !collectionDate) {
+      errors.push("채취일 형식 오류 (YYYY-MM-DD)");
+    }
+    if (!specimen) errors.push("검체 종류 값 오류");
+    if (!sex) errors.push("성별 값 오류");
+
+    [
+      ["rs762551", "CYP1A2*1F rs762551"],
+      ["rs2069514", "CYP1A2*1C rs2069514"],
+      ["rs2472297", "CYP1A1-CYP1A2 rs2472297"],
+      ["rs6968865", "AHR rs6968865"]
+    ].forEach(function (item) {
+      var gene = getGene(item[0]);
+      var genotype = normalizeGenotype(gene, getBatchCell(row, headerMap, item[1]));
+      if (!genotype) {
+        errors.push(item[0] + " 유전자형 값 오류");
+      } else {
+        selectionMap[item[0]] = genotype;
+      }
+    });
+
+    return {
+      rowNumber: rowNumber,
+      sampleId: sampleId || "(미입력)",
+      errors: errors,
+      selectionMap: selectionMap,
+      reportInfo: {
+        sampleId: sampleId,
+        reportDate: reportDate || "--",
+        collectionDate: collectionDate || "--",
+        sampleType: specimen ? specimen.label : "",
+        sampleTypeValue: specimen ? specimen.value : "",
+        sex: sex ? sex.label : "",
+        sexValue: sex ? sex.value : "",
+        institution: FIXED_INSTITUTION
+      }
+    };
+  }
+
+  function parseBatchWorkbook(file) {
+    if (!window.XLSX) {
+      return Promise.reject(new Error("엑셀 처리 모듈을 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요."));
+    }
+
+    return file.arrayBuffer().then(function (buffer) {
+      var workbook = window.XLSX.read(buffer, { type: "array", cellDates: true });
+      var sheet = workbook.Sheets[BATCH_SHEET_NAME];
+      if (!sheet) {
+        throw new Error("‘" + BATCH_SHEET_NAME + "’ 시트를 찾을 수 없습니다. 제공된 양식의 시트 이름을 바꾸지 말아 주세요.");
+      }
+
+      var matrix = window.XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "", blankrows: true });
+      if (!matrix.length) throw new Error("‘" + BATCH_SHEET_NAME + "’ 시트가 비어 있습니다.");
+
+      var headers = matrix[0].map(function (value) { return String(value || "").trim(); });
+      var headerMap = {};
+      headers.forEach(function (header, index) {
+        if (header && headerMap[header] === undefined) headerMap[header] = index;
+      });
+      var missingHeaders = BATCH_HEADERS.filter(function (header) { return headerMap[header] === undefined; });
+      if (missingHeaders.length) {
+        throw new Error("필수 열이 없습니다: " + missingHeaders.join(", ") + ". 제공된 양식을 다시 내려받아 작성해 주세요.");
+      }
+
+      var dataRows = matrix.slice(1).map(function (row, index) {
+        return { row: row, rowNumber: index + 2 };
+      }).filter(function (entry) {
+        return BATCH_HEADERS.some(function (header) {
+          var value = getBatchCell(entry.row, headerMap, header);
+          return value !== null && value !== undefined && String(value).trim() !== "";
+        });
+      }).filter(function (entry) {
+        var sampleId = getBatchCell(entry.row, headerMap, "Sample ID");
+        return String(sampleId || "").trim() !== BATCH_EXAMPLE_SAMPLE_ID;
+      });
+
+      if (!dataRows.length) throw new Error("입력된 대상자가 없습니다. 예시 행 아래의 3행부터 데이터를 입력해 주세요.");
+      if (dataRows.length > MAX_BATCH_ROWS) {
+        throw new Error("한 번에 최대 " + MAX_BATCH_ROWS + "명까지 처리할 수 있습니다. 현재 " + dataRows.length + "명이 입력되어 있습니다.");
+      }
+
+      var seenSampleIds = {};
+      return dataRows.map(function (entry) {
+        return parseBatchRow(entry.row, entry.rowNumber, headerMap, seenSampleIds);
+      });
+    });
+  }
+
+  function analyzeBatchRow(record) {
+    if (record.errors.length) return record;
+    var result = buildComputedResult(record.selectionMap);
+    var reportData = buildReportDataFor(result, record.reportInfo, record.selectionMap);
+    record.result = result;
+    record.reportData = reportData;
+    record.payload = buildSheetPayloadFor(reportData, record.selectionMap, true);
+    return record;
+  }
+
+  function renderBatchResults(records) {
+    var errorCount = records.filter(function (record) { return record.errors.length > 0; }).length;
+    var validCount = records.length - errorCount;
+    elements.batchResults.hidden = false;
+    elements.batchResultCounts.innerHTML = [
+      "<span>전체 ", records.length, "명</span>",
+      "<span>분석 가능 ", validCount, "명</span>",
+      errorCount ? "<span class=\"error\">수정 필요 " + errorCount + "명</span>" : ""
+    ].join("");
+
+    elements.batchResultsBody.innerHTML = records.map(function (record) {
+      var hasError = record.errors.length > 0;
+      var result = record.result;
+      return [
+        '<tr class="', hasError ? "has-error" : "", '">',
+        "<td>", record.rowNumber, "</td>",
+        "<td><strong>", escapeHtml(record.sampleId), "</strong></td>",
+        '<td><span class="status-pill ', hasError ? "error" : "", '">', hasError ? "수정 필요" : "분석 완료", "</span></td>",
+        "<td>", !hasError && typeof result.score === "number" ? result.score.toFixed(1) + "점" : (!hasError ? "산출 없음" : "--"), "</td>",
+        "<td>", !hasError ? escapeHtml(result.category.label) : "--", "</td>",
+        "<td>", !hasError ? escapeHtml(result.metabolismSubtype.name) : "--", "</td>",
+        "<td>", !hasError ? result.confidence + "%" : "--", "</td>",
+        "<td>", hasError ? escapeHtml(record.errors.join(" · ")) : "확인됨", "</td>",
+        "</tr>"
+      ].join("");
+    }).join("");
+  }
+
+  function buildBatchId() {
+    return "batch-" + getKoreaDateTimeString().replace(/[^0-9]/g, "").slice(0, 14) + "-" + Math.random().toString(36).slice(2, 8);
+  }
+
+  function verifyBatchEndpointSupport() {
+    return new Promise(function (resolve, reject) {
+      var callbackName = "caffeineBatchCapability_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+      var script = document.createElement("script");
+      var finished = false;
+      var timeoutId;
+
+      function cleanup() {
+        window.clearTimeout(timeoutId);
+        if (script.parentNode) script.parentNode.removeChild(script);
+        try {
+          delete window[callbackName];
+        } catch (error) {
+          window[callbackName] = undefined;
+        }
+      }
+
+      function fail(message) {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        reject(new Error(message));
+      }
+
+      window[callbackName] = function (response) {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        if (!response || !response.ok || !response.capabilities || response.capabilities.batchSave !== true) {
+          reject(new Error("Google Apps Script가 아직 엑셀 일괄 저장을 지원하지 않습니다. Code.gs를 최신 코드로 교체하고 웹앱을 새 버전으로 다시 배포해 주세요."));
+          return;
+        }
+        resolve(response.capabilities);
+      };
+
+      script.async = true;
+      script.src = GOOGLE_SHEETS_ENDPOINT
+        + (GOOGLE_SHEETS_ENDPOINT.indexOf("?") === -1 ? "?" : "&")
+        + "action=capabilities&callback=" + encodeURIComponent(callbackName)
+        + "&_=" + Date.now();
+      script.onerror = function () {
+        fail("Google Apps Script 일괄 저장 버전을 확인하지 못했습니다. Code.gs 재배포와 웹앱 접근 권한을 확인해 주세요.");
+      };
+      timeoutId = window.setTimeout(function () {
+        fail("Google Apps Script 일괄 저장 버전 확인 시간이 초과되었습니다. Code.gs를 재배포한 뒤 다시 시도해 주세요.");
+      }, 8000);
+      document.head.appendChild(script);
+    });
+  }
+
+  function processBatchUpload() {
+    if (!batchFile) {
+      setBatchStatus("먼저 작성한 엑셀 파일을 선택해 주세요.", "error");
+      return;
+    }
+    if (!elements.batchConsent.checked) {
+      setBatchStatus("모든 대상자의 분석 및 저장 동의를 확인한 뒤 체크해 주세요.", "error");
+      return;
+    }
+    if (!GOOGLE_SHEETS_ENDPOINT) {
+      setBatchStatus("Google Apps Script 배포 URL이 설정되지 않았습니다.", "error");
+      return;
+    }
+
+    elements.batchAnalyzeSaveBtn.disabled = true;
+    elements.batchAnalyzeSaveBtn.textContent = "엑셀 확인 중...";
+    setBatchStatus("엑셀 양식과 입력값을 확인하고 있습니다.");
+    resetBatchOutput();
+
+    parseBatchWorkbook(batchFile).then(function (records) {
+      batchRows = records;
+      batchResults = records.map(analyzeBatchRow);
+      renderBatchResults(batchResults);
+
+      var invalidRows = batchResults.filter(function (record) { return record.errors.length > 0; });
+      if (invalidRows.length) {
+        setBatchStatus("수정이 필요한 행이 " + invalidRows.length + "개 있습니다. 일부만 저장하지 않았으며, 오류를 고친 뒤 다시 업로드해 주세요.", "error");
+        setBatchSheetStatus("입력 오류가 있어 Google Sheets에는 어떤 행도 저장하지 않았습니다.", "error");
+        return null;
+      }
+
+      elements.batchAnalyzeSaveBtn.textContent = "저장 기능 확인 중...";
+      setBatchStatus(batchResults.length + "명의 분석이 완료되었습니다. Google Apps Script의 일괄 저장 지원 버전을 확인하고 있습니다.");
+
+      return verifyBatchEndpointSupport().then(function (capabilities) {
+        var endpointLimit = Number(capabilities.maxBatchRows) || MAX_BATCH_ROWS;
+        if (batchResults.length > endpointLimit) {
+          throw new Error("현재 Google Apps Script는 한 번에 최대 " + endpointLimit + "명까지 저장할 수 있습니다.");
+        }
+
+        elements.batchAnalyzeSaveBtn.textContent = "Google Sheets 저장 중...";
+        setBatchStatus(batchResults.length + "명의 분석이 완료되었습니다. Google Sheets에 일괄 저장 요청을 보내고 있습니다.");
+
+        return fetch(GOOGLE_SHEETS_ENDPOINT, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body: JSON.stringify({
+            action: "batchSave",
+            batchId: buildBatchId(),
+            rows: batchResults.map(function (record) { return record.payload; })
+          })
+        });
+      }).then(function () {
+        setBatchStatus(batchResults.length + "명의 분석과 일괄 저장 요청이 완료되었습니다.", "success");
+        setBatchSheetStatus("Google Sheets에 " + batchResults.length + "명 저장 요청을 보냈습니다. 시트에서 새 행을 확인해 주세요.", "success");
+      });
+    }).catch(function (error) {
+      setBatchStatus(error && error.message ? error.message : "엑셀 처리 중 오류가 발생했습니다.", "error");
+      if (!elements.batchResults.hidden) {
+        setBatchSheetStatus("Google Sheets 저장 요청을 보내지 못했습니다.", "error");
+      }
+    }).finally(function () {
+      elements.batchAnalyzeSaveBtn.disabled = !batchFile;
+      elements.batchAnalyzeSaveBtn.textContent = "일괄 분석 및 시트 저장";
     });
   }
 
@@ -1274,6 +1760,10 @@
     elements.saveBtn.addEventListener("click", saveDetailedReport);
     elements.pdfBtn.addEventListener("click", savePdfReport);
     elements.sheetSaveBtn.addEventListener("click", saveToGoogleSheets);
+    elements.singleModeBtn.addEventListener("click", function () { setInputMode("single"); });
+    elements.batchModeBtn.addEventListener("click", function () { setInputMode("batch"); });
+    elements.batchFile.addEventListener("change", handleBatchFileChange);
+    elements.batchAnalyzeSaveBtn.addEventListener("click", processBatchUpload);
     window.addEventListener("resize", function () {
       window.clearTimeout(chartResizeTimer);
       chartResizeTimer = window.setTimeout(function () {
@@ -1288,6 +1778,7 @@
     elements.institution.value = FIXED_INSTITUTION;
     elements.reportDate.value = getKoreaDateString();
     elements.collectionDate.value = getKoreaDateString();
+    setInputMode("single");
     updateReportMeta();
     renderEmpty();
     drawReferenceChart(null);

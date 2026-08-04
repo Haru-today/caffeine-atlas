@@ -1,6 +1,9 @@
 const SPREADSHEET_ID = "1v0-AhubC4vXzK-dzmA1G_S0qR8DYLOe1woqnAl7VL0s";
 const SHEET_NAME = "Responses";
 const KOREA_TIME_ZONE = "Asia/Seoul";
+const ENDPOINT_VERSION = "2026-08-04-batch-v2";
+const MAX_BATCH_ROWS = 200;
+const BATCH_EXAMPLE_SAMPLE_ID = "예시-저장안됨";
 
 const FIELD_KEYS = [
   "submittedAt",
@@ -23,7 +26,8 @@ const FIELD_KEYS = [
   "regulationScore",
   "consent",
   "rankOutOf100",
-  "reportJson"
+  "reportJson",
+  "batchId"
 ];
 
 const DISPLAY_HEADERS = [
@@ -47,47 +51,130 @@ const DISPLAY_HEADERS = [
   "조절 점수",
   "저장 동의",
   "100명 중 예상 등수",
-  "전체 리포트 JSON"
+  "전체 리포트 JSON",
+  "일괄 처리 ID"
 ];
 
-function doGet() {
-  return ContentService
-    .createTextOutput(JSON.stringify({
-      ok: true,
-      message: "Caffeine Atlas Google Sheets endpoint is active.",
-      spreadsheetId: SPREADSHEET_ID,
-      sheetName: SHEET_NAME
-    }))
-    .setMimeType(ContentService.MimeType.JSON);
+function doGet(e) {
+  const response = {
+    ok: true,
+    message: "Caffeine Atlas Google Sheets endpoint is active.",
+    spreadsheetId: SPREADSHEET_ID,
+    sheetName: SHEET_NAME,
+    version: ENDPOINT_VERSION,
+    capabilities: {
+      batchSave: true,
+      maxBatchRows: MAX_BATCH_ROWS
+    }
+  };
+  const callback = e && e.parameter ? String(e.parameter.callback || "") : "";
+  if (callback) {
+    if (!/^[A-Za-z_$][0-9A-Za-z_$]*$/.test(callback)) {
+      return jsonResponse({ ok: false, message: "Invalid callback." });
+    }
+    return ContentService
+      .createTextOutput(`${callback}(${JSON.stringify(response)});`)
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return jsonResponse(response);
 }
 
 function doPost(e) {
-  const payload = JSON.parse((e.postData && e.postData.contents) || "{}");
-  if (payload.action === "setupTemplate") {
-    setupTemplate();
-    return jsonResponse({ ok: true, action: "setupTemplate" });
+  try {
+    const payload = JSON.parse((e.postData && e.postData.contents) || "{}");
+    if (payload.action === "setupTemplate") {
+      setupTemplate();
+      return jsonResponse({ ok: true, action: "setupTemplate" });
+    }
+    if (payload.action === "batchSave") {
+      return saveBatchRows_(payload);
+    }
+
+    validateResponsePayload_(payload);
+    appendResponseRows_([payload], "");
+    return jsonResponse({ ok: true, savedCount: 1 });
+  } catch (error) {
+    console.error(error);
+    return jsonResponse({ ok: false, message: error && error.message ? error.message : "Unknown error" });
   }
+}
 
-  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-  spreadsheet.setSpreadsheetTimeZone(KOREA_TIME_ZONE);
-  const sheet = spreadsheet.getSheetByName(SHEET_NAME) || spreadsheet.insertSheet(SHEET_NAME);
+function saveBatchRows_(payload) {
+  const submittedRows = Array.isArray(payload.rows) ? payload.rows : [];
+  const rows = submittedRows.filter((row) => String((row && row.sampleId) || "").trim() !== BATCH_EXAMPLE_SAMPLE_ID);
+  if (!rows.length) throw new Error("No batch rows were provided.");
+  if (rows.length > MAX_BATCH_ROWS) throw new Error(`A batch can contain at most ${MAX_BATCH_ROWS} rows.`);
 
-  ensureResponseHeader_(sheet);
+  const batchId = String(payload.batchId || "").trim() || Utilities.getUuid();
+  const sampleIds = {};
+  rows.forEach((row) => {
+    validateResponsePayload_(row);
+    const sampleId = String(row.sampleId).trim();
+    if (sampleIds[sampleId]) throw new Error(`Duplicate Sample ID in batch: ${sampleId}`);
+    sampleIds[sampleId] = true;
+  });
 
-  sheet.appendRow(FIELD_KEYS.map((key) => {
-    if (key === "submittedAt") {
-      return payload.submittedAt || formatKoreaDateTime_(new Date());
+  appendResponseRows_(rows, batchId);
+  return jsonResponse({ ok: true, action: "batchSave", batchId, savedCount: rows.length });
+}
+
+function validateResponsePayload_(payload) {
+  if (!payload || typeof payload !== "object") throw new Error("Invalid response payload.");
+  if (payload.consent !== true) throw new Error("Storage consent is required.");
+  if (!String(payload.sampleId || "").trim()) throw new Error("Sample ID is required.");
+  if (!String(payload.reportDate || "").trim()) throw new Error("Report date is required.");
+
+  const allowedGenotypes = {
+    rs762551: ["AA", "AC", "CC", "모름"],
+    rs2069514: ["GG", "AG", "AA", "모름"],
+    rs2472297: ["CC", "CT", "TT", "모름"],
+    rs6968865: ["GG", "TG", "TT", "모름"]
+  };
+  Object.keys(allowedGenotypes).forEach((key) => {
+    if (!allowedGenotypes[key].includes(String(payload[key] || ""))) {
+      throw new Error(`Invalid genotype for ${key}.`);
     }
-    if (key === "rankOutOf100") {
-      return payload.rankOutOf100 ?? rankFromPercentile_(payload.percentile);
-    }
-    if (key === "reportJson") {
-      return JSON.stringify(payload.reportJson || {});
-    }
-    return payload[key] ?? "";
-  }));
+  });
 
-  return jsonResponse({ ok: true });
+  if (payload.score !== null && payload.score !== "" && (!Number.isFinite(Number(payload.score)) || Number(payload.score) < 0 || Number(payload.score) > 100)) {
+    throw new Error("Sensitivity score must be between 0 and 100.");
+  }
+}
+
+function appendResponseRows_(payloads, batchId) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    spreadsheet.setSpreadsheetTimeZone(KOREA_TIME_ZONE);
+    const sheet = spreadsheet.getSheetByName(SHEET_NAME) || spreadsheet.insertSheet(SHEET_NAME);
+    ensureResponseHeader_(sheet);
+
+    const values = payloads.map((payload) => FIELD_KEYS.map((key) => {
+      if (key === "submittedAt") {
+        return safeCellValue_(payload.submittedAt || formatKoreaDateTime_(new Date()));
+      }
+      if (key === "rankOutOf100") {
+        return payload.rankOutOf100 ?? rankFromPercentile_(payload.percentile);
+      }
+      if (key === "reportJson") {
+        return safeCellValue_(JSON.stringify(payload.reportJson || {}));
+      }
+      if (key === "batchId") {
+        return safeCellValue_(batchId || payload.batchId || "");
+      }
+      return safeCellValue_(payload[key] ?? "");
+    }));
+
+    sheet.getRange(sheet.getLastRow() + 1, 1, values.length, FIELD_KEYS.length).setValues(values);
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function safeCellValue_(value) {
+  if (typeof value !== "string") return value;
+  return /^[=+\-@]/.test(value) ? `'${value}` : value;
 }
 
 function jsonResponse(value) {
@@ -186,7 +273,7 @@ function buildConsentLog_(spreadsheet) {
 function buildDataDictionary_(spreadsheet) {
   const sheet = getOrResetSheet_(spreadsheet, "Data Dictionary");
   sheet.getRange("A1").setValue("Data Dictionary");
-  sheet.getRange("A3:C24").setValues([
+  sheet.getRange("A3:C25").setValues([
     ["표시 컬럼명", "의미", "저장 출처"],
     ["저장 시각", "데이터가 시트에 저장된 시각", "웹사이트"],
     ["Sample ID", "검체 또는 사용자 식별용 Sample ID", "입력값"],
@@ -208,7 +295,8 @@ function buildDataDictionary_(spreadsheet) {
     ["조절 점수", "조절 레이어 점수", "계산 결과"],
     ["저장 동의", "리포트 데이터 저장 동의 여부", "동의 체크"],
     ["100명 중 예상 등수", "백분위를 100명 기준 순위로 환산한 값. 1등에 가까울수록 높은 카페인 민감도 위치입니다.", "계산 결과"],
-    ["전체 리포트 JSON", "결과 해석, 섭취 가이드, 유전자형 상세를 포함한 전체 리포트 원본", "계산 결과"]
+    ["전체 리포트 JSON", "결과 해석, 섭취 가이드, 유전자형 상세를 포함한 전체 리포트 원본", "계산 결과"],
+    ["일괄 처리 ID", "같은 엑셀 업로드로 저장된 행을 묶어 확인하는 식별자", "웹사이트 일괄 처리"]
   ]);
   finishTemplateSheet_(sheet, 3);
 }
@@ -220,7 +308,7 @@ function formatKoreaDateTime_(date) {
 function rankFromPercentile_(percentile) {
   const value = Number(percentile);
   if (!Number.isFinite(value)) return "";
-  return Math.max(1, Math.min(100, Math.round(101 - value)));
+  return Math.max(1, Math.min(100, Math.round(100 - value)));
 }
 
 function updateRankColumn_(sheet) {
