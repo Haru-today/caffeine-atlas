@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 const artifactTool = await import(process.env.CAFFEINE_ARTIFACT_TOOL || "@oai/artifact-tool");
 const { SpreadsheetFile, Workbook } = artifactTool;
 
-const outputDir = "/Users/user/Documents/카페인/outputs/019fcc99-1804-79a3-b328-104fdea88068";
+const outputDir = "/Users/user/Documents/카페인/outputs/01a0a7a8-a6eb-7cc1-aea2-d1b239e000b6";
 const assetPath = "/Users/user/Documents/카페인/caffeine-sensitivity-app/assets/caffeine-atlas-batch-template.xlsx";
 const outputPath = `${outputDir}/caffeine-atlas-batch-template.xlsx`;
 
@@ -49,7 +49,7 @@ input.getRange("A2:I2").values = [[
   "AA",
   "GG",
   "CC",
-  "GG",
+  "AA",
 ]];
 input.getRange("A2:I2").format = {
   fill: "#E7F2F3",
@@ -134,7 +134,7 @@ guide.getRange("A3:F3").format.rowHeightPx = 44;
 
 guide.getRange("A5:F14").values = [
   ["구분", "필수", "입력 형식", "허용값/예시", "검증 기준", "주의"],
-  ["Sample ID", "필수", "텍스트", "SAMPLE-001", "파일 안에서 중복 불가", "이름·주민번호 대신 비식별 ID 권장"],
+  ["Sample ID", "필수", "텍스트", "SAMPLE-001", "파일·기존 시트 중복 불가", "이름·주민번호 대신 비식별 ID 권장"],
   ["리포트 날짜", "필수", "날짜", "2026-08-04", "YYYY-MM-DD", "엑셀 날짜 형식 사용"],
   ["채취일", "선택", "날짜", "2026-08-03", "YYYY-MM-DD 또는 빈칸", "리포트 날짜 이후인지 별도 확인"],
   ["검체 종류", "필수", "목록 선택", "구강상피세포", "코드북 허용값", "셀의 선택 목록 사용"],
@@ -142,7 +142,7 @@ guide.getRange("A5:F14").values = [
   ["rs762551", "필수", "목록 선택", "AA / AC / CC / 모름", "허용 유전자형", "핵심 표지자가 모름이면 유형 판정 보류"],
   ["rs2069514", "필수", "목록 선택", "GG / AG / AA / 모름", "허용 유전자형", "모름은 점수에서 제외"],
   ["rs2472297", "필수", "목록 선택", "CC / CT / TT / 모름", "허용 유전자형", "모름은 점수에서 제외"],
-  ["rs6968865", "필수", "목록 선택", "GG / TG / TT / 모름", "허용 유전자형", "모름은 점수에서 제외"],
+  ["rs6968865", "필수", "목록 선택", "AA / AT / TT / 모름", "허용 유전자형", "모름은 점수에서 제외"],
 ];
 guide.getRange("A5:F5").format = {
   fill: "#DDEDEE",
@@ -176,8 +176,8 @@ guide.freezePanes.freezeRows(5);
 
 codebook.getRange("A1:F5").values = [
   ["검체 종류", "성별", "rs762551", "rs2069514", "rs2472297", "rs6968865"],
-  ["구강상피세포", "미기재", "AA", "GG", "CC", "GG"],
-  ["타액", "여성", "AC", "AG", "CT", "TG"],
+  ["구강상피세포", "미기재", "AA", "GG", "CC", "AA"],
+  ["타액", "여성", "AC", "AG", "CT", "AT"],
   ["혈액", "남성", "CC", "AA", "TT", "TT"],
   ["기존 유전자형 데이터", "기타", "모름", "모름", "모름", "모름"],
 ];
@@ -195,6 +195,8 @@ codebook.getRange("A2:F5").format = {
 codebook.getRange("A:A").format.columnWidthPx = 190;
 codebook.getRange("B:F").format.columnWidthPx = 110;
 codebook.freezePanes.freezeRows(1);
+
+workbook.recalculate();
 
 const inputCheck = await workbook.inspect({
   kind: "table",
@@ -231,8 +233,8 @@ console.log(JSON.stringify({ outputPath, assetPath }));
 
 if (process.env.CAFFEINE_BATCH_TEST_FIXTURES === "1") {
   input.getRange("A3:I5").values = [
-    ["TEST-FAST", "2026-08-04", "2026-08-03", "구강상피세포", "미기재", "AA", "GG", "CC", "GG"],
-    ["TEST-MID", "2026/08/04", "", "Saliva", "Female", "CA", "GA", "TC", "GT"],
+    ["TEST-FAST", "2026-08-04", "2026-08-03", "구강상피세포", "미기재", "AA", "GG", "CC", "AA"],
+    ["TEST-MID", "2026/08/04", "", "Saliva", "Female", "CA", "GA", "TC", "TA"],
     ["TEST-SLOW", "2026.08.04", "2026.08.02", "혈액", "남성", "CC", "AA", "TT", "TT"],
   ];
   const validFixture = await SpreadsheetFile.exportXlsx(workbook);
@@ -240,8 +242,8 @@ if (process.env.CAFFEINE_BATCH_TEST_FIXTURES === "1") {
 
   input.getRange("A3:I202").clear({ applyTo: "contents" });
   input.getRange("A3:I5").values = [
-    ["DUPLICATE", "2026-08-04", "", "구강상피세포", "미기재", "AA", "GG", "CC", "GG"],
-    ["DUPLICATE", "2026-08-04", "", "타액", "여성", "AC", "AG", "CT", "TG"],
+    ["DUPLICATE", "2026-08-04", "", "구강상피세포", "미기재", "AA", "GG", "CC", "AA"],
+    ["DUPLICATE", "2026-08-04", "", "타액", "여성", "AC", "AG", "CT", "AT"],
     ["BAD-GENOTYPE", "2026-99-04", "", "혈액", "남성", "XX", "AA", "TT", "TT"],
   ];
   const invalidFixture = await SpreadsheetFile.exportXlsx(workbook);

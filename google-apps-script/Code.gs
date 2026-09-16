@@ -1,7 +1,7 @@
 const SPREADSHEET_ID = "1v0-AhubC4vXzK-dzmA1G_S0qR8DYLOe1woqnAl7VL0s";
 const SHEET_NAME = "Responses";
 const KOREA_TIME_ZONE = "Asia/Seoul";
-const ENDPOINT_VERSION = "2026-08-04-batch-v2";
+const ENDPOINT_VERSION = "2026-09-16-confirmed-v3";
 const MAX_BATCH_ROWS = 200;
 const BATCH_EXAMPLE_SAMPLE_ID = "예시-저장안됨";
 
@@ -56,7 +56,7 @@ const DISPLAY_HEADERS = [
 ];
 
 function doGet(e) {
-  const response = {
+  let response = {
     ok: true,
     message: "Caffeine Atlas Google Sheets endpoint is active.",
     spreadsheetId: SPREADSHEET_ID,
@@ -64,9 +64,18 @@ function doGet(e) {
     version: ENDPOINT_VERSION,
     capabilities: {
       batchSave: true,
+      confirmedSave: true,
+      globalSampleIdCheck: true,
+      ahrAlleles: "A/T",
       maxBatchRows: MAX_BATCH_ROWS
     }
   };
+  if (e && e.parameter && e.parameter.action === "saveStatus") {
+    const requestId = String(e.parameter.requestId || "");
+    const cached = /^[a-f0-9]{32}$/.test(requestId)
+      ? CacheService.getScriptCache().get("save:" + requestId) : null;
+    response = cached ? JSON.parse(cached) : { ok: false, state: "unconfirmed" };
+  }
   const callback = e && e.parameter ? String(e.parameter.callback || "") : "";
   if (callback) {
     if (!/^[A-Za-z_$][0-9A-Za-z_$]*$/.test(callback)) {
@@ -80,21 +89,30 @@ function doGet(e) {
 }
 
 function doPost(e) {
+  let requestId = "";
   try {
     const payload = JSON.parse((e.postData && e.postData.contents) || "{}");
+    requestId = String(payload.requestId || "");
+    if (!/^[a-f0-9]{32}$/.test(requestId)) throw new Error("A valid request ID is required.");
+    let result;
     if (payload.action === "setupTemplate") {
       setupTemplate();
       return jsonResponse({ ok: true, action: "setupTemplate" });
     }
     if (payload.action === "batchSave") {
-      return saveBatchRows_(payload);
+      result = saveBatchRows_(payload);
+    } else {
+      validateResponsePayload_(payload);
+      appendResponseRows_([payload], "");
+      result = { ok: true, savedCount: 1 };
     }
-
-    validateResponsePayload_(payload);
-    appendResponseRows_([payload], "");
-    return jsonResponse({ ok: true, savedCount: 1 });
+    CacheService.getScriptCache().put("save:" + requestId, JSON.stringify({ ok: true, state: "saved", savedCount: result.savedCount }), 600);
+    return jsonResponse(result);
   } catch (error) {
     console.error(error);
+    if (/^[a-f0-9]{32}$/.test(requestId)) {
+      CacheService.getScriptCache().put("save:" + requestId, JSON.stringify({ ok: false, state: "error", code: error.code || "SAVE_UNCONFIRMED" }), 600);
+    }
     return jsonResponse({ ok: false, message: error && error.message ? error.message : "Unknown error" });
   }
 }
@@ -106,7 +124,7 @@ function saveBatchRows_(payload) {
   if (rows.length > MAX_BATCH_ROWS) throw new Error(`A batch can contain at most ${MAX_BATCH_ROWS} rows.`);
 
   const batchId = String(payload.batchId || "").trim() || Utilities.getUuid();
-  const sampleIds = {};
+  const sampleIds = Object.create(null);
   rows.forEach((row) => {
     validateResponsePayload_(row);
     const sampleId = String(row.sampleId).trim();
@@ -115,7 +133,7 @@ function saveBatchRows_(payload) {
   });
 
   appendResponseRows_(rows, batchId);
-  return jsonResponse({ ok: true, action: "batchSave", batchId, savedCount: rows.length });
+  return { ok: true, action: "batchSave", batchId, savedCount: rows.length };
 }
 
 function validateResponsePayload_(payload) {
@@ -128,7 +146,7 @@ function validateResponsePayload_(payload) {
     rs762551: ["AA", "AC", "CC", "모름"],
     rs2069514: ["GG", "AG", "AA", "모름"],
     rs2472297: ["CC", "CT", "TT", "모름"],
-    rs6968865: ["GG", "TG", "TT", "모름"]
+    rs6968865: ["AA", "AT", "TT", "모름"]
   };
   Object.keys(allowedGenotypes).forEach((key) => {
     if (!allowedGenotypes[key].includes(String(payload[key] || ""))) {
@@ -150,6 +168,19 @@ function appendResponseRows_(payloads, batchId) {
     const sheet = spreadsheet.getSheetByName(SHEET_NAME) || spreadsheet.insertSheet(SHEET_NAME);
     ensureResponseHeader_(sheet);
 
+    // Check and append under the same lock, including concurrent submissions.
+    const existingIds = new Set(sheet.getLastRow() > 1
+      ? sheet.getRange(2, 2, sheet.getLastRow() - 1, 1).getValues().map((row) => String(row[0]).trim()) : []);
+    for (const payload of payloads) {
+      const sampleId = String(payload.sampleId).trim();
+      if (existingIds.has(sampleId) || existingIds.has(safeCellValue_(sampleId))) {
+        const error = new Error("Duplicate Sample ID. No new rows were saved.");
+        error.code = "DUPLICATE_SAMPLE_ID";
+        throw error;
+      }
+      existingIds.add(sampleId);
+    }
+
     const values = payloads.map((payload) => FIELD_KEYS.map((key) => {
       if (key === "submittedAt") {
         return safeCellValue_(payload.submittedAt || formatKoreaDateTime_(new Date()));
@@ -163,10 +194,18 @@ function appendResponseRows_(payloads, batchId) {
       if (key === "batchId") {
         return safeCellValue_(batchId || payload.batchId || "");
       }
+      if (key === "sampleId") return safeCellValue_(String(payload.sampleId).trim());
       return safeCellValue_(payload[key] ?? "");
     }));
 
-    sheet.getRange(sheet.getLastRow() + 1, 1, values.length, FIELD_KEYS.length).setValues(values);
+    const target = sheet.getRange(sheet.getLastRow() + 1, 1, values.length, FIELD_KEYS.length);
+    target.setValues(values);
+    SpreadsheetApp.flush();
+    const stored = target.getValues();
+    if (stored.length !== values.length || stored.some((row, i) => row.length !== FIELD_KEYS.length || row.some((value, j) => {
+      const expected = values[i][j];
+      return String(value) !== String(expected) && !(typeof expected === "string" && /^'[=+\-@]/.test(expected) && String(value) === expected.slice(1));
+    }))) throw new Error("Written rows could not be verified.");
   } finally {
     lock.releaseLock();
   }
@@ -253,7 +292,7 @@ function buildSummary_(spreadsheet) {
     ["rs762551", "AA", '=COUNTIF(Responses!H2:H,"AA")', "AC", '=COUNTIF(Responses!H2:H,"AC")'],
     ["rs2069514", "AA", '=COUNTIF(Responses!I2:I,"AA")', "AG", '=COUNTIF(Responses!I2:I,"AG")'],
     ["rs2472297", "TT", '=COUNTIF(Responses!J2:J,"TT")', "CT", '=COUNTIF(Responses!J2:J,"CT")'],
-    ["rs6968865", "TT", '=COUNTIF(Responses!K2:K,"TT")', "TG", '=COUNTIF(Responses!K2:K,"TG")']
+    ["rs6968865", "TT", '=COUNTIF(Responses!K2:K,"TT")', "AT", '=COUNTIF(Responses!K2:K,"AT")']
   ]);
   finishTemplateSheet_(sheet, 7);
 }

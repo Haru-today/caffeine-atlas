@@ -4,6 +4,11 @@ const vm = require("node:vm");
 
 const writes = [];
 let lastRow = 1;
+const cells = [];
+const receipts = new Map();
+let failWrite = false;
+let failReadback = false;
+let locked = false;
 
 const sheet = {
   getLastRow() {
@@ -15,7 +20,17 @@ const sheet = {
   },
   getRange(row, column, rowCount, columnCount) {
     return {
+      getValues() {
+        assert.equal(locked, true, "reads must hold the write lock");
+        if (failReadback && columnCount === 22) return [["mismatch"]];
+        return Array.from({ length: rowCount }, (_, i) => Array.from({ length: columnCount }, (_, j) => cells[row + i]?.[column + j] ?? ""));
+      },
       setValues(values) {
+        if (failWrite && row > 1) throw new Error("write failed");
+        values.forEach((valuesRow, i) => {
+          cells[row + i] ||= [];
+          valuesRow.forEach((value, j) => { cells[row + i][column + j] = value; });
+        });
         writes.push({ row, column, rowCount, columnCount, values });
         lastRow = Math.max(lastRow, row + values.length - 1);
         return this;
@@ -47,14 +62,16 @@ const sandbox = {
       };
     },
   },
+  CacheService: { getScriptCache() { return { get: key => receipts.get(key), put: (key, value) => receipts.set(key, value) }; } },
   SpreadsheetApp: {
+    flush() {},
     openById() {
       return spreadsheet;
     },
   },
   LockService: {
     getScriptLock() {
-      return { waitLock() {}, releaseLock() {} };
+      return { waitLock() { assert.equal(locked, false); locked = true; }, releaseLock() { locked = false; } };
     },
   },
   Utilities: {
@@ -87,7 +104,8 @@ function validRow(sampleId, genotype = "AA") {
     rs762551: genotype,
     rs2069514: "GG",
     rs2472297: "CC",
-    rs6968865: "GG",
+    rs6968865: "AA",
+    requestId: "a".repeat(32),
     score: 0,
     category: "각성형",
     metabolismSubtype: "고속 대사형",
@@ -105,6 +123,7 @@ const batchResponse = sandbox.doPost({
   postData: {
     contents: JSON.stringify({
       action: "batchSave",
+      requestId: "b".repeat(32),
       batchId: "batch-test-001",
       rows: [validRow("TEST-001"), validRow("TEST-002", "AC")],
     }),
@@ -129,6 +148,7 @@ const exampleResponse = sandbox.doPost({
   postData: {
     contents: JSON.stringify({
       action: "batchSave",
+      requestId: "b".repeat(32),
       batchId: "batch-example-skip",
       rows: [validRow("예시-저장안됨"), validRow("TEST-ACTUAL")],
     }),
@@ -146,6 +166,7 @@ const duplicateResponse = sandbox.doPost({
   postData: {
     contents: JSON.stringify({
       action: "batchSave",
+      requestId: "b".repeat(32),
       rows: [validRow("DUPLICATE"), validRow("DUPLICATE")],
     }),
   },
@@ -163,3 +184,39 @@ const noConsentResponse = sandbox.doPost({
 assert.equal(JSON.parse(noConsentResponse.text).ok, false);
 
 console.log("Google Apps Script batch tests passed");
+
+function post(payload) {
+  return JSON.parse(sandbox.doPost({ postData: { contents: JSON.stringify(payload) } }).text);
+}
+function status(requestId) {
+  return JSON.parse(sandbox.doGet({ parameter: { action: "saveStatus", requestId } }).text);
+}
+assert.equal(status("a".repeat(32)).state, "error");
+assert.equal(post(validRow(" UNIQUE ")).ok, true);
+assert.deepEqual(status("a".repeat(32)), { ok: true, state: "saved", savedCount: 1 });
+let before = lastRow;
+assert.equal(post(validRow("UNIQUE")).ok, false);
+assert.equal(lastRow, before);
+assert.equal(status("a".repeat(32)).code, "DUPLICATE_SAMPLE_ID");
+assert.equal(post({ action: "batchSave", requestId: "c".repeat(32), rows: [validRow("NEW"), validRow("TEST-001")] }).ok, false);
+assert.equal(lastRow, before, "existing ID must block the entire batch");
+for (const genotype of ["GG", "TG", "GT"]) {
+  assert.equal(post({ ...validRow("INVALID-" + genotype), rs6968865: genotype }).ok, false);
+}
+for (const genotype of ["AA", "AT", "TT", "모름"]) {
+  assert.equal(post({ ...validRow("AHR-" + genotype), rs6968865: genotype }).ok, true);
+}
+assert.equal(post(validRow("__proto__")).ok, true);
+assert.equal(post(validRow("__proto__")).ok, false);
+failWrite = true;
+assert.equal(post(validRow("FAIL-WRITE")).ok, false);
+assert.equal(status("a".repeat(32)).state, "error");
+failWrite = false;
+failReadback = true;
+assert.equal(post(validRow("FAIL-READBACK")).ok, false);
+assert.equal(status("a".repeat(32)).state, "error");
+failReadback = false;
+assert.equal(status("f".repeat(32)).state, "unconfirmed");
+assert.equal(status("bad").state, "unconfirmed");
+assert.equal(locked, false);
+console.log("Global duplicates, allele validation, and confirmed-write tests passed");

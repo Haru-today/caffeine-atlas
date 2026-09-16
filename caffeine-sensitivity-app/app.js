@@ -72,8 +72,8 @@
       evidenceGrade: "Moderate",
       weightText: "조절 46%",
       genotypes: [
-        { code: "GG", alleleCount: 0, evidenceScore: 0, label: "T 0개" },
-        { code: "TG", alleleCount: 1, evidenceScore: 0.5, label: "T 1개" },
+        { code: "AA", alleleCount: 0, evidenceScore: 0, label: "T 0개" },
+        { code: "AT", alleleCount: 1, evidenceScore: 0.5, label: "T 1개" },
         { code: "TT", alleleCount: 2, evidenceScore: 1, label: "T 2개" },
         { code: "unknown", alleleCount: null, evidenceScore: null, label: "모름" }
       ]
@@ -1109,17 +1109,10 @@
     elements.sheetSaveBtn.disabled = true;
     setSheetStatus("Google Sheets로 저장 요청을 보내는 중입니다.");
 
-    fetch(GOOGLE_SHEETS_ENDPOINT, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8"
-      },
-      body: JSON.stringify(payload)
-    }).then(function () {
-      setSheetStatus("저장 요청을 보냈습니다. Google Sheets에서 새 행을 확인해 주세요. 행이 없으면 Apps Script 웹앱 URL과 공개 권한을 다시 확인해야 합니다.", "success");
-    }).catch(function () {
-      setSheetStatus("저장 요청에 실패했습니다. Apps Script URL과 배포 권한을 확인해 주세요.", "error");
+    saveConfirmedPayload(payload, 1).then(function () {
+      setSheetStatus("Google Sheets에 1명 저장 완료. 서버에서 기록된 행을 확인했습니다.", "success");
+    }).catch(function (error) {
+      setSheetStatus(error.message, "error");
     }).finally(function () {
       elements.sheetSaveBtn.disabled = false;
     });
@@ -1376,7 +1369,7 @@
         throw new Error("한 번에 최대 " + MAX_BATCH_ROWS + "명까지 처리할 수 있습니다. 현재 " + dataRows.length + "명이 입력되어 있습니다.");
       }
 
-      var seenSampleIds = {};
+      var seenSampleIds = Object.create(null);
       return dataRows.map(function (entry) {
         return parseBatchRow(entry.row, entry.rowNumber, headerMap, seenSampleIds);
       });
@@ -1425,7 +1418,7 @@
     return "batch-" + getKoreaDateTimeString().replace(/[^0-9]/g, "").slice(0, 14) + "-" + Math.random().toString(36).slice(2, 8);
   }
 
-  function verifyBatchEndpointSupport() {
+  function requestEndpointStatus(parameters) {
     return new Promise(function (resolve, reject) {
       var callbackName = "caffeineBatchCapability_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
       var script = document.createElement("script");
@@ -1453,25 +1446,67 @@
         if (finished) return;
         finished = true;
         cleanup();
-        if (!response || !response.ok || !response.capabilities || response.capabilities.batchSave !== true) {
-          reject(new Error("Google Apps Script가 아직 엑셀 일괄 저장을 지원하지 않습니다. Code.gs를 최신 코드로 교체하고 웹앱을 새 버전으로 다시 배포해 주세요."));
-          return;
-        }
-        resolve(response.capabilities);
+        resolve(response);
+
       };
 
       script.async = true;
       script.src = GOOGLE_SHEETS_ENDPOINT
         + (GOOGLE_SHEETS_ENDPOINT.indexOf("?") === -1 ? "?" : "&")
-        + "action=capabilities&callback=" + encodeURIComponent(callbackName)
+        + parameters + "&callback=" + encodeURIComponent(callbackName)
         + "&_=" + Date.now();
       script.onerror = function () {
-        fail("Google Apps Script 일괄 저장 버전을 확인하지 못했습니다. Code.gs 재배포와 웹앱 접근 권한을 확인해 주세요.");
+        fail("저장 서버 응답을 확인하지 못했습니다. 전송 후라면 실제 저장 여부를 시트에서 확인해 주세요.");
       };
       timeoutId = window.setTimeout(function () {
-        fail("Google Apps Script 일괄 저장 버전 확인 시간이 초과되었습니다. Code.gs를 재배포한 뒤 다시 시도해 주세요.");
+        fail("서버 확인 시간이 초과되었습니다. 전송 후라면 재시도 전에 시트에서 실제 저장 여부를 확인해 주세요.");
       }, 8000);
       document.head.appendChild(script);
+    });
+  }
+
+  function verifyBatchEndpointSupport() {
+    return requestEndpointStatus("action=capabilities").then(function (response) {
+      var caps = response && response.capabilities;
+      if (!response || !response.ok || !caps || !caps.batchSave || !caps.confirmedSave || !caps.globalSampleIdCheck || caps.ahrAlleles !== "A/T") {
+        throw new Error("저장 서버 업데이트가 필요합니다. 관리자에게 문의해 주세요. 분석 결과는 내려받을 수 있으며, 저장 요청은 보내지 않았습니다.");
+      }
+      return caps;
+    });
+  }
+
+  function saveConfirmedPayload(payload, expectedCount) {
+    return verifyBatchEndpointSupport().then(function (caps) {
+      if (expectedCount > Number(caps.maxBatchRows)) throw new Error("서버의 일괄 저장 가능 인원을 초과했습니다.");
+      var bytes = new Uint8Array(16);
+      window.crypto.getRandomValues(bytes);
+      var requestId = Array.from(bytes, function (value) { return value.toString(16).padStart(2, "0"); }).join("");
+      payload.requestId = requestId;
+      var controller = new AbortController();
+      var timeout = window.setTimeout(function () { controller.abort(); }, 20000);
+      return fetch(GOOGLE_SHEETS_ENDPOINT, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      }).catch(function () {
+        // A failed transport can still have committed the write. Check its receipt.
+      }).then(function () {
+        window.clearTimeout(timeout);
+        function poll(attempt) {
+          return requestEndpointStatus("action=saveStatus&requestId=" + requestId).then(function (status) {
+            if (status && status.ok && status.state === "saved" && status.savedCount === expectedCount) return status;
+            if (status && status.state === "error") {
+              if (status.code === "DUPLICATE_SAMPLE_ID") throw new Error("이미 저장된 Sample ID가 있어 이번 요청은 저장하지 않았습니다. 기존 기록을 확인해 주세요.");
+              throw new Error("서버에서 저장을 확인하지 못했습니다. 재시도 전에 시트에서 실제 저장 여부를 확인해 주세요.");
+            }
+            if (attempt >= 5) throw new Error("저장 여부 미확인. 재시도 전에 Google Sheets에서 기록을 확인해 주세요.");
+            return new Promise(function (resolve) { window.setTimeout(resolve, 1500); }).then(function () { return poll(attempt + 1); });
+          });
+        }
+        return poll(0);
+      });
     });
   }
 
@@ -1509,35 +1544,18 @@
       elements.batchAnalyzeSaveBtn.textContent = "저장 기능 확인 중...";
       setBatchStatus(batchResults.length + "명의 분석이 완료되었습니다. Google Apps Script의 일괄 저장 지원 버전을 확인하고 있습니다.");
 
-      return verifyBatchEndpointSupport().then(function (capabilities) {
-        var endpointLimit = Number(capabilities.maxBatchRows) || MAX_BATCH_ROWS;
-        if (batchResults.length > endpointLimit) {
-          throw new Error("현재 Google Apps Script는 한 번에 최대 " + endpointLimit + "명까지 저장할 수 있습니다.");
-        }
-
-        elements.batchAnalyzeSaveBtn.textContent = "Google Sheets 저장 중...";
-        setBatchStatus(batchResults.length + "명의 분석이 완료되었습니다. Google Sheets에 일괄 저장 요청을 보내고 있습니다.");
-
-        return fetch(GOOGLE_SHEETS_ENDPOINT, {
-          method: "POST",
-          mode: "no-cors",
-          headers: {
-            "Content-Type": "text/plain;charset=utf-8"
-          },
-          body: JSON.stringify({
-            action: "batchSave",
-            batchId: buildBatchId(),
-            rows: batchResults.map(function (record) { return record.payload; })
-          })
-        });
-      }).then(function () {
-        setBatchStatus(batchResults.length + "명의 분석과 일괄 저장 요청이 완료되었습니다.", "success");
-        setBatchSheetStatus("Google Sheets에 " + batchResults.length + "명 저장 요청을 보냈습니다. 시트에서 새 행을 확인해 주세요.", "success");
+      return saveConfirmedPayload({
+        action: "batchSave",
+        batchId: buildBatchId(),
+        rows: batchResults.map(function (record) { return record.payload; })
+      }, batchResults.length).then(function () {
+        setBatchStatus(batchResults.length + "명의 분석과 저장이 완료되었습니다.", "success");
+        setBatchSheetStatus("Google Sheets에 " + batchResults.length + "명 저장 완료. 서버에서 기록된 행을 확인했습니다.", "success");
       });
     }).catch(function (error) {
       setBatchStatus(error && error.message ? error.message : "엑셀 처리 중 오류가 발생했습니다.", "error");
       if (!elements.batchResults.hidden) {
-        setBatchSheetStatus("Google Sheets 저장 요청을 보내지 못했습니다.", "error");
+        setBatchSheetStatus(error.message || "저장 여부를 확인하지 못했습니다. 시트의 실제 기록을 확인해 주세요.", "error");
       }
     }).finally(function () {
       elements.batchAnalyzeSaveBtn.disabled = !batchFile;
