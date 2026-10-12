@@ -523,12 +523,12 @@
   function updateReportMeta() {
     var info = getReportInfo();
     elements.reportMeta.innerHTML = [
-      "<span>Sample ID: " + info.sampleId + "</span>",
-      "<span>Report date: " + info.reportDate + "</span>",
-      "<span>Collection date: " + info.collectionDate + "</span>",
-      "<span>Specimen: " + info.sampleType + "</span>",
-      "<span>Sex: " + info.sex + "</span>",
-      "<span>운영기관: " + info.institution + "</span>"
+      "<span>Sample ID: " + escapeHtml(info.sampleId) + "</span>",
+      "<span>Report date: " + escapeHtml(info.reportDate) + "</span>",
+      "<span>Collection date: " + escapeHtml(info.collectionDate) + "</span>",
+      "<span>Specimen: " + escapeHtml(info.sampleType) + "</span>",
+      "<span>Sex: " + escapeHtml(info.sex) + "</span>",
+      "<span>운영기관: " + escapeHtml(info.institution) + "</span>"
     ].join("");
   }
 
