@@ -2905,3 +2905,11 @@ a {
     flex-direction: column;
   }
 }
+
+/* Shared LABDAM policy links and explicit genetic-data cloud storage disclosure. */
+.policy-links{margin:12px 0 0;font-size:.86rem;line-height:1.65;color:#546a74}
+.policy-links a,.privacy-genetic-note a,.consent-card a{color:#175d70;text-decoration:underline;text-underline-offset:3px}
+.policy-links a:focus-visible,.privacy-genetic-note a:focus-visible,.consent-card a:focus-visible{outline:2px solid #246e72;outline-offset:3px}
+.privacy-genetic-note{margin:16px 0 20px;padding:14px 18px;border-left:3px solid #a97a42;background:#fffaf1;color:#423a30;border-radius:4px;font-size:.88rem;line-height:1.65}
+.privacy-genetic-note strong{font-weight:760}
+.consent-card a{position:relative;z-index:1}

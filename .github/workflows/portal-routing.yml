@@ -17,4 +17,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test tests/portal-routing.test.cjs
+      - run: node --test tests/portal-routing.test.cjs tests/privacy-notices.test.cjs
