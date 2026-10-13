@@ -252,6 +252,6 @@ assert.equal(post(validRow("FAIL-READBACK")).ok, false);
 assert.equal(status("a".repeat(32)).state, "error");
 failReadback = false;
 assert.equal(status("f".repeat(32)).state, "unconfirmed");
-assert.equal(status("bad").state, "unconfirmed");
+assert.equal(status("bad").code, "AUTH_REQUIRED");
 assert.equal(locked, false);
 console.log("Global duplicates, allele validation, and confirmed-write tests passed");
