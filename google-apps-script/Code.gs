@@ -192,7 +192,7 @@ function saveBatchRows_(payload) {
   rows.forEach((row) => {
     validateResponsePayload_(row);
     const sampleId = String(row.sampleId).trim();
-    if (sampleIds[sampleId]) throw new Error(`Duplicate Sample ID in batch: ${sampleId}`);
+    if (sampleIds[sampleId]) { const error = new Error("Duplicate Sample ID in batch."); error.code = "DUPLICATE_SAMPLE_ID"; throw error; }
     sampleIds[sampleId] = true;
   });
 
