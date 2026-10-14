@@ -89,3 +89,15 @@ test("illustrative reference distribution is not described as verified populatio
   assert.match(source, /인구 백분위가 아닙니다/);
   assert.match(landing, /실제 인구집단의 백분위나 개인별 안전 섭취량은 아닙니다/);
 });
+
+
+test("four-SNP coverage is not misrepresented as predictive confidence", () => {
+  assert.match(analyzer, /<span>입력 완성도<\/span>/);
+  assert.match(analyzer, /예측 정확도·통계적 신뢰도를 의미하지 않습니다/);
+  assert.doesNotMatch(analyzer, /<span>신뢰도<\/span>/);
+  assert.match(source, /<span>SNP coverage<\/span>/);
+  assert.match(source, /<span>입력 완성도<\/span>/);
+  assert.doesNotMatch(source, /<span>Confidence<\/span>|<span>신뢰도<\/span>/);
+  // Keep historical JSON schema stable; only copy/labels change.
+  assert.match(source, /confidence: confidence/);
+});
