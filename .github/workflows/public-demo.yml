@@ -1,0 +1,43 @@
+name: Caffeine Atlas public symposium demo
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'caffeine-sensitivity-app/**'
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/public-demo.yml'
+      - 'PUBLIC-DEMO-RELEASE.md'
+  push:
+    branches: [main]
+    paths:
+      - 'caffeine-sensitivity-app/**'
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/public-demo.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  public-qr-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax of public analysis code
+        run: node --check caffeine-sensitivity-app/app.js
+      - name: Run all model, save, privacy, QR and public/demo-mode tests
+        run: node --test tests/*.test.cjs
+      - name: Ensure public site ships no direct Google Sheets endpoint
+        run: |
+          if grep -q 'https://script.google.com/macros/' caffeine-sensitivity-app/app.js; then
+            echo 'FAIL: direct Apps Script endpoint shipped in public QR demo'
+            exit 1
+          fi
+          grep -q 'var RESEARCH_STORAGE_MODE = false' caffeine-sensitivity-app/app.js
+          grep -q 'http-equiv="refresh" content="0; url=./caffeine-sensitivity-app/index.html"' index.html
