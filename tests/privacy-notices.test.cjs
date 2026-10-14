@@ -7,15 +7,33 @@ const vm = require("node:vm");
 
 const appDir = path.join(__dirname, "..", "caffeine-sensitivity-app");
 
-test("all Caffeine Atlas pages link to LABDAM privacy and service notices", () => {
+test("Caffeine Atlas public pages have independent privacy and terms links without LABDAM login", () => {
   for (const page of ["index.html", "analyzer.html", "account.html", "board.html", "board-write.html"]) {
     const html = fs.readFileSync(path.join(appDir, page), "utf8");
-    assert.match(html, /href="https:\/\/haru-today\.github\.io\/privacy\.html"/, page);
-    assert.match(html, /href="https:\/\/haru-today\.github\.io\/terms\.html"/, page);
+    assert.match(html, /href="https:\/\/haru-today\.github\.io\/caffeine-atlas\/privacy\.html"/, page);
+    assert.match(html, /href="https:\/\/haru-today\.github\.io\/caffeine-atlas\/terms\.html"/, page);
     assert.match(html, page === "analyzer.html"
       ? /styles\.css\?v=reference-clarification-20261014/
       : /styles\.css\?v=privacy-notice-20261013/, page);
   }
+});
+
+
+test("standalone public policy pages survive LABDAM root login cutover", () => {
+  const root = path.join(appDir, "..");
+  const privacy = fs.readFileSync(path.join(root, "privacy.html"), "utf8");
+  const terms = fs.readFileSync(path.join(root, "terms.html"), "utf8");
+  for (const text of [privacy, terms]) {
+    assert.match(text, /Caffeine Atlas/);
+    assert.match(text, /로그인/);
+    assert.match(text, /개인정보/);
+    assert.match(text, /href="\.\/caffeine-sensitivity-app\//);
+    assert.doesNotMatch(text, /href="\/labinsight\/|href="\/caffeine-atlas\/|cloudflareaccess\.com/);
+  }
+  assert.match(privacy, /공개 체험/);
+  assert.match(privacy, /확정되지 않았습니다/);
+  assert.match(terms, /연구·교육/);
+  assert.match(terms, /한국 전체 인구/);
 });
 
 test("genetic cloud storage consent discloses actual data fields and unknown retention", () => {
