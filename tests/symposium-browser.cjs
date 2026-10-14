@@ -53,7 +53,8 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     }
     assert.equal(await page.locator("#resultReport").isVisible(), true);
     assert.match(await page.locator("#referenceRankText").textContent(), /모형 참고 순서/);
-    assert.equal(await page.locator(".reference-scope-note").isVisible(), true);
+    assert.equal(await page.locator(".chart-card .reference-scope-note").isVisible(), true);
+    assert.equal(await page.locator(".layer-stack .reference-scope-note").isVisible(), true);
     assert.match(await page.locator(".layer-stack").textContent(), /입력 완성도/);
 
     // Shared-event-device hygiene: previous demo inputs must be removable.
