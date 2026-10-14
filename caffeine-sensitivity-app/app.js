@@ -667,10 +667,10 @@
     elements.confidenceScore.textContent = confidence + "%";
     elements.confidenceBar.style.width = confidence + "%";
 
-    elements.referenceRankText.textContent = hasScore ? "모형 참고 순서 " + sensitivityRank + "/100" : "비교 불가";
-    elements.percentileText.textContent = hasScore ? "임의 구간 기반 참고값 · 실제 인구 순위 아님" : "확인된 유전자형 없음";
+    elements.referenceRankText.textContent = hasScore ? "참조자료 대비 순서 " + sensitivityRank + "/100" : "비교 불가";
+    elements.percentileText.textContent = hasScore ? "검사결과 기반 연구 참조분포 · 100단위 환산" : "확인된 유전자형 없음";
     elements.detailCategory.textContent = category.label;
-    elements.detailPercentile.textContent = hasScore ? "모형 내 " + lastResult.percentile.toFixed(1) + "% 지점" : "산출 없음";
+    elements.detailPercentile.textContent = hasScore ? "연구 참조분포의 " + lastResult.percentile.toFixed(1) + "% 지점" : "산출 없음";
     elements.detailInputQuality.textContent = "확인 " + valid.length + "개 · 모름 " + unknownCount + "개";
     elements.metabolismTypeName.textContent = metabolismSubtype.name;
     elements.metabolismTypeDesc.textContent = metabolismSubtype.desc;
@@ -973,9 +973,9 @@
       "점수: " + (typeof lastResult.score === "number" ? lastResult.score.toFixed(1) + "점" : "산출 없음"),
       "유형: " + lastResult.category.label,
       "대사 레이어 판정: " + lastResult.metabolismSubtype.name,
-      "모형 참고 순서(100단위 환산): " + (typeof lastResult.sensitivityRank === "number" ? lastResult.sensitivityRank + "/100" : "산출 없음"),
-      "모형 내부 분포의 위치: " + (typeof lastResult.percentile === "number" ? lastResult.percentile.toFixed(1) + "%" : "산출 없음"),
-      "참고: 이 분포는 7개의 임의 예시 구간으로 만든 모형 지표이며 실제 한국인 순위나 인구 백분위가 아닙니다.",
+      "참조자료 대비 순서(100단위 환산): " + (typeof lastResult.sensitivityRank === "number" ? lastResult.sensitivityRank + "/100" : "산출 없음"),
+      "연구 참조분포의 상대 위치: " + (typeof lastResult.percentile === "number" ? lastResult.percentile.toFixed(1) + "%" : "산출 없음"),
+      "참고: 연구에 사용된 실제 검사결과를 참고해 정리한 7개 점수 구간의 비교분포입니다. 표시된 순서는 연구 참조자료 기준의 100단위 환산값으로, 대한민국 전체 인구를 대표하거나 임상적으로 검증된 민감도 순위는 아닙니다.",
       layerText.join("\n"),
       "",
       "[유전자형]",
@@ -1674,7 +1674,7 @@
 
     if (clonedCanvas) {
       chartImage.src = elements.chart.toDataURL("image/png");
-      chartImage.alt = "7개 임의 구간에 따른 모형 참고분포 그래프";
+      chartImage.alt = "검사결과 기반 연구 참조분포의 7개 점수 구간 그래프";
       chartImage.className = "saved-chart-image";
       clonedCanvas.replaceWith(chartImage);
     }
@@ -1735,7 +1735,7 @@
     var hasScore = typeof result.score === "number";
     var pdfScoreText = hasScore ? result.score.toFixed(1) : "--";
     var pdfScoreUnit = hasScore ? "<small> 점</small>" : "";
-    var pdfRankText = typeof result.sensitivityRank === "number" ? "모형 " + result.sensitivityRank + "/100" : "산출 없음";
+    var pdfRankText = typeof result.sensitivityRank === "number" ? "참조자료 " + result.sensitivityRank + "/100" : "산출 없음";
     var pdfPercentileText = typeof result.percentile === "number" ? result.percentile.toFixed(1) + "%" : "산출 없음";
     var pdfMarker = "";
     if (hasScore) {
@@ -1747,7 +1747,7 @@
       ].join("");
     }
     var pdfDistributionChart = [
-      '<svg class="distribution-chart" viewBox="0 0 100 60" role="img" aria-label="예시 7구간의 모형 참고분포에서의 위치">',
+      '<svg class="distribution-chart" viewBox="0 0 100 60" role="img" aria-label="연구 참조분포 7개 점수 구간에서의 위치">',
       '<line class="distribution-grid" x1="0" y1="21" x2="100" y2="21"></line>',
       '<line class="distribution-grid" x1="0" y1="38" x2="100" y2="38"></line>',
       '<polygon class="distribution-area" points="0,54 ', pdfChartPoints, ' 100,54"></polygon>',
@@ -1780,10 +1780,10 @@
       "<section class=\"pdf-meta\"><div><span>Sample ID</span><strong>", escapeHtml(info.sampleId), "</strong></div><div><span>Report date</span><strong>", escapeHtml(info.reportDate), "</strong></div><div><span>Collection</span><strong>", escapeHtml(info.collectionDate), "</strong></div><div><span>Specimen / Sex</span><strong>", escapeHtml(info.sampleType), " / ", escapeHtml(info.sex), "</strong></div><div><span>Institution</span><strong>", escapeHtml(info.institution), "</strong></div></section>",
       "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", escapeHtml(result.category), "</h2><p>", escapeHtml(result.typeDescription), "</p></div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div><div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>각성형</span><span>잠잠형</span><span>잠꾸러기형</span></div></div></section>",
       "<section class=\"metrics\"><div class=\"metric\"><span>Result type</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>Metabolism</span><strong>", escapeHtml(result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>Model position</span><strong>", pdfRankText, "</strong></div><div class=\"metric\"><span>SNP coverage</span><strong>", result.confidence, "%</strong></div></section>",
-      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><div><h3>모형 참고분포</h3><span>임의 7구간 · 인구 백분위 아님</span></div><strong>", pdfPercentileText, "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>입력 완성도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
+      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><div><h3>연구 참조분포</h3><span>검사결과 기반 · 7개 점수 구간</span></div><strong>", pdfPercentileText, "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>입력 완성도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
       "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>Score</th></tr></thead><tbody>", genotypeRows, "</tbody></table></div></section>",
       "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3><strong>", escapeHtml(result.title), "</strong><p>", escapeHtml(result.interpretation), "</p></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드</h3><ul>", recommendations, "</ul></div></section>",
-      "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.join(" ")), " 예시 7구간의 모형 참고분포는 실제 한국인 인구 백분위 또는 임상적 순위를 의미하지 않습니다.</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
+      "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.join(" ")), " 검사결과를 참고해 구성한 7구간 비교도표로, 전체 한국인 인구를 대표하는 임상 검증 순위를 의미하지 않습니다.</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
       "</main><script>window.addEventListener('load',function(){if(navigator.webdriver)return;var ready=document.fonts?document.fonts.ready:Promise.resolve();ready.then(function(){setTimeout(function(){window.print()},350)})});<\/script></body></html>"
     ].join("");
   }
