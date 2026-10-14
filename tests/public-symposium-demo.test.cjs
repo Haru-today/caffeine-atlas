@@ -79,14 +79,15 @@ test("one-tap example is explicitly fictional and does not enable research uploa
   assert.match(source, /if \(!RESEARCH_STORAGE_MODE\)\s*\{\s*\/\/ Important for a shared symposium demo device/);
 });
 
-test("illustrative reference distribution is not described as verified population percentile", () => {
-  assert.match(analyzer, /Illustrative model bins/);
-  assert.match(analyzer, /모형 참고분포의 위치/);
-  assert.match(analyzer, /대한민국 인구 순위나 실제 관찰된 민감도 백분위를 뜻하지 않습니다/);
-  assert.doesNotMatch(analyzer, /KPGP PRS distribution|비슷한 사람들 중 위치|다른 사람들과 비교한 위치/);
-  assert.doesNotMatch(source, /대한민국 평균 100명 중|다른 사람들과 비교한 위치|Reference rank/);
-  assert.match(source, /모형 참고 순서/);
-  assert.match(source, /인구 백분위가 아닙니다/);
+test("research reference distribution is not falsely labeled arbitrary or nationwide validated", () => {
+  assert.match(analyzer, /Research reference data/);
+  assert.match(analyzer, /연구 참조분포에서의 위치/);
+  assert.match(analyzer, /연구에서 확보한 검사결과를 참고해 구성한 7개 점수 구간/);
+  assert.match(analyzer, /전체 인구의 대표 순위나 임상적 카페인 민감도 진단을 뜻하지 않습니다/);
+  assert.doesNotMatch(analyzer, /KPGP PRS distribution|비슷한 사람들 중 위치|임의 구간/);
+  assert.doesNotMatch(source, /대한민국 평균 100명 중|7개의 임의 예시 구간|임의 7구간/);
+  assert.match(source, /참조자료 대비 순서/);
+  assert.match(source, /전체 인구를 대표하거나 임상적으로 검증된 민감도 순위는 아닙니다/);
   assert.match(landing, /실제 인구집단의 백분위나 개인별 안전 섭취량은 아닙니다/);
 });
 
