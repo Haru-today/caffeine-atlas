@@ -97,7 +97,10 @@
     { raw: 1, level: 1 }
   ];
 
-  var GOOGLE_SHEETS_ENDPOINT = "https://script.google.com/macros/s/AKfycbxkjHn8rhkkRL-hcnTHyrUcHD0ldsEL8PKAwFXUmkrum06PiGbKD50zOKF1tG-qdI-G/exec";
+  // The public QR demo is offline-first for analysis: no research upload API.
+  // A separately hosted, Access-authenticated research build enables storage.
+  var RESEARCH_STORAGE_MODE = false;
+  var GOOGLE_SHEETS_ENDPOINT = "";
   var FIXED_INSTITUTION = "동의대학교 임상병리학과 분자진단연구실";
   var KOREA_TIME_ZONE = "Asia/Seoul";
   var BATCH_SHEET_NAME = "일괄 입력";
@@ -1092,6 +1095,10 @@
   }
 
   function saveToGoogleSheets() {
+    if (!RESEARCH_STORAGE_MODE || !GOOGLE_SHEETS_ENDPOINT) {
+      setSheetStatus("공개 체험에서는 연구 데이터가 서버에 저장되지 않습니다. 리포트 PDF 다운로드를 이용하세요.", "error");
+      return;
+    }
     var payload = buildSheetPayload();
     if (!payload) {
       setSheetStatus("먼저 리포트 생성 버튼을 눌러 결과를 생성해 주세요.", "error");
@@ -1119,7 +1126,7 @@
   }
 
   function setInputMode(mode) {
-    var isBatch = mode === "batch";
+    var isBatch = RESEARCH_STORAGE_MODE && mode === "batch";
     elements.singleModeBtn.classList.toggle("active", !isBatch);
     elements.batchModeBtn.classList.toggle("active", isBatch);
     elements.singleModeBtn.setAttribute("aria-selected", String(!isBatch));
@@ -1419,6 +1426,9 @@
   }
 
   function requestEndpointStatus(parameters) {
+    if (!RESEARCH_STORAGE_MODE || !GOOGLE_SHEETS_ENDPOINT) {
+      return Promise.reject(new Error("공개 체험에서는 연구 데이터 저장 기능이 제공되지 않습니다."));
+    }
     return new Promise(function (resolve, reject) {
       var callbackName = "caffeineBatchCapability_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
       var script = document.createElement("script");
@@ -1476,6 +1486,9 @@
   }
 
   function saveConfirmedPayload(payload, expectedCount) {
+    if (!RESEARCH_STORAGE_MODE || !GOOGLE_SHEETS_ENDPOINT) {
+      return Promise.reject(new Error("공개 체험에서는 연구 데이터 저장 기능이 제공되지 않습니다."));
+    }
     return verifyBatchEndpointSupport().then(function (caps) {
       if (expectedCount > Number(caps.maxBatchRows)) throw new Error("서버의 일괄 저장 가능 인원을 초과했습니다.");
       var bytes = new Uint8Array(16);
@@ -1511,6 +1524,10 @@
   }
 
   function processBatchUpload() {
+    if (!RESEARCH_STORAGE_MODE || !GOOGLE_SHEETS_ENDPOINT) {
+      setBatchStatus("공개 체험에서는 일괄 서버 저장이 제공되지 않습니다.", "error");
+      return;
+    }
     if (!batchFile) {
       setBatchStatus("먼저 작성한 엑셀 파일을 선택해 주세요.", "error");
       return;
