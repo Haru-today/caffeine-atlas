@@ -60,8 +60,8 @@ test("visible public notices accurately disclose data handling limitations", () 
   assert.match(analyzer, /상세 리포트는 파일로 내려받을 수 있습니다/);
   assert.match(analyzer, /브라우저의 ‘PDF로 저장’ 기능을 이용하세요/);
   assert.match(analyzer, /연구·교육용 해석 리포트이며 질병 진단/);
-  assert.match(analyzer, /https:\/\/haru-today\.github\.io\/privacy\.html/);
-  assert.match(analyzer, /https:\/\/haru-today\.github\.io\/terms\.html/);
+  assert.match(analyzer, /https:\/\/haru-today\.github\.io\/caffeine-atlas\/privacy\.html/);
+  assert.match(analyzer, /https:\/\/haru-today\.github\.io\/caffeine-atlas\/terms\.html/);
 });
 
 
