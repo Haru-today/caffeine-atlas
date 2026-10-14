@@ -57,7 +57,8 @@ test("public Caffeine Atlas bundle has no working Google Apps Script endpoint", 
 
 test("visible public notices accurately disclose data handling limitations", () => {
   assert.match(analyzer, /공개 체험에서 입력한 내용은 Google Sheets로 전송하거나 저장하지 않습니다/);
-  assert.match(analyzer, /리포트는 기기에 직접 내려받을 수 있습니다/);
+  assert.match(analyzer, /상세 리포트는 파일로 내려받을 수 있습니다/);
+  assert.match(analyzer, /브라우저의 ‘PDF로 저장’ 기능을 이용하세요/);
   assert.match(analyzer, /연구·교육용 해석 리포트이며 질병 진단/);
   assert.match(analyzer, /https:\/\/haru-today\.github\.io\/privacy\.html/);
   assert.match(analyzer, /https:\/\/haru-today\.github\.io\/terms\.html/);
