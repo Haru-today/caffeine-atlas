@@ -12,7 +12,9 @@ test("all Caffeine Atlas pages link to LABDAM privacy and service notices", () =
     const html = fs.readFileSync(path.join(appDir, page), "utf8");
     assert.match(html, /href="https:\/\/haru-today\.github\.io\/privacy\.html"/, page);
     assert.match(html, /href="https:\/\/haru-today\.github\.io\/terms\.html"/, page);
-    assert.match(html, /styles\.css\?v=privacy-notice-20261013/, page);
+    assert.match(html, page === "analyzer.html"
+      ? /styles\.css\?v=symposium-demo-20261014-b/
+      : /styles\.css\?v=privacy-notice-20261013/, page);
   }
 });
 
