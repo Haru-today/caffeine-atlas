@@ -127,6 +127,7 @@
 
   var elements = {
     geneGrid: document.getElementById("geneGrid"),
+    exampleDemoBtn: document.getElementById("exampleDemoBtn"),
     sampleId: document.getElementById("sampleId"),
     reportDate: document.getElementById("reportDate"),
     collectionDate: document.getElementById("collectionDate"),
@@ -899,8 +900,42 @@
     return normalizedBins[normalizedBins.length - 1].level;
   }
 
+  // Fictional demonstration values ONLY. These do not represent a real
+  // individual, population baseline, medical interpretation or a sample
+  // collected for research. A manual user input takes precedence unless
+  // this button is explicitly pressed.
+  function showExampleReport() {
+    if (RESEARCH_STORAGE_MODE) return;
+    var exampleGenotypes = [
+      ["rs762551", "AA"],
+      ["rs2069514", "GG"],
+      ["rs2472297", "CC"],
+      ["rs6968865", "AT"]
+    ];
+    elements.sampleId.value = "DEMO-001";
+    elements.reportDate.value = getKoreaDateString();
+    elements.collectionDate.value = getKoreaDateString();
+    elements.sampleType.value = "Raw genotype data";
+    elements.sex.value = "Not provided";
+    setInputMode("single");
+    exampleGenotypes.forEach(function (pair) {
+      setSelection(pair[0], pair[1]);
+    });
+    // The normal validation and report functions remain the sole analyzer.
+    analyze();
+  }
+
   function resetAll() {
     selections = {};
+    if (!RESEARCH_STORAGE_MODE) {
+      // Important for a shared symposium demo device: do not carry an
+      // identifier or genotype entry into the next visitor's session.
+      elements.sampleId.value = "";
+      elements.sampleType.value = "Buccal swab";
+      elements.sex.value = "Not provided";
+      elements.reportDate.value = getKoreaDateString();
+      elements.collectionDate.value = getKoreaDateString();
+    }
     var buttons = document.querySelectorAll(".gt-button");
     for (var i = 0; i < buttons.length; i += 1) {
       buttons[i].classList.remove("active");
@@ -1789,6 +1824,7 @@
     });
 
     elements.analyzeBtn.addEventListener("click", analyze);
+    if (elements.exampleDemoBtn) elements.exampleDemoBtn.addEventListener("click", showExampleReport);
     elements.editBtn.addEventListener("click", showInputScreen);
     elements.resetBtn.addEventListener("click", resetAll);
     elements.copyBtn.addEventListener("click", copyResult);
