@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>리포트 생성 | Caffeine Atlas</title>
-  <link rel="stylesheet" href="./styles.css?v=privacy-notice-20261013">
+  <link rel="stylesheet" href="./styles.css?v=symposium-demo-20261014-b">
 </head>
 <body class="public-demo">
   <div class="app-shell">
@@ -28,7 +28,7 @@
       <div>
         <p class="eyebrow">Report generator</p>
         <h1>카페인 반응 리포트 생성</h1>
-        <p class="top-summary">한 명씩 직접 입력하거나 지정 엑셀 양식으로 여러 명을 한 번에 분석할 수 있습니다. 확인할 수 없는 유전자형은 ‘모름’으로 진행할 수 있습니다.</p>
+        <p class="top-summary">4개 SNP 유전자형을 직접 선택하거나 가상 예시 리포트로 체험할 수 있습니다. 분석 결과는 연구·교육용 모델 지표이며 개인의 실제 카페인 반응이나 안전 섭취량을 확정하지 않습니다.</p>
       </div>
       <div class="top-actions">
         <div class="privacy-chip">브라우저 내부 계산</div>
@@ -60,6 +60,13 @@
         <strong>회원가입 없이 체험하는 Caffeine Atlas</strong>
         <p>4개 SNP 유전자형을 선택하면 연구·교육용 모델 지표와 리포트를 확인할 수 있습니다. 공개 체험에서 입력한 내용은 Google Sheets로 전송하거나 저장하지 않습니다. 실명·환자번호·학번·실제 식별 가능한 검체 정보는 입력하지 마세요.</p>
       </aside>
+      <div class="public-example-banner public-only" aria-labelledby="example-title">
+        <div>
+          <strong id="example-title">유전자형을 모르더라도 체험할 수 있습니다.</strong>
+          <p id="demo-example-explain">실제 사람이 아닌 가상 예시(A A / G G / C C / A T)를 자동 입력해 리포트 화면으로 이동합니다. 현재 입력한 내용은 예시 값으로 대체되며, 연구 데이터 저장은 하지 않습니다.</p>
+        </div>
+        <button class="tool-button primary" id="exampleDemoBtn" type="button" aria-describedby="demo-example-explain">가상 예시 리포트 바로 보기</button>
+      </div>
       <section class="input-panel input-screen" id="inputScreen" aria-labelledby="input-title">
         <div class="section-head">
           <div>
@@ -374,7 +381,7 @@
           <p id="sheetSyncStatus" class="sync-status">Google Sheets 저장은 동의 후 결과 화면에서 실행할 수 있습니다.</p>
         </div>
 
-        <div class="public-download-note public-only" role="note">리포트는 기기에 직접 내려받을 수 있습니다. 공개 체험 결과는 연구용 Google Sheets에 업로드되지 않습니다.</div>
+        <div class="public-download-note public-only" role="note">상세 리포트는 파일로 내려받을 수 있습니다. PDF는 별도 인쇄 화면에서 브라우저의 ‘PDF로 저장’ 기능을 이용하세요. 공개 체험 결과는 연구용 Google Sheets에 업로드되지 않습니다.</div>
         <div class="action-row detailed-actions">
           <button class="tool-button primary research-only" id="sheetSaveBtn" type="button" title="동의한 리포트 데이터를 Google Sheets에 저장">
             <span aria-hidden="true">↥</span>
@@ -384,9 +391,9 @@
             <span aria-hidden="true">↓</span>
             상세 리포트 저장
           </button>
-          <button class="tool-button primary" id="pdfBtn" type="button" title="A4 PDF 리포트 저장">
+          <button class="tool-button primary" id="pdfBtn" type="button" title="PDF용 인쇄 화면 열기">
             <span aria-hidden="true">↓</span>
-            PDF 리포트
+            PDF 저장 화면 열기
           </button>
           <button class="tool-button" id="copyBtn" type="button" title="결과 텍스트 복사">
             <span aria-hidden="true">⧉</span>
@@ -402,6 +409,6 @@
 
   <nav class="policy-links" aria-label="이용 정책" style="text-align:center;margin:12px auto 24px;font-size:.9rem;"><p class="policy-links"><a href="https://haru-today.github.io/privacy.html">개인정보 처리 안내</a> · <a href="https://haru-today.github.io/terms.html">서비스 이용 안내</a></p></nav>
   <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
-  <script src="./app.js?v=public-demo-20261014"></script>
+  <script src="./app.js?v=symposium-demo-20261014-b"></script>
 </body>
 </html>
