@@ -2942,3 +2942,37 @@ body.public-demo .research-only, body.research-mode .public-only { display: none
   .public-demo-notice p { font-size: .86rem; }
   .public-download-note { font-size: .85rem; }
 }
+
+/* One-tap fictional example for visitors without genotype results. */
+.public-example-banner {
+  margin: 0 0 20px;
+  padding: 17px 20px;
+  border: 1px solid #cbdceb;
+  background: #fff;
+  border-radius: 14px;
+  color: #193451;
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+}
+.public-example-banner strong { display: block; font-size: 1.06rem; line-height: 1.45; }
+.public-example-banner p { color: #4b6075; font-size: .9rem; line-height: 1.6; margin: 6px 0 0; max-width: 580px; }
+.public-example-banner .tool-button { flex-shrink: 0; min-height: 48px; text-align: center; }
+.public-example-banner .tool-button:focus-visible { outline: 3px solid #245baa; outline-offset: 3px; }
+@media (max-width: 760px) {
+  .public-example-banner { flex-direction: column; align-items: stretch; padding: 14px 15px; gap: 13px; }
+  .public-example-banner p { font-size: .85rem; }
+  .public-example-banner .tool-button { width: 100%; }
+}
+
+/* Scientific scope for simulated model reference bins (not population centiles). */
+.reference-scope-note {
+  color: #495d70;
+  font-size: .84rem;
+  line-height: 1.6;
+  margin: 10px 0 0;
+  padding: 9px 12px;
+  border-left: 2px solid #97acc7;
+  background: #f6f8fc;
+}

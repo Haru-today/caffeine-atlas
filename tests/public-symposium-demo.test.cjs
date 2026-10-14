@@ -57,8 +57,35 @@ test("public Caffeine Atlas bundle has no working Google Apps Script endpoint", 
 
 test("visible public notices accurately disclose data handling limitations", () => {
   assert.match(analyzer, /공개 체험에서 입력한 내용은 Google Sheets로 전송하거나 저장하지 않습니다/);
-  assert.match(analyzer, /리포트는 기기에 직접 내려받을 수 있습니다/);
+  assert.match(analyzer, /상세 리포트는 파일로 내려받을 수 있습니다/);
+  assert.match(analyzer, /브라우저의 ‘PDF로 저장’ 기능을 이용하세요/);
   assert.match(analyzer, /연구·교육용 해석 리포트이며 질병 진단/);
   assert.match(analyzer, /https:\/\/haru-today\.github\.io\/privacy\.html/);
   assert.match(analyzer, /https:\/\/haru-today\.github\.io\/terms\.html/);
+});
+
+
+test("one-tap example is explicitly fictional and does not enable research uploads", () => {
+  assert.match(analyzer, /id="exampleDemoBtn"/);
+  assert.match(analyzer, /가상 예시 리포트 바로 보기/);
+  assert.match(analyzer, /실제 사람이 아닌 가상 예시/);
+  assert.match(source, /function showExampleReport\(\)/);
+  assert.match(source, /if \(RESEARCH_STORAGE_MODE\) return;/);
+  for (const [rsid, genotype] of [["rs762551", "AA"], ["rs2069514", "GG"],
+    ["rs2472297", "CC"], ["rs6968865", "AT"]]) {
+    assert.ok(source.includes('["' + rsid + '", "' + genotype + '"]'));
+  }
+  assert.match(source, /elements\.sampleId\.value = "DEMO-001"/);
+  assert.match(source, /if \(!RESEARCH_STORAGE_MODE\)\s*\{\s*\/\/ Important for a shared symposium demo device/);
+});
+
+test("illustrative reference distribution is not described as verified population percentile", () => {
+  assert.match(analyzer, /Illustrative model bins/);
+  assert.match(analyzer, /모형 참고분포의 위치/);
+  assert.match(analyzer, /대한민국 인구 순위나 실제 관찰된 민감도 백분위를 뜻하지 않습니다/);
+  assert.doesNotMatch(analyzer, /KPGP PRS distribution|비슷한 사람들 중 위치|다른 사람들과 비교한 위치/);
+  assert.doesNotMatch(source, /대한민국 평균 100명 중|다른 사람들과 비교한 위치|Reference rank/);
+  assert.match(source, /모형 참고 순서/);
+  assert.match(source, /인구 백분위가 아닙니다/);
+  assert.match(landing, /실제 인구집단의 백분위나 개인별 안전 섭취량은 아닙니다/);
 });

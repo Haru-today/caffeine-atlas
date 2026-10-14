@@ -39,6 +39,29 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.equal(await page.locator("#batchModeBtn").isVisible(), false);
     assert.equal(await page.locator("#sheetConsent").isVisible(), false);
 
+    // The poster audience generally has no personal genotyping data.
+    // Explicit, fictional one-tap example must produce a full report.
+    assert.equal(await page.locator("#exampleDemoBtn").isVisible(), true);
+    await page.locator("#exampleDemoBtn").click();
+    assert.equal(await page.locator("#sampleId").inputValue(), "DEMO-001");
+    for (const [gene, genotype] of [
+      ["rs762551", "AA"], ["rs2069514", "GG"],
+      ["rs2472297", "CC"], ["rs6968865", "AT"]
+    ]) {
+      assert.equal(await page.locator('[data-gene="' + gene + '"][data-genotype="' + genotype + '"]').getAttribute("class")
+        .then(classes => classes.includes("active")), true, gene);
+    }
+    assert.equal(await page.locator("#resultReport").isVisible(), true);
+    assert.match(await page.locator("#referenceRankText").textContent(), /모형 참고 순서/);
+    assert.equal(await page.locator(".reference-scope-note").isVisible(), true);
+
+    // Shared-event-device hygiene: previous demo inputs must be removable.
+    await page.locator("#editBtn").click();
+    await page.locator("#resetBtn").click();
+    assert.equal(await page.locator("#sampleId").inputValue(), "");
+    assert.equal(await page.locator(".gt-button.active").count(), 0);
+
+    // The original manual 4-SNP input and PDF flow also remain functional.
     await page.locator("#sampleId").fill("DEMO-001");
     for (const [gene, genotype] of [
       ["rs762551", "AA"],
@@ -66,6 +89,8 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     const content = await popup.locator("body").textContent();
     assert.match(content, /DEMO-001/);
     assert.match(content, /rs6968865|AHR/);
+    assert.match(content, /모형 참고분포/);
+    assert.match(content, /실제 한국인 인구 백분위/);
     await popup.close();
 
     assert.deepEqual(outgoing, [], name + ": unapproved Sheets API call observed");
@@ -74,7 +99,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       document.documentElement.scrollWidth > window.innerWidth + 1);
     assert.equal(overflow, false, name + ": horizontal overflow");
     await page.screenshot({ path: path.join(artifacts, name + ".png"), fullPage: true });
-    console.log("PASS " + name + " — QR route, public 4-SNP analyzer, downloadable report and PDF popup");
+    console.log("PASS " + name + " — QR, one-tap fictional demo, safe reset, manual SNP, downloads, PDF and no Sheets calls");
   } finally {
     await context.close();
     await browser.close();

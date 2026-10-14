@@ -127,6 +127,7 @@
 
   var elements = {
     geneGrid: document.getElementById("geneGrid"),
+    exampleDemoBtn: document.getElementById("exampleDemoBtn"),
     sampleId: document.getElementById("sampleId"),
     reportDate: document.getElementById("reportDate"),
     collectionDate: document.getElementById("collectionDate"),
@@ -666,10 +667,10 @@
     elements.confidenceScore.textContent = confidence + "%";
     elements.confidenceBar.style.width = confidence + "%";
 
-    elements.referenceRankText.textContent = hasScore ? "대한민국 평균 100명 중 " + sensitivityRank + "등" : "비교 불가";
-    elements.percentileText.textContent = hasScore ? "카페인 민감도가 높은 순서 기준" : "확인된 유전자형 없음";
+    elements.referenceRankText.textContent = hasScore ? "모형 참고 순서 " + sensitivityRank + "/100" : "비교 불가";
+    elements.percentileText.textContent = hasScore ? "임의 구간 기반 참고값 · 실제 인구 순위 아님" : "확인된 유전자형 없음";
     elements.detailCategory.textContent = category.label;
-    elements.detailPercentile.textContent = hasScore ? lastResult.percentile.toFixed(1) + "% 위치" : "산출 없음";
+    elements.detailPercentile.textContent = hasScore ? "모형 내 " + lastResult.percentile.toFixed(1) + "% 지점" : "산출 없음";
     elements.detailInputQuality.textContent = "확인 " + valid.length + "개 · 모름 " + unknownCount + "개";
     elements.metabolismTypeName.textContent = metabolismSubtype.name;
     elements.metabolismTypeDesc.textContent = metabolismSubtype.desc;
@@ -840,7 +841,7 @@
     ctx.save();
     ctx.translate(16, padTop + chartH / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText("참조분포", 0, 0);
+    ctx.fillText("예시 분포", 0, 0);
     ctx.restore();
 
     if (typeof userScore === "number") {
@@ -899,8 +900,42 @@
     return normalizedBins[normalizedBins.length - 1].level;
   }
 
+  // Fictional demonstration values ONLY. These do not represent a real
+  // individual, population baseline, medical interpretation or a sample
+  // collected for research. A manual user input takes precedence unless
+  // this button is explicitly pressed.
+  function showExampleReport() {
+    if (RESEARCH_STORAGE_MODE) return;
+    var exampleGenotypes = [
+      ["rs762551", "AA"],
+      ["rs2069514", "GG"],
+      ["rs2472297", "CC"],
+      ["rs6968865", "AT"]
+    ];
+    elements.sampleId.value = "DEMO-001";
+    elements.reportDate.value = getKoreaDateString();
+    elements.collectionDate.value = getKoreaDateString();
+    elements.sampleType.value = "Raw genotype data";
+    elements.sex.value = "Not provided";
+    setInputMode("single");
+    exampleGenotypes.forEach(function (pair) {
+      setSelection(pair[0], pair[1]);
+    });
+    // The normal validation and report functions remain the sole analyzer.
+    analyze();
+  }
+
   function resetAll() {
     selections = {};
+    if (!RESEARCH_STORAGE_MODE) {
+      // Important for a shared symposium demo device: do not carry an
+      // identifier or genotype entry into the next visitor's session.
+      elements.sampleId.value = "";
+      elements.sampleType.value = "Buccal swab";
+      elements.sex.value = "Not provided";
+      elements.reportDate.value = getKoreaDateString();
+      elements.collectionDate.value = getKoreaDateString();
+    }
     var buttons = document.querySelectorAll(".gt-button");
     for (var i = 0; i < buttons.length; i += 1) {
       buttons[i].classList.remove("active");
@@ -938,8 +973,9 @@
       "점수: " + (typeof lastResult.score === "number" ? lastResult.score.toFixed(1) + "점" : "산출 없음"),
       "유형: " + lastResult.category.label,
       "대사 레이어 판정: " + lastResult.metabolismSubtype.name,
-      "대한민국 평균 100명 중 민감도 높은 순: " + (typeof lastResult.sensitivityRank === "number" ? lastResult.sensitivityRank + "등" : "산출 없음"),
-      "다른 사람들과 비교한 위치: " + (typeof lastResult.percentile === "number" ? lastResult.percentile.toFixed(1) + "%" : "산출 없음"),
+      "모형 참고 순서(100단위 환산): " + (typeof lastResult.sensitivityRank === "number" ? lastResult.sensitivityRank + "/100" : "산출 없음"),
+      "모형 내부 분포의 위치: " + (typeof lastResult.percentile === "number" ? lastResult.percentile.toFixed(1) + "%" : "산출 없음"),
+      "참고: 이 분포는 7개의 임의 예시 구간으로 만든 모형 지표이며 실제 한국인 순위나 인구 백분위가 아닙니다.",
       layerText.join("\n"),
       "",
       "[유전자형]",
@@ -1638,7 +1674,7 @@
 
     if (clonedCanvas) {
       chartImage.src = elements.chart.toDataURL("image/png");
-      chartImage.alt = "참조분포 그래프";
+      chartImage.alt = "7개 임의 구간에 따른 모형 참고분포 그래프";
       chartImage.className = "saved-chart-image";
       clonedCanvas.replaceWith(chartImage);
     }
@@ -1699,7 +1735,7 @@
     var hasScore = typeof result.score === "number";
     var pdfScoreText = hasScore ? result.score.toFixed(1) : "--";
     var pdfScoreUnit = hasScore ? "<small> 점</small>" : "";
-    var pdfRankText = typeof result.sensitivityRank === "number" ? "100명 중 " + result.sensitivityRank + "등" : "산출 없음";
+    var pdfRankText = typeof result.sensitivityRank === "number" ? "모형 " + result.sensitivityRank + "/100" : "산출 없음";
     var pdfPercentileText = typeof result.percentile === "number" ? result.percentile.toFixed(1) + "%" : "산출 없음";
     var pdfMarker = "";
     if (hasScore) {
@@ -1711,7 +1747,7 @@
       ].join("");
     }
     var pdfDistributionChart = [
-      '<svg class="distribution-chart" viewBox="0 0 100 60" role="img" aria-label="참조분포 선형 그래프와 내 위치">',
+      '<svg class="distribution-chart" viewBox="0 0 100 60" role="img" aria-label="예시 7구간의 모형 참고분포에서의 위치">',
       '<line class="distribution-grid" x1="0" y1="21" x2="100" y2="21"></line>',
       '<line class="distribution-grid" x1="0" y1="38" x2="100" y2="38"></line>',
       '<polygon class="distribution-area" points="0,54 ', pdfChartPoints, ' 100,54"></polygon>',
@@ -1743,11 +1779,11 @@
       "<header class=\"pdf-header\"><div class=\"pdf-brand\"><img src=\"", escapeHtml(logoUrl), "\" alt=\"Caffeine Atlas\"><p>Evidence-based caffeine response interpretation</p></div><div class=\"pdf-title\"><h1>Caffeine Atlas Report</h1><p>", escapeHtml(data.generatedAt), "</p></div></header>",
       "<section class=\"pdf-meta\"><div><span>Sample ID</span><strong>", escapeHtml(info.sampleId), "</strong></div><div><span>Report date</span><strong>", escapeHtml(info.reportDate), "</strong></div><div><span>Collection</span><strong>", escapeHtml(info.collectionDate), "</strong></div><div><span>Specimen / Sex</span><strong>", escapeHtml(info.sampleType), " / ", escapeHtml(info.sex), "</strong></div><div><span>Institution</span><strong>", escapeHtml(info.institution), "</strong></div></section>",
       "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", escapeHtml(result.category), "</h2><p>", escapeHtml(result.typeDescription), "</p></div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div><div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>각성형</span><span>잠잠형</span><span>잠꾸러기형</span></div></div></section>",
-      "<section class=\"metrics\"><div class=\"metric\"><span>Result type</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>Metabolism</span><strong>", escapeHtml(result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>Reference rank</span><strong>", pdfRankText, "</strong></div><div class=\"metric\"><span>Confidence</span><strong>", result.confidence, "%</strong></div></section>",
-      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><div><h3>Reference distribution</h3><span>선 위의 점이 내 위치입니다</span></div><strong>", pdfPercentileText, "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>신뢰도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
+      "<section class=\"metrics\"><div class=\"metric\"><span>Result type</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>Metabolism</span><strong>", escapeHtml(result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>Model position</span><strong>", pdfRankText, "</strong></div><div class=\"metric\"><span>Confidence</span><strong>", result.confidence, "%</strong></div></section>",
+      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><div><h3>모형 참고분포</h3><span>임의 7구간 · 인구 백분위 아님</span></div><strong>", pdfPercentileText, "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>신뢰도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
       "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>Score</th></tr></thead><tbody>", genotypeRows, "</tbody></table></div></section>",
       "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3><strong>", escapeHtml(result.title), "</strong><p>", escapeHtml(result.interpretation), "</p></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드</h3><ul>", recommendations, "</ul></div></section>",
-      "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.join(" ")), "</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
+      "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.join(" ")), " 예시 7구간의 모형 참고분포는 실제 한국인 인구 백분위 또는 임상적 순위를 의미하지 않습니다.</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
       "</main><script>window.addEventListener('load',function(){if(navigator.webdriver)return;var ready=document.fonts?document.fonts.ready:Promise.resolve();ready.then(function(){setTimeout(function(){window.print()},350)})});<\/script></body></html>"
     ].join("");
   }
@@ -1789,6 +1825,7 @@
     });
 
     elements.analyzeBtn.addEventListener("click", analyze);
+    if (elements.exampleDemoBtn) elements.exampleDemoBtn.addEventListener("click", showExampleReport);
     elements.editBtn.addEventListener("click", showInputScreen);
     elements.resetBtn.addEventListener("click", resetAll);
     elements.copyBtn.addEventListener("click", copyResult);
