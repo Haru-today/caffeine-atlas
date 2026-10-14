@@ -2913,3 +2913,32 @@ a {
 .privacy-genetic-note{margin:16px 0 20px;padding:14px 18px;border-left:3px solid #a97a42;background:#fffaf1;color:#423a30;border-radius:4px;font-size:.88rem;line-height:1.65}
 .privacy-genetic-note strong{font-weight:760}
 .consent-card a{position:relative;z-index:1}
+
+/* 2026 student symposium public QR demo: analysis/report open, research storage private. */
+body.public-demo .research-only, body.research-mode .public-only { display: none !important; }
+.public-demo-notice {
+  margin: 0 0 22px;
+  padding: 16px 20px;
+  border: 1px solid #d2e2f3;
+  border-left: 4px solid #245baa;
+  border-radius: 12px;
+  background: #f3f7fd;
+  color: #193451;
+  line-height: 1.65;
+}
+.public-demo-notice strong { display: block; margin-bottom: 5px; font-size: 1rem; }
+.public-demo-notice p { margin: 0; font-size: .91rem; }
+.public-download-note {
+  margin: 16px 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: #f3f7fd;
+  color: #284561;
+  line-height: 1.65;
+  font-size: .9rem;
+}
+@media(max-width:760px) {
+  .public-demo-notice { padding: 13px 15px; margin: 0 0 16px; }
+  .public-demo-notice p { font-size: .86rem; }
+  .public-download-note { font-size: .85rem; }
+}
