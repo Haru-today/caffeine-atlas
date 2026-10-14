@@ -52,7 +52,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
         .then(classes => classes.includes("active")), true, gene);
     }
     assert.equal(await page.locator("#resultReport").isVisible(), true);
-    assert.match(await page.locator("#referenceRankText").textContent(), /모형 참고 순서/);
+    assert.match(await page.locator("#referenceRankText").textContent(), /참조자료 대비 순서/);
     assert.equal(await page.locator(".chart-card .reference-scope-note").isVisible(), true);
     assert.equal(await page.locator(".layer-stack .reference-scope-note").isVisible(), true);
     assert.match(await page.locator(".layer-stack").textContent(), /입력 완성도/);
@@ -91,8 +91,8 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     const content = await popup.locator("body").textContent();
     assert.match(content, /DEMO-001/);
     assert.match(content, /rs6968865|AHR/);
-    assert.match(content, /모형 참고분포/);
-    assert.match(content, /실제 한국인 인구 백분위/);
+    assert.match(content, /연구 참조분포/);
+    assert.match(content, /전체 한국인 인구를 대표하는 임상 검증 순위/);
     assert.match(content, /SNP coverage/);
     await popup.close();
 
