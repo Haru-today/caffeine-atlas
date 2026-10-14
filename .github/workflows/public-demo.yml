@@ -1,0 +1,71 @@
+name: Caffeine Atlas public symposium demo
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'caffeine-sensitivity-app/**'
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/public-demo.yml'
+      - 'PUBLIC-DEMO-RELEASE.md'
+  push:
+    branches: [main]
+    paths:
+      - 'caffeine-sensitivity-app/**'
+      - 'index.html'
+      - 'tests/**'
+      - '.github/workflows/public-demo.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  public-qr-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check syntax of public analysis code
+        run: node --check caffeine-sensitivity-app/app.js
+      - name: Run all model, save, privacy, QR and public/demo-mode tests
+        run: node --test tests/*.test.cjs
+      - name: Ensure public site ships no direct Google Sheets endpoint
+        run: |
+          if grep -q 'https://script.google.com/macros/' caffeine-sensitivity-app/app.js; then
+            echo 'FAIL: direct Apps Script endpoint shipped in public QR demo'
+            exit 1
+          fi
+          grep -q 'var RESEARCH_STORAGE_MODE = false' caffeine-sensitivity-app/app.js
+          grep -q 'http-equiv="refresh" content="0; url=./caffeine-sensitivity-app/index.html"' index.html
+
+  browser-qr-demo:
+    needs: public-qr-demo
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test runtime
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium webkit
+      - name: Launch static QR demo locally
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/caffeine-public-demo.log 2>&1 &
+          sleep 2
+          curl -fsSI http://127.0.0.1:8765/caffeine-sensitivity-app/analyzer.html
+      - name: Exercise real Chromium, iPhone WebKit, downloads, popup, network
+        run: node tests/symposium-browser.cjs
+      - name: Upload symposium browser screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: caffeine-public-qr-demo-browser
+          path: test-artifacts/
+          if-no-files-found: ignore

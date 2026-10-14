@@ -6,7 +6,7 @@
   <title>리포트 생성 | Caffeine Atlas</title>
   <link rel="stylesheet" href="./styles.css?v=privacy-notice-20261013">
 </head>
-<body>
+<body class="public-demo">
   <div class="app-shell">
     <nav class="site-nav" aria-label="리포트 생성 페이지 메뉴">
       <a class="brand-mark" href="./index.html">
@@ -56,6 +56,10 @@
     </section>
 
     <main class="test-flow" id="report-form">
+      <aside class="public-demo-notice public-only" aria-label="학회 공개 체험 안내">
+        <strong>회원가입 없이 체험하는 Caffeine Atlas</strong>
+        <p>4개 SNP 유전자형을 선택하면 연구·교육용 모델 지표와 리포트를 확인할 수 있습니다. 공개 체험에서 입력한 내용은 Google Sheets로 전송하거나 저장하지 않습니다. 실명·환자번호·학번·실제 식별 가능한 검체 정보는 입력하지 마세요.</p>
+      </aside>
       <section class="input-panel input-screen" id="inputScreen" aria-labelledby="input-title">
         <div class="section-head">
           <div>
@@ -68,7 +72,7 @@
           </button>
         </div>
 
-        <div class="input-mode-switch" role="tablist" aria-label="리포트 입력 방식">
+        <div class="input-mode-switch research-only" role="tablist" aria-label="리포트 입력 방식">
           <button class="input-mode-button active" id="singleModeBtn" type="button" role="tab" aria-selected="true" aria-controls="singleModePanel">
             1명 직접 입력
           </button>
@@ -82,7 +86,7 @@
         <div class="sample-card detailed-form">
           <div class="field">
             <label for="sampleId">Sample ID</label>
-            <input id="sampleId" type="text" placeholder="예: SAMPLE-001" required>
+            <input id="sampleId" type="text" placeholder="예: DEMO-001 (실명 입력 금지)" autocomplete="off" required>
           </div>
           <div class="field">
             <label for="reportDate">Report date</label>
@@ -130,9 +134,10 @@
         </div>
 
         <div class="gene-grid" id="geneGrid"></div>
-        <p class="privacy-genetic-note"><strong>유전자정보 보호 안내:</strong> 분석 결과는 저장 버튼을 누르지 않으면 연구 시트로 전송하지 않도록 구현되어 있습니다. Sample ID에 이름·환자번호·학번 등 식별정보를 입력하지 마세요. 보유기간·권한·삭제절차가 확인되지 않은 상태에서 식별 가능한 실제 검체 데이터를 저장하지 마세요.</p>
+        <p class="privacy-genetic-note public-only"><strong>공개 체험 안내:</strong> 결과는 이 브라우저에서 계산하고 PDF 등 파일은 사용자의 기기에 내려받습니다. 연구 데이터베이스 저장 기능은 공개되지 않습니다. 실제 검체·개인식별정보 대신 예시 데이터를 사용하세요.</p>
+        <p class="privacy-genetic-note research-only"><strong>유전자정보 보호 안내:</strong> 분석 결과는 저장 버튼을 누르지 않으면 연구 시트로 전송하지 않도록 구현되어 있습니다. Sample ID에 이름·환자번호·학번 등 식별정보를 입력하지 마세요. 보유기간·권한·삭제절차가 확인되지 않은 상태에서 식별 가능한 실제 검체 데이터를 저장하지 마세요.</p>
 
-        <label class="consent-card">
+        <label class="consent-card research-only">
           <input id="sheetConsent" type="checkbox">
           <span>
             <strong>리포트 데이터 저장 동의</strong>
@@ -151,7 +156,7 @@
         </div>
         </div>
 
-        <section class="batch-panel" id="batchModePanel" role="tabpanel" aria-labelledby="batchModeBtn" hidden>
+        <section class="batch-panel research-only" id="batchModePanel" role="tabpanel" aria-labelledby="batchModeBtn" hidden>
           <div class="batch-intro">
             <div>
               <p class="eyebrow">Batch report generator</p>
@@ -358,7 +363,7 @@
           <div class="summary-grid" id="summaryGrid"></div>
         </div>
 
-        <div class="save-scope-card">
+        <div class="save-scope-card research-only">
           <h3>저장되는 항목</h3>
           <ul>
             <li>리포트 정보, 검체 정보, 보고일</li>
@@ -369,8 +374,9 @@
           <p id="sheetSyncStatus" class="sync-status">Google Sheets 저장은 동의 후 결과 화면에서 실행할 수 있습니다.</p>
         </div>
 
+        <div class="public-download-note public-only" role="note">리포트는 기기에 직접 내려받을 수 있습니다. 공개 체험 결과는 연구용 Google Sheets에 업로드되지 않습니다.</div>
         <div class="action-row detailed-actions">
-          <button class="tool-button primary" id="sheetSaveBtn" type="button" title="동의한 리포트 데이터를 Google Sheets에 저장">
+          <button class="tool-button primary research-only" id="sheetSaveBtn" type="button" title="동의한 리포트 데이터를 Google Sheets에 저장">
             <span aria-hidden="true">↥</span>
             시트에 저장
           </button>
@@ -396,6 +402,6 @@
 
   <nav class="policy-links" aria-label="이용 정책" style="text-align:center;margin:12px auto 24px;font-size:.9rem;"><p class="policy-links"><a href="https://haru-today.github.io/privacy.html">개인정보 처리 안내</a> · <a href="https://haru-today.github.io/terms.html">서비스 이용 안내</a></p></nav>
   <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
-  <script src="./app.js?v=privacy-escape-20261013"></script>
+  <script src="./app.js?v=public-demo-20261014"></script>
 </body>
 </html>

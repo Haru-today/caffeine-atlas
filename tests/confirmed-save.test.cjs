@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const { webcrypto } = require('node:crypto');
 
-function app(responses, transportFails = false) {
+function app(responses, transportFails = false, researchMode = true) {
   let posts = 0;
   const window = { crypto: webcrypto, clearTimeout() {}, setTimeout(fn, ms) { if (ms === 1500) queueMicrotask(fn); return 1; } };
   const document = {
@@ -24,13 +24,24 @@ function app(responses, transportFails = false) {
     }
   };
   vm.createContext(sandbox);
-  const source = fs.readFileSync('caffeine-sensitivity-app/app.js', 'utf8').replace('  init();',
+  let source = fs.readFileSync('caffeine-sensitivity-app/app.js', 'utf8');
+  if (researchMode) {
+    // The Cloudflare Worker builds a separate, authenticated research-mode
+    // service bundle; this synthetic URL exists ONLY in the regression VM.
+    source = source.replace('var RESEARCH_STORAGE_MODE = false;', 'var RESEARCH_STORAGE_MODE = true;')
+      .replace('var GOOGLE_SHEETS_ENDPOINT = "";',
+        'var GOOGLE_SHEETS_ENDPOINT = "https://script.google.com/macros/s/FAKE_TEST_ENDPOINT/exec";');
+  }
+  source = source.replace('  init();',
     '  window.test = { genes: genes, normalizeGenotype: normalizeGenotype, save: saveConfirmedPayload };');
   vm.runInContext(source, sandbox);
   return { ...window.test, posts: () => posts };
 }
 const capabilities = { ok: true, capabilities: { batchSave: true, confirmedSave: true, globalSampleIdCheck: true, ahrAlleles: 'A/T', maxBatchRows: 200 } };
 (async () => {
+  const publicDemo = app([], false, false);
+  await assert.rejects(publicDemo.save({ consent: true }, 1), /공개 체험/);
+  assert.equal(publicDemo.posts(), 0, "public QR demo must never submit genetic data");
   const model = app([]);
   const ahr = model.genes.find(g => g.id === 'rs6968865');
   for (const [input, expected, count] of [['AA', 'AA', 0], ['TA', 'AT', 1], ['A/T', 'AT', 1], ['TT', 'TT', 2]]) {

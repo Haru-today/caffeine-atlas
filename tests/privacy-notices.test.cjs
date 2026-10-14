@@ -50,5 +50,7 @@ test("consent remains a separate check before server storage", () => {
   const src = fs.readFileSync(path.join(appDir, "app.js"), "utf8");
   assert.match(src, /if \(!elements\.sheetConsent\.checked\)/);
   assert.match(src, /if \(!elements\.batchConsent\.checked\)/);
-  assert.match(src, /https:\/\/script\.google\.com\/macros\//);
+  assert.doesNotMatch(src, /https:\/\/script\.google\.com\/macros\//);
+  assert.match(src, /var RESEARCH_STORAGE_MODE = false;/);
+  assert.match(src, /var GOOGLE_SHEETS_ENDPOINT = "";/);
 });
