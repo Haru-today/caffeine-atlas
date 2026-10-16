@@ -12,8 +12,8 @@ test("Caffeine Atlas public pages have independent privacy and terms links witho
     const html = fs.readFileSync(path.join(appDir, page), "utf8");
     assert.match(html, /href="https:\/\/haru-today\.github\.io\/caffeine-atlas\/privacy\.html"/, page);
     assert.match(html, /href="https:\/\/haru-today\.github\.io\/caffeine-atlas\/terms\.html"/, page);
-    assert.match(html, page === "analyzer.html"
-      ? /styles\.css\?v=reference-clarification-20261014/
+    assert.match(html, ["index.html", "analyzer.html"].includes(page)
+      ? /styles\.css\?v=readability-20261016/
       : /styles\.css\?v=privacy-notice-20261013/, page);
   }
 });

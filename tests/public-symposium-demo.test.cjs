@@ -102,3 +102,15 @@ test("four-SNP coverage is not misrepresented as predictive confidence", () => {
   // Keep historical JSON schema stable; only copy/labels change.
   assert.match(source, /confidence: confidence/);
 });
+
+test("public landing and analyzer use readable mobile styling without introducing login gates", () => {
+  assert.match(landing, /styles\.css\?v=readability-20261016/);
+  assert.match(analyzer, /styles\.css\?v=readability-20261016/);
+  assert.match(css, /2026-10-16 public\/mobile readability polish/);
+  assert.match(css, /\.nav-links\s*\{[^}]*overflow-x:\s*auto/s);
+  assert.match(css, /\.hero-actions \.hero-button\s*\{[^}]*min-height:\s*48px/s);
+  assert.match(css, /\.public-demo-notice p[\s\S]*font-size:\s*0\.94rem/);
+  assert.match(landing, /로그인 없이 체험 시작/);
+  assert.match(analyzer, /<body class="public-demo">/);
+  assert.doesNotMatch(landing + analyzer, /href="\/login(?:\.html)?"/);
+});
