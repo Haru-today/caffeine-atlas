@@ -30,6 +30,24 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     await page.waitForURL(/\/caffeine-sensitivity-app\/index\.html$/, { timeout: 15000 });
     const cta = page.getByRole("link", { name: /로그인 없이 체험 시작/ });
     assert.equal(await cta.count(), 1, name + ": missing public demo CTA");
+    // Landing stays public and the mobile primary action must be easy to tap.
+    const landingMetrics = await page.evaluate(() => {
+      const cta = [...document.querySelectorAll("a")].find(a => a.textContent.includes("로그인 없이 체험 시작"));
+      const rect = cta?.getBoundingClientRect();
+      return {
+        scroll: document.documentElement.scrollWidth,
+        viewport: document.documentElement.clientWidth,
+        buttonWidth: rect?.width || 0,
+        buttonHeight: rect?.height || 0
+      };
+    });
+    assert.ok(landingMetrics.scroll <= landingMetrics.viewport + 1, name + ": landing horizontal overflow");
+    assert.ok(landingMetrics.buttonHeight >= 46, name + ": login-free CTA too small");
+    if (viewport.width <= 760) {
+      assert.ok(landingMetrics.buttonWidth >= 150, name + ": mobile login-free CTA too narrow");
+      const navScrollable = await page.locator(".nav-links").evaluate(el => getComputedStyle(el).overflowX);
+      assert.equal(navScrollable, "auto", name + ": mobile menu must scroll within its own container");
+    }
     await cta.click();
     await page.waitForURL(/\/caffeine-sensitivity-app\/analyzer\.html$/);
     assert.equal(await page.locator("body.public-demo").count(), 1);
