@@ -2976,3 +2976,80 @@ body.public-demo .research-only, body.research-mode .public-only { display: none
   border-left: 2px solid #97acc7;
   background: #f6f8fc;
 }
+
+
+/* 2026-10-16 public/mobile readability polish.
+   Presentation only: no SNP labels, scoring weights, report output, or access gates. */
+body { line-height: 1.6; }
+.nav-links { font-size: 14px; line-height: 1.45; }
+.nav-links a { text-underline-offset: 4px; }
+.site-nav a:focus-visible,
+.hero-actions a:focus-visible,
+.nav-cta:focus-visible {
+  outline: 3px solid #367fdd;
+  outline-offset: 3px;
+}
+.portal-copy .top-summary { max-width: 590px; line-height: 1.75; }
+.hero-button { min-height: 48px; justify-content: center; text-align: center; }
+.hero-button.primary { box-shadow: 0 5px 18px rgb(0 0 0 / 14%); }
+.service-card p,
+.model-card p,
+.report-copy p,
+.public-demo-notice p { line-height: 1.75; }
+.public-example-banner p { line-height: 1.7; }
+.public-demo-notice p { font-size: 0.95rem; }
+.public-example-banner strong { line-height: 1.5; }
+@media (max-width: 760px) {
+  .site-nav { padding: 13px 14px; gap: 10px; }
+  .nav-links {
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    -webkit-overflow-scrolling: touch;
+    gap: 5px;
+    padding: 3px 1px 8px;
+    scrollbar-width: thin;
+  }
+  .nav-links a {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 7px 9px;
+    white-space: nowrap;
+    border-radius: 7px;
+  }
+  .nav-links a:focus-visible { outline-offset: -2px; }
+  .nav-cta {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+  }
+  .portal-hero { min-height: 0; }
+  .portal-hero-layout { padding: 32px 21px 26px; gap: 22px; }
+  .portal-copy h1 { font-size: clamp(28px, 7.7vw, 38px); line-height: 1.25; }
+  .hero .top-summary { font-size: 15px; line-height: 1.72; }
+  .hero-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 9px; }
+  .hero-actions .hero-button { width: 100%; min-height: 48px; padding: 10px 13px; }
+  .hero-proof { padding: 2px 14px; }
+  .hero-proof div { padding: 9px 0; }
+  .status-card strong { font-size: 14px; line-height: 1.5; }
+  .portal-section { padding: 31px 17px; }
+  .public-demo-notice p,
+  .public-example-banner p { font-size: 0.94rem; line-height: 1.75; }
+  .public-example-banner .tool-button { min-height: 48px; }
+  .analyzer-head .top-summary { font-size: 15px; line-height: 1.75; }
+  input, select, textarea { max-width: 100%; }
+}
+@media (max-width: 370px) {
+  .portal-hero-layout { padding: 27px 15px 22px; }
+  .portal-copy h1 { font-size: 27px; }
+  .portal-section { padding: 27px 13px; }
+  .public-demo-notice, .public-example-banner { padding: 13px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-links { scroll-behavior: auto; }
+}
