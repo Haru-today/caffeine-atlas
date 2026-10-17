@@ -1,6 +1,16 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
+const { createHmac } = require("node:crypto");
+const TEST_KEY = "unit-test-hmac-secret-should-not-be-used-in-production";
+let signedNonceCount = 0;
+function signRequest(payload) {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const nonce = (++signedNonceCount).toString(16).padStart(32, "0");
+  const stringToSign = String(timestamp) + "." + nonce + "." + JSON.stringify(payload);
+  const signature = createHmac("sha256", TEST_KEY).update(stringToSign).digest("hex");
+  return { timestamp, nonce, signature };
+}
 
 const writes = [];
 let lastRow = 1;
@@ -74,7 +84,9 @@ const sandbox = {
       return { waitLock() { assert.equal(locked, false); locked = true; }, releaseLock() { locked = false; } };
     },
   },
+  PropertiesService: { getScriptProperties() { return { getProperty(key) { return key === "CAFFEINE_ATLAS_WRITE_HMAC_KEY" ? TEST_KEY : key === "CAFFEINE_ATLAS_SHEET_ID" ? "TEST-SHEET-NOT-REAL-00000000" : null; } }; } },
   Utilities: {
+    computeHmacSha256Signature(message, key) { return [...createHmac("sha256", key).update(message).digest()]; },
     getUuid() {
       return "generated-test-batch";
     },
@@ -86,6 +98,29 @@ const sandbox = {
 
 vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync("google-apps-script/Code.gs", "utf8"), sandbox, { filename: "Code.gs" });
+
+// The public endpoint must fail closed. Only a trusted gateway signs requests.
+const publicWrite = sandbox.doPost({ postData: { contents: JSON.stringify({ action: "setupTemplate", requestId: "a".repeat(32) }) } });
+assert.equal(JSON.parse(publicWrite.text).code, "AUTH_REQUIRED");
+const publicRead = sandbox.doGet({ parameter: { action: "capabilities" } });
+assert.equal(JSON.parse(publicRead.text).code, "AUTH_REQUIRED");
+
+const originalDoPost = sandbox.doPost;
+sandbox.doPost = function (event) {
+  const payload = JSON.parse(event.postData.contents);
+  return originalDoPost({ postData: { contents: JSON.stringify({ payload, auth: signRequest(payload) }) } });
+};
+const originalDoGet = sandbox.doGet;
+sandbox.doGet = function (event) {
+  const param = { ...event.parameter };
+  const action = param.action || "capabilities";
+  const message = "GET:" + action + ":" + String(param.requestId || "");
+  return originalDoGet({ parameter: { ...param, ...signRequest(message) } });
+};
+
+const adminResponse = sandbox.doPost({ postData: { contents: JSON.stringify({ action: "setupTemplate", requestId: "d".repeat(32) }) } });
+assert.equal(JSON.parse(adminResponse.text).code, "ADMIN_ACTION_FORBIDDEN");
+
 
 const capabilityResponse = sandbox.doGet({ parameter: { callback: "batchCapabilityTest" } });
 assert.match(capabilityResponse.text, /^batchCapabilityTest\(/);
@@ -173,7 +208,7 @@ const duplicateResponse = sandbox.doPost({
 });
 const duplicateJson = JSON.parse(duplicateResponse.text);
 assert.equal(duplicateJson.ok, false);
-assert.match(duplicateJson.message, /Duplicate Sample ID/);
+assert.equal(duplicateJson.code, "DUPLICATE_SAMPLE_ID");
 assert.equal(writes.length, writesBeforeDuplicate, "invalid batch must not write partial rows");
 
 const noConsent = validRow("NO-CONSENT");
@@ -217,6 +252,6 @@ assert.equal(post(validRow("FAIL-READBACK")).ok, false);
 assert.equal(status("a".repeat(32)).state, "error");
 failReadback = false;
 assert.equal(status("f".repeat(32)).state, "unconfirmed");
-assert.equal(status("bad").state, "unconfirmed");
+assert.equal(status("bad").code, "AUTH_REQUIRED");
 assert.equal(locked, false);
 console.log("Global duplicates, allele validation, and confirmed-write tests passed");

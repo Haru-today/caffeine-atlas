@@ -1,0 +1,45 @@
+name: Caffeine Atlas Sheets API security review
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'google-apps-script/**'
+      - 'tests/**'
+      - 'google-sheets-setup.md'
+      - '.github/workflows/sheets-api-security.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'google-apps-script/**'
+      - 'tests/**'
+      - '.github/workflows/sheets-api-security.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check Apps Script and browser integration
+        run: |
+          node --check < google-apps-script/Code.gs
+          node --check caffeine-sensitivity-app/app.js
+      - name: Run Google Sheets/consent/routing regression tests
+        run: node --test tests/*.test.cjs
+      - name: Assert no credential in repo source
+        shell: bash
+        run: |
+          if grep -E '(WRITE_HMAC_KEY[[:space:]]*=[[:space:]]*"[^"]+"|SpreadsheetApp[.]openById[(]"[^"]+")' google-apps-script/Code.gs; then
+            echo "Hard-coded secret or spreadsheet identifier in source" >&2
+            exit 1
+          fi
+      - name: Make deployment limits explicit
+        run: |
+          echo "Static source tests passed. No Apps Script deployment or Script Properties change occurs in CI."

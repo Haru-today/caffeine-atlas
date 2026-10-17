@@ -1,4 +1,48 @@
-const SPREADSHEET_ID = "1v0-AhubC4vXzK-dzmA1G_S0qR8DYLOe1woqnAl7VL0s";
+// Set CAFFEINE_ATLAS_SHEET_ID and CAFFEINE_ATLAS_WRITE_HMAC_KEY in
+// Apps Script > Project Settings > Script properties. Never put these in web JS.
+const WRITE_SECRET_PROPERTY = "CAFFEINE_ATLAS_WRITE_HMAC_KEY";
+const SHEET_ID_PROPERTY = "CAFFEINE_ATLAS_SHEET_ID";
+const AUTH_WINDOW_SECONDS = 300;
+
+function getSpreadsheetId_() {
+  const id = PropertiesService.getScriptProperties().getProperty(SHEET_ID_PROPERTY);
+  if (!id || !/^[A-Za-z0-9_-]{20,120}$/.test(id)) {
+    throw new Error("Spreadsheet ID has not been configured.");
+  }
+  return id;
+}
+
+// Signed envelope protects the Sheet from direct calls to a public web app.
+// Only a trusted, server-side Access-authenticated proxy may know this key.
+// This is not a credential that a public browser can be given.
+function verifySignedRequest_(payload, auth) {
+  const key = PropertiesService.getScriptProperties().getProperty(WRITE_SECRET_PROPERTY);
+  if (typeof key !== "string" || key.length < 32) throw new Error("AUTH_REQUIRED");
+  const stamp = auth && auth.timestamp;
+  const nonce = auth && auth.nonce;
+  const signature = auth && auth.signature;
+  if (!Number.isSafeInteger(stamp) || Math.abs(Math.floor(Date.now() / 1000) - stamp) > AUTH_WINDOW_SECONDS ||
+      typeof nonce !== "string" || !/^[a-f0-9]{32}$/.test(nonce) ||
+      typeof signature !== "string" || !/^[a-f0-9]{64}$/.test(signature)) {
+    throw new Error("AUTH_REQUIRED");
+  }
+  const message = String(stamp) + "." + nonce + "." + JSON.stringify(payload);
+  const bytes = Utilities.computeHmacSha256Signature(message, key);
+  const expected = bytes.map((value) => ((value + 256) % 256).toString(16).padStart(2, "0")).join("");
+  // Compare all positions without returning a detailed matching error.
+  let different = expected.length ^ signature.length;
+  for (let i = 0; i < expected.length; i++) different |= expected.charCodeAt(i) ^ signature.charCodeAt(i);
+  if (different !== 0) throw new Error("AUTH_REQUIRED");
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(5000);
+  try {
+    const cache = CacheService.getScriptCache();
+    if (cache.get("auth_nonce:" + nonce)) throw new Error("AUTH_REQUIRED");
+    cache.put("auth_nonce:" + nonce, "1", AUTH_WINDOW_SECONDS * 2);
+  } finally { lock.releaseLock(); }
+}
+
 const SHEET_NAME = "Responses";
 const KOREA_TIME_ZONE = "Asia/Seoul";
 const ENDPOINT_VERSION = "2026-09-16-confirmed-v3";
@@ -56,30 +100,34 @@ const DISPLAY_HEADERS = [
 ];
 
 function doGet(e) {
+  const param = e && e.parameter ? e.parameter : {};
+  const action = String(param.action || "capabilities");
+  const requestId = String(param.requestId || "");
+  if (action !== "capabilities" && action !== "saveStatus") return jsonResponse({ ok: false, code: "AUTH_REQUIRED" });
+  if (action === "saveStatus" && !/^[a-f0-9]{32}$/.test(requestId)) return jsonResponse({ ok: false, code: "AUTH_REQUIRED" });
+  try {
+    verifySignedRequest_("GET:" + action + ":" + requestId, {
+      timestamp: Number(param.timestamp), nonce: param.nonce, signature: param.signature
+    });
+  } catch (_) {
+    return jsonResponse({ ok: false, code: "AUTH_REQUIRED" });
+  }
+
   let response = {
-    ok: true,
-    message: "Caffeine Atlas Google Sheets endpoint is active.",
-    spreadsheetId: SPREADSHEET_ID,
-    sheetName: SHEET_NAME,
-    version: ENDPOINT_VERSION,
-    capabilities: {
-      batchSave: true,
-      confirmedSave: true,
-      globalSampleIdCheck: true,
-      ahrAlleles: "A/T",
-      maxBatchRows: MAX_BATCH_ROWS
-    }
+    ok: true, version: ENDPOINT_VERSION,
+    capabilities: { batchSave: true, confirmedSave: true,
+      globalSampleIdCheck: true, ahrAlleles: "A/T", maxBatchRows: MAX_BATCH_ROWS }
   };
-  if (e && e.parameter && e.parameter.action === "saveStatus") {
-    const requestId = String(e.parameter.requestId || "");
-    const cached = /^[a-f0-9]{32}$/.test(requestId)
-      ? CacheService.getScriptCache().get("save:" + requestId) : null;
+  if (action === "saveStatus") {
+    const cached = CacheService.getScriptCache().get("save:" + requestId);
     response = cached ? JSON.parse(cached) : { ok: false, state: "unconfirmed" };
   }
-  const callback = e && e.parameter ? String(e.parameter.callback || "") : "";
+  // JSONP remains supported for the legacy receipt integration but ONLY with
+  // a fresh, server-signed URL. Never sign query strings in public JavaScript.
+  const callback = String(param.callback || "");
   if (callback) {
     if (!/^[A-Za-z_$][0-9A-Za-z_$]*$/.test(callback)) {
-      return jsonResponse({ ok: false, message: "Invalid callback." });
+      return jsonResponse({ ok: false, code: "INVALID_CALLBACK" });
     }
     return ContentService
       .createTextOutput(`${callback}(${JSON.stringify(response)});`)
@@ -91,14 +139,24 @@ function doGet(e) {
 function doPost(e) {
   let requestId = "";
   try {
-    const payload = JSON.parse((e.postData && e.postData.contents) || "{}");
+    const envelope = JSON.parse((e.postData && e.postData.contents) || "{}");
+    if (!envelope || typeof envelope !== "object" || Array.isArray(envelope) || !envelope.payload ||
+        typeof envelope.payload !== "object" || Array.isArray(envelope.payload)) {
+      return jsonResponse({ ok: false, code: "AUTH_REQUIRED" });
+    }
+    verifySignedRequest_(envelope.payload, envelope.auth);
+    const payload = envelope.payload;
+    if (payload.action === "setupTemplate") {
+      // Destructive template resets are OWNER-ONLY via the script editor;
+      // never allow them from doPost, even with a valid gateway signature.
+      return jsonResponse({ ok: false, code: "ADMIN_ACTION_FORBIDDEN" });
+    }
+    if (payload.action && payload.action !== "batchSave") {
+      return jsonResponse({ ok: false, code: "INVALID_ACTION" });
+    }
     requestId = String(payload.requestId || "");
     if (!/^[a-f0-9]{32}$/.test(requestId)) throw new Error("A valid request ID is required.");
     let result;
-    if (payload.action === "setupTemplate") {
-      setupTemplate();
-      return jsonResponse({ ok: true, action: "setupTemplate" });
-    }
     if (payload.action === "batchSave") {
       result = saveBatchRows_(payload);
     } else {
@@ -106,14 +164,20 @@ function doPost(e) {
       appendResponseRows_([payload], "");
       result = { ok: true, savedCount: 1 };
     }
-    CacheService.getScriptCache().put("save:" + requestId, JSON.stringify({ ok: true, state: "saved", savedCount: result.savedCount }), 600);
+    CacheService.getScriptCache().put("save:" + requestId,
+      JSON.stringify({ ok: true, state: "saved", savedCount: result.savedCount }), 600);
     return jsonResponse(result);
   } catch (error) {
-    console.error(error);
-    if (/^[a-f0-9]{32}$/.test(requestId)) {
-      CacheService.getScriptCache().put("save:" + requestId, JSON.stringify({ ok: false, state: "error", code: error.code || "SAVE_UNCONFIRMED" }), 600);
+    if (error && (error.message === "AUTH_REQUIRED" || error.message === "Authorization required")) {
+      return jsonResponse({ ok: false, code: "AUTH_REQUIRED" });
     }
-    return jsonResponse({ ok: false, message: error && error.message ? error.message : "Unknown error" });
+    console.error("Save rejected:", error && error.code ? error.code : "VALIDATION_OR_WRITE_FAILED");
+    if (/^[a-f0-9]{32}$/.test(requestId)) {
+      CacheService.getScriptCache().put("save:" + requestId,
+        JSON.stringify({ ok: false, state: "error", code: error.code || "SAVE_UNCONFIRMED" }), 600);
+    }
+    // Never reflect untrusted payloads or Sheet information in a public response.
+    return jsonResponse({ ok: false, code: error && error.code || "SAVE_UNCONFIRMED" });
   }
 }
 
@@ -128,7 +192,7 @@ function saveBatchRows_(payload) {
   rows.forEach((row) => {
     validateResponsePayload_(row);
     const sampleId = String(row.sampleId).trim();
-    if (sampleIds[sampleId]) throw new Error(`Duplicate Sample ID in batch: ${sampleId}`);
+    if (sampleIds[sampleId]) { const error = new Error("Duplicate Sample ID in batch."); error.code = "DUPLICATE_SAMPLE_ID"; throw error; }
     sampleIds[sampleId] = true;
   });
 
@@ -163,7 +227,7 @@ function appendResponseRows_(payloads, batchId) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
-    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const spreadsheet = SpreadsheetApp.openById(getSpreadsheetId_());
     spreadsheet.setSpreadsheetTimeZone(KOREA_TIME_ZONE);
     const sheet = spreadsheet.getSheetByName(SHEET_NAME) || spreadsheet.insertSheet(SHEET_NAME);
     ensureResponseHeader_(sheet);
@@ -223,7 +287,7 @@ function jsonResponse(value) {
 }
 
 function setupTemplate() {
-  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const spreadsheet = SpreadsheetApp.openById(getSpreadsheetId_());
   spreadsheet.setSpreadsheetTimeZone(KOREA_TIME_ZONE);
   ensureResponsesSheet_(spreadsheet);
   buildDashboard_(spreadsheet);

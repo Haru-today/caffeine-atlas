@@ -1,64 +1,56 @@
-# Google Sheets 저장 연동 설정
+# Google Sheets 저장 연동 — 보안 전환 가이드
 
-리포트 결과를 아래 Google Sheet에 축적하려면 Google Apps Script 웹앱 URL이 필요합니다.
+**상태: GitHub PR 코드 검토 단계. Google Apps Script 실서비스에는 아직 적용하지 않았습니다.**
 
-대상 시트:
-`https://docs.google.com/spreadsheets/d/1v0-AhubC4vXzK-dzmA1G_S0qR8DYLOe1woqnAl7VL0s/edit`
+Caffeine Atlas가 저장하는 유전자형과 전체 리포트는 민감정보가 포함될 수 있습니다. 공개 GitHub Pages 화면의 로그인 버튼, consent=true 값, 단순 요청 ID는 사용자 인증 수단이 아닙니다.
 
-Spreadsheet ID:
-`1v0-AhubC4vXzK-dzmA1G_S0qR8DYLOe1woqnAl7VL0s`
+## 기존 공개 엔드포인트 문제
 
-## 1. Apps Script 열기
+- 브라우저 JavaScript에 Google Apps Script /exec 주소가 포함돼 있어 독립 호출이 가능합니다.
+- doPost는 요청자가 실제 로그인했는지 확인하지 않고 저장합니다.
+- setupTemplate 관리 명령은 웹 POST로 실행 가능해 요약 테이블을 초기화할 수 있었습니다.
+- doGet에는 스프레드시트 식별자가 응답에 포함됐습니다.
 
-1. 위 Google Sheet를 엽니다.
-2. `확장 프로그램 > Apps Script`를 엽니다.
-3. `Code.gs` 파일에 아래 코드를 붙여넣습니다.
+이번 변경은 doPost/doGet에 HMAC 서명을 필수로 요구하고, 잘못된 서명/만료/재사용 nonce/비밀키 누락 시 요청을 거부합니다. setupTemplate 웹 호출은 서명 여부와 무관하게 금지합니다. 원래 단건·일괄 저장 및 중복 검사는 유지합니다. 운영 배포는 하지 않았습니다.
 
-## 2. Apps Script 코드 붙여넣기
+## 운영 설정 (Script Properties)
 
-최신 전체 코드는 로컬 파일 `google-apps-script/Code.gs`에 저장되어 있습니다. 파일 내용을 Apps Script의 `Code.gs`에 전체 교체해 붙여넣습니다.
+Apps Script 프로젝트 설정 → 스크립트 속성:
 
-현재 코드는 다음 두 가지 저장 요청을 함께 처리합니다.
+- CAFFEINE_ATLAS_SHEET_ID: 실제 운영 시트 식별자. GitHub 코드에 하드코딩하지 않습니다.
+- CAFFEINE_ATLAS_WRITE_HMAC_KEY: 32자 이상의 충분히 강한 난수 비밀키. 승인된 서버만 동일 값을 보유합니다.
 
-- 1명 직접 입력: 기존처럼 한 행을 저장합니다.
-- 엑셀 일괄 업로드: `batchSave` 요청으로 최대 200명의 행을 한 번에 검증하고 `setValues`로 일괄 저장합니다.
+비밀키·API 토큰·실제 환자정보는 GitHub 또는 웹 브라우저 코드에 넣지 마세요.
 
-엑셀 양식은 메인 홈페이지와 리포트 생성 화면의 `엑셀 양식 다운로드` 버튼에서 받을 수 있습니다. 양식의 2행은 `예시-저장안됨` Sample ID가 들어간 작성 예시이며, 웹사이트와 Apps Script 양쪽에서 자동 제외됩니다. 실제 대상자 정보는 3행부터 입력합니다.
+## 서버 서명 규격
 
-일괄 저장에는 같은 업로드를 묶어 확인할 수 있는 `일괄 처리 ID` 열이 추가됩니다. 서버에서도 저장 동의, 필수값, 허용 유전자형, 점수 범위를 다시 검사합니다.
+POST 요청 본문은 payload 객체와 auth 객체를 포함합니다. auth에는 timestamp(Unix 초), nonce(32자리 소문자 hex), signature(64자리 소문자 hex)가 있습니다. HMAC-SHA256 키는 Script Properties에만 둡니다.
 
-## 3. 웹앱 배포
+서명 대상: timestamp + "." + nonce + "." + JSON.stringify(payload)
+서명 허용 시계 차이: ±300초. nonce는 Script Cache에서 600초간 중복 사용을 거절합니다. Cache의 TTL 및 저장 특성상 영구적인 트랜잭션 재사용 방지로 간주하지 마세요.
 
-1. 처음 연결하는 경우 Apps Script에서 `배포 > 새 배포`를 선택합니다.
-2. 유형은 `웹 앱`으로 선택합니다.
-3. 실행 계정은 `나`로 둡니다.
-4. 액세스 권한은 사이트 공개 범위에 맞춰 설정합니다.
-   - 외부 사용자가 리포트 결과를 저장해야 하면 `모든 사용자` 또는 배포 화면에서 허용 가능한 공개 옵션을 선택해야 합니다.
-5. 배포 후 생성되는 웹앱 URL을 복사합니다.
-6. 복사한 웹앱 URL을 브라우저 주소창에 열어봅니다.
-   - 정상이라면 `ok: true`와 `Caffeine Atlas Google Sheets endpoint is active.` 문구가 보입니다.
-   - Google Drive의 `현재 파일을 열 수 없습니다` 화면이 보이면 URL이 잘못됐거나 배포가 유효하지 않은 상태입니다.
+GET 상태 확인 및 기능 확인의 서명 대상 payload는 JSON.stringify("GET:" + action + ":" + requestId) 입니다. action은 capabilities 또는 saveStatus만 허용합니다. GET도 새 서명이 필요하며 스프레드시트 식별자는 반환하지 않습니다.
 
-이미 웹앱을 배포한 상태에서 일괄 업로드 기능을 추가하는 경우에는 코드를 붙여넣은 뒤 `배포 > 배포 관리 > 수정 > 새 버전`으로 다시 배포해야 합니다. 같은 배포를 수정하면 기존 `/exec` URL을 유지할 수 있습니다.
+## 실제 로그인 시스템과 연결해야 하는 이유
 
-사이트는 직접 입력과 일괄 저장 모두 전송 전에 `confirmedSave`, `globalSampleIdCheck`, `ahrAlleles: "A/T"` 지원 여부를 확인합니다. 현재 버전은 `2026-09-16-confirmed-v3`입니다. 구버전 서버에는 저장 요청을 보내지 않습니다.
+현재 공개 Caffeine Atlas app.js는 Apps Script URL에 직접 POST하고 JSONP로 확인합니다. 서명 비밀키를 이용자 브라우저에 삽입하는 것은 금지입니다. 다음 작업은 Cloudflare Access로 사용자 로그인을 검증한 Worker에서만 Apps Script 요청을 서명하도록 프록시를 구현하는 것입니다.
 
-서버는 같은 잠금 안에서 기존 Responses의 Sample ID와 새 요청을 비교한 뒤 기록합니다. 앞뒤 공백은 제거하며 대소문자는 구분합니다. 하나라도 중복이면 요청 전체를 거절합니다. 과거 중복 행은 자동 삭제하지 않습니다.
+이 프록시가 완성되기 전에 Apps Script만 새로운 코드로 배포하면 기존 저장 기능은 작동하지 않습니다. 반대로 공개된 구버전 /exec 웹앱을 남겨두면 로그인 우회가 가능합니다.
 
-브라우저의 POST는 여전히 `no-cors`이므로 그 응답만으로 성공을 판단하지 않습니다. 요청마다 무작위 128비트 ID를 생성하고, 서버는 `setValues` → `flush` → 기록된 행 전체 읽기 검증 후 10분짜리 저장 확인 정보를 캐시에 남깁니다. 브라우저는 JSONP로 해당 ID의 상태와 저장 건수를 조회해 일치할 때만 완료를 표시합니다. 확인 정보에는 Sample ID·유전자형·리포트를 포함하지 않습니다. 시간 초과·캐시 유실·통신 오류는 미확인으로 처리하며 재전송 전에 실제 시트를 확인해야 합니다. 이는 영구 영수증이나 자동 재시도 기능은 아닙니다.
+안전한 전환 순서:
+1. 실제 배포된 Google Apps Script 접근권한과 데이터 접근자, 보존/삭제 절차 확인
+2. Access JWT로 사용자 인증과 권한을 확인하는 서버 측 저장 프록시 구현
+3. 승인된 가상 데이터만으로 단건·일괄·중복·저장 확인 시나리오 테스트
+4. Apps Script 프로젝트 Script Properties 설정, 새 코드 반영, 새 버전 배포
+5. 옛 공개 /exec URL 우회 제거 및 인증된 프록시 전용 전환
+6. 사용자별 동의 증빙·보관기간·삭제 기능 및 비공개 문의 경로 확정
 
-rs6968865는 `AA / AT / TT / 모름`만 허용합니다. 기존 `GG/TG` 기록은 원자료를 대조하기 전까지 자동 변환하지 않습니다. 수정된 다운로드 양식을 사용하세요. 이 변경은 표기·입력 검증 오류 수정이며, 민감도 점수 모델의 임상적 검증을 의미하지 않습니다.
+**중요:** 회원 로그인 화면이 있어도 Google Sheets API는 별도 권한 검증이 필요합니다. Cloudflare 설정·운영 배포·실제 저장 데이터·개인정보 법률 검증은 이번 코드 PR의 범위에 포함되지 않습니다.
 
-## 4. 사이트에 URL 넣기
+## 테스트
 
-`caffeine-sensitivity-app/app.js`의 아래 값을 복사한 웹앱 URL로 바꿉니다.
+- node --test tests/google-apps-script-batch.test.cjs
+- node --test tests/apps-script-auth.test.cjs
+- node --test tests/*.test.cjs
 
-```javascript
-var GOOGLE_SHEETS_ENDPOINT = "https://script.google.com/macros/s/배포ID/exec";
-```
-
-## 주의
-
-유전자형과 리포트 결과는 민감한 정보로 취급해야 합니다. 실제 운영 전에는 저장 동의 문구, 보관 기간, 접근 권한, 삭제 요청 처리 절차를 정리해 두는 것이 좋습니다.
-
-엑셀 업로드 화면은 파일을 먼저 브라우저 내부에서 분석합니다. 파일에 오류 행이 하나라도 있으면 정상 행만 부분 저장하지 않으며, 오류를 모두 수정한 뒤 다시 업로드해야 Google Sheets 저장 요청이 전송됩니다.
+모든 테스트는 로컬 가상 Google 객체를 이용하며 실제 스프레드시트를 조회·수정하지 않습니다.
