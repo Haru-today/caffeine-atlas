@@ -74,3 +74,11 @@ test("consent remains a separate check before server storage", () => {
   assert.match(src, /var RESEARCH_STORAGE_MODE = false;/);
   assert.match(src, /var GOOGLE_SHEETS_ENDPOINT = "";/);
 });
+
+test("public notices use the current REPODAM service name", () => {
+  for (const file of ["terms.html", "privacy.html"]) {
+    const html = fs.readFileSync(path.join(__dirname, "..", file), "utf8");
+    assert.doesNotMatch(html, /LabInsight|랩인사이트/, file);
+    assert.match(html, /REPODAM\(리포담\)/, file);
+  }
+});
