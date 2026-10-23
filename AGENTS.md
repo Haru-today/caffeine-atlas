@@ -1,7 +1,11 @@
 # Shared agent rules — Caffeine Atlas
 
-This is the common project policy for Codex, Claude Code and Gemini CLI.
-`CLAUDE.md` and `GEMINI.md` import this file; keep shared rules here.
+This is the common project policy for Codex, Claude Code and Google Antigravity
+CLI (Gemini). `CLAUDE.md` and `GEMINI.md` import this file; keep shared rules here.
+Antigravity also reads `AGENTS.md` directly; retain `GEMINI.md` for compatibility.
+For personal Google AI subscriptions, use `agy` with Google sign-in. Do not use
+legacy `gemini` or API keys as a subscription fallback, enable paid overages,
+or upgrade plans without explicit owner approval.
 
 ## Scope and existing behavior
 
