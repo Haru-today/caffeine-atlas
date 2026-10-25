@@ -251,7 +251,7 @@ body.landing .home-sample-tag {
 }
 
 body.landing .home-sample-type {
-  color: var(--coral);
+  color: var(--green);
   font-size: 20px;
   font-weight: 800;
 }
