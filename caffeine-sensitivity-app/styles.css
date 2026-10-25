@@ -1791,16 +1791,7 @@ a {
 .portal-hero {
   min-height: clamp(500px, 62vh, 610px);
   align-items: stretch;
-}
-
-.portal-hero img {
-  object-position: 62% center;
-}
-
-.portal-hero .hero-overlay {
-  background:
-    linear-gradient(90deg, rgba(7, 24, 29, 0.91) 0%, rgba(7, 24, 29, 0.76) 42%, rgba(7, 24, 29, 0.34) 74%, rgba(7, 24, 29, 0.2) 100%),
-    linear-gradient(0deg, rgba(7, 24, 29, 0.28), transparent 52%);
+  background: #0d2a2d;
 }
 
 .portal-hero-layout {
