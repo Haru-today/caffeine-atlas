@@ -125,7 +125,15 @@ test("homepage styles live in home.css and never reach other pages", () => {
     .filter(selector => selector && !selector.startsWith("@"));
   assert.ok(selectors.length > 20);
   for (const group of selectors) {
-    for (const selector of group.split(",")) assert.match(selector.trim(), /^body\.landing\b/, selector);
+    for (const selector of group.split(",")) assert.match(selector.trim(), /^body\.landing(?![\w-])/, selector);
   }
-  assert.doesNotMatch(home, /@import|url\(\s*["']?https?:/, "no external font or asset requests");
+  assert.doesNotMatch(home, /@import|url\(\s*["']?(?:https?:)?\/\//, "no external font or asset requests");
+});
+
+test("homepage sample result is a score the model can actually produce", () => {
+  const score = Number(landing.match(/class="home-sample-score">([\d.]+)</)[1]);
+  const [met, beh] = [...landing.matchAll(/class="home-bar-value">(\d+)%</g)].map(match => Number(match[1]));
+  assert.equal((0.7 * met + 0.3 * beh).toFixed(1), score.toFixed(1));
+  assert.ok(score >= 66.67, "the sample is labelled 잠꾸러기형, the high band in classify()");
+  assert.match(landing, /class="home-sample-type">잠꾸러기형/);
 });

@@ -70,6 +70,12 @@ body.landing .home-top-bar {
   min-height: 68px;
 }
 
+body.landing .home-logo {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 body.landing .home-logo img {
   display: block;
   width: 168px;
@@ -286,9 +292,30 @@ body.landing .home-sample-bars {
 
 body.landing .home-sample-bars div {
   display: grid;
-  grid-template-columns: 84px 1fr;
+  grid-template-columns: 84px 1fr 40px;
   gap: 12px;
   align-items: center;
+}
+
+body.landing .home-sample-bars dd.home-bar-value {
+  height: auto;
+  overflow: visible;
+  background: none;
+  color: var(--home-ink);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+}
+
+body.landing .home-sample-genotypes {
+  margin-top: 14px;
+  color: var(--home-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+body.landing .home-sample-genotypes span {
+  white-space: nowrap;
 }
 
 body.landing .home-sample-bars dt {

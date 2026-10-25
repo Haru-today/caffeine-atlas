@@ -48,11 +48,18 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       // Every homepage menu item must be fully on screen and easy to tap, with no hidden scroller.
       const menu = await page.locator(".home-menu a").evaluateAll(links => links.map(a => {
         const r = a.getBoundingClientRect();
-        return { text: a.textContent.trim(), left: r.left, right: r.right, height: r.height, visible: r.width > 0 };
+        const style = getComputedStyle(a);
+        const hit = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+        return {
+          text: a.textContent.trim(), left: r.left, right: r.right, height: r.height,
+          visible: r.width > 0 && style.visibility === "visible" && style.pointerEvents !== "none",
+          clickable: !!hit && (hit === a || a.contains(hit))
+        };
       }));
       assert.equal(menu.length, 4, name + ": homepage menu items");
       for (const item of menu) {
-        assert.ok(item.visible && item.left >= 0 && item.right <= landingMetrics.viewport + 1, name + ": menu item off screen: " + item.text);
+        assert.ok(item.visible && item.clickable, name + ": menu item hidden or covered: " + item.text);
+        assert.ok(item.left >= 0 && item.right <= landingMetrics.viewport + 1, name + ": menu item off screen: " + item.text);
         assert.ok(item.height >= 44, name + ": menu item too small to tap: " + item.text);
       }
     }
