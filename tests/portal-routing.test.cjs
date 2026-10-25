@@ -9,17 +9,22 @@ test("Caffeine Atlas root is service entry, not a fourth integrated portal", () 
   assert.match(html, /<title>Caffeine Atlas/);
   assert.match(html, /http-equiv="refresh" content="0; url=\.\/caffeine-sensitivity-app\/index\.html"/);
   assert.match(html, /rel="canonical" href="https:\/\/haru-today\.github\.io\/caffeine-atlas\/caffeine-sensitivity-app\/index\.html"/);
-  assert.match(html, /href="https:\/\/haru-today\.github\.io\/">LABDAM 통합 포털<\/a>/);
+  assert.match(html, /href="\.\/caffeine-sensitivity-app\/index\.html">Caffeine Atlas 서비스 열기<\/a>/);
   assert.doesNotMatch(html, /<title>Personal Health Atlas/);
 });
 
-test("every Caffeine Atlas app page has navigation to LABDAM, not an extra portal", () => {
-  const pages = ["index.html", "analyzer.html", "board.html", "board-write.html", "account.html"];
+test("public pages stand on their own without LABDAM or REPODAM ties", () => {
+  const pages = ["index.html", "privacy.html", "terms.html",
+    ...["index.html", "analyzer.html", "board.html", "board-write.html", "account.html"]
+      .map(name => path.join("caffeine-sensitivity-app", name))];
   for (const name of pages) {
-    const html = fs.readFileSync(path.join("caffeine-sensitivity-app", name), "utf8");
-    assert.match(html, /href="https:\/\/haru-today\.github\.io\/" aria-label="LABDAM 통합 포털로 이동"/, name);
-    assert.match(html, /portal-link-badge" aria-hidden="true">LAB</, name);
-    assert.doesNotMatch(html, /Personal Health Atlas 통합 포털로 이동/, name);
+    const html = fs.readFileSync(name, "utf8");
+    assert.doesNotMatch(html, /LABDAM|LabInsight|lab-insight|REPODAM|리포담|Personal Health Atlas/i, name);
+    for (const [, href] of html.matchAll(/href="([^"]+)"/g)) {
+      const url = new URL(href, "https://haru-today.github.io/caffeine-atlas/" + name.replace(/\\/g, "/"));
+      if (url.hostname !== "haru-today.github.io") continue;
+      assert.ok(url.pathname.startsWith("/caffeine-atlas/"), `${name} links outside Caffeine Atlas: ${href}`);
+    }
   }
 });
 
