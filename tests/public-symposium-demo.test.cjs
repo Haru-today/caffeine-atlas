@@ -114,3 +114,18 @@ test("public landing and analyzer use readable mobile styling without introducin
   assert.match(analyzer, /<body class="public-demo">/);
   assert.doesNotMatch(landing + analyzer, /href="\/login(?:\.html)?"/);
 });
+
+test("homepage styles live in home.css and never reach other pages", () => {
+  assert.match(landing, /<body class="landing">/);
+  assert.match(landing, /href="\.\/home\.css\?v=[\w-]+"/);
+  assert.doesNotMatch(analyzer, /home\.css/);
+  const home = readFileSync("caffeine-sensitivity-app/home.css", "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const selectors = [...home.matchAll(/([^{}]+)\{/g)]
+    .map(match => match[1].trim())
+    .filter(selector => selector && !selector.startsWith("@"));
+  assert.ok(selectors.length > 20);
+  for (const group of selectors) {
+    for (const selector of group.split(",")) assert.match(selector.trim(), /^body\.landing\b/, selector);
+  }
+  assert.doesNotMatch(home, /@import|url\(\s*["']?https?:/, "no external font or asset requests");
+});

@@ -18,6 +18,7 @@
   <meta name="twitter:description" content="유전자형을 입력하면 카페인 민감도와 섭취 가이드를 바로 확인할 수 있습니다.">
   <meta name="twitter:image" content="https://haru-today.github.io/caffeine-atlas/caffeine-sensitivity-app/assets/hero-caffeine-genetics.png">
   <link rel="stylesheet" href="./styles.css?v=readability-20261016">
+  <link rel="stylesheet" href="./home.css?v=redesign-20261025">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -31,277 +32,177 @@
   </script>
 </head>
 <body class="landing">
-  <div class="app-shell">
-    <nav class="site-nav portal-nav" aria-label="주요 메뉴">
-      <a class="brand-mark" href="#home">
+  <header class="home-top">
+    <div class="home-wrap home-top-bar">
+      <a class="home-logo" href="#home">
         <img src="./assets/caffeine-atlas-logo-wordmark.png" alt="Caffeine Atlas" width="1900" height="330">
       </a>
-      <div class="nav-links">
-        <a href="#service">체험 안내</a>
-        <a href="#report">결과 보기</a>
+      <nav class="home-menu" aria-label="주요 메뉴">
+        <a href="#process">체험 방법</a>
+        <a href="#report">결과 유형</a>
         <a href="#model">산출 기준</a>
         <a href="./board.html">자료실</a>
-      </div>
-      <a class="nav-cta" href="./analyzer.html">체험 시작</a>
-    </nav>
+      </nav>
+      <a class="home-top-cta" href="./analyzer.html">체험 시작</a>
+    </div>
+  </header>
 
-    <header class="hero portal-hero" id="home">
-      <div class="portal-hero-layout">
-        <div class="portal-copy">
-          <p class="eyebrow">Open demo · 2026 student symposium</p>
-          <h1>
-            <span>카페인 민감도</span>
-            <span>유전자형으로 확인하세요</span>
-          </h1>
-          <p class="top-summary">회원가입 없이 약 3분 동안 4개 유전자형을 선택해 연구·교육용 모델 지표와 리포트를 확인할 수 있습니다. 개인별 카페인 반응을 진단하는 검사는 아닙니다.</p>
-          <div class="hero-actions">
-            <a class="hero-button primary" href="./analyzer.html">로그인 없이 체험 시작</a>
-            <a class="hero-text-link" href="#process">체험 방법 보기</a>
+  <main>
+    <section class="home-hero" id="home">
+      <div class="home-wrap home-hero-grid">
+        <div class="home-hero-copy">
+          <p class="home-kicker">2026 학생 심포지엄 공개 체험</p>
+          <h1>카페인 민감도,<br>유전자형으로 살펴보세요</h1>
+          <p class="home-lead">카페인과 관련된 4개 유전자형으로 연구·교육용 민감도 지수와 생활 가이드를 계산해 드려요. 유전자형을 몰라도 가상 예시로 바로 체험할 수 있어요.</p>
+          <div class="home-hero-actions">
+            <a class="home-button" href="./analyzer.html">로그인 없이 체험 시작</a>
+            <a class="home-text-link" href="#process">체험 방법 보기</a>
           </div>
+          <ul class="home-facts" aria-label="체험 요약">
+            <li><strong>약 3분</strong>회원가입 없음</li>
+            <li><strong>4개 SNP</strong>CYP1A2·AHR</li>
+            <li><strong>0–100점</strong>민감도 지수</li>
+          </ul>
+          <p class="home-note">개인별 카페인 반응을 진단하는 검사가 아니에요. 진단이나 처방에 사용할 수 없습니다.</p>
         </div>
 
-        <div class="hero-proof" aria-label="리포트 핵심 정보">
-          <div>
-            <strong>약 3분</strong>
-            <span>웹에서 바로 입력</span>
-          </div>
-          <div>
-            <strong>4개 SNP</strong>
-            <span>CYP1A2·AHR 기반 해석</span>
-          </div>
-          <div>
-            <strong>0-100점</strong>
-            <span>민감도 지수와 섭취 가이드</span>
-          </div>
-        </div>
-      </div>
-    </header>
-
-    <section class="portal-section" id="service">
-      <div class="section-head wide">
-        <div>
-          <p class="eyebrow">How can you learn?</p>
-          <h2>내 몸이 카페인을 어떻게 받아들이는지 확인하세요</h2>
-        </div>
-        <p class="service-summary">복잡한 유전자 정보를 검사 결과처럼 짧고 명확하게 정리합니다.<br>진단이 아니라 카페인 반응을 이해하기 위한 연구·교육용 안내입니다.</p>
-      </div>
-      <div class="service-grid">
-        <article class="service-card">
-          <span>01</span>
-          <h3>나의 민감도 확인</h3>
-          <p>카페인이 몸에 오래 남을 가능성을 0-100점 민감도 지수로 확인합니다.</p>
-        </article>
-        <article class="service-card">
-          <span>02</span>
-          <h3>섭취 습관 점검</h3>
-          <p>커피를 마시는 시간, 양, 수면 영향을 함께 생각할 수 있도록 안내합니다.</p>
-        </article>
-        <article class="service-card">
-          <span>03</span>
-          <h3>결과 리포트 저장</h3>
-          <p>결과 해석, SNP별 근거, 섭취 가이드를 한 화면에서 확인하고 저장합니다.</p>
-        </article>
+        <figure class="home-sample" aria-label="예시 결과 화면">
+          <figcaption class="home-sample-tag">예시 결과</figcaption>
+          <p class="home-sample-type">잠꾸러기형 <span>느린 대사형</span></p>
+          <p class="home-sample-score">78.4<small>/100</small></p>
+          <p class="home-sample-title">카페인 민감도 지수가 높은 편이에요</p>
+          <dl class="home-sample-bars">
+            <div><dt>대사 레이어</dt><dd><i style="width:84%"></i></dd></div>
+            <div><dt>조절 레이어</dt><dd><i style="width:65%"></i></dd></div>
+            <div><dt>입력 완성도</dt><dd><i style="width:100%"></i></dd></div>
+          </dl>
+          <p class="home-sample-tip">오전에만 마시고, 오후에는 디카페인이나 카페인이 없는 음료를 선택해 보세요.</p>
+        </figure>
       </div>
     </section>
 
-    <section class="report-showcase" id="report">
-      <div class="report-copy">
-        <p class="eyebrow">What can you do here?</p>
-        <h2>결과는 바로 읽을 수 있게 정리됩니다</h2>
-        <p>민감도 점수와 모형 내부 참고분포 위치, 결과 해석, 섭취 가이드와 SNP별 근거를 구분해 보여드립니다. 실제 인구집단의 백분위나 개인별 안전 섭취량은 아닙니다.</p>
-      </div>
-      <div class="report-preview">
-        <div class="preview-head">
-          <span>Sample report</span>
-          <strong>High sensitivity</strong>
-        </div>
-        <div class="preview-score">
-          <span>78.4</span>
-          <small>/100</small>
-        </div>
-        <div class="preview-bars">
-          <div><span>Metabolism</span><i style="width:84%"></i></div>
-          <div><span>Regulation</span><i style="width:65%"></i></div>
-          <div><span>Completeness</span><i style="width:100%"></i></div>
-        </div>
-        <div class="preview-list">
-          <p>CYP1A2 중심 대사 해석</p>
-          <p>AHR 기반 보조 해석</p>
-          <p>모형 내부 참고분포 위치</p>
-        </div>
+    <section class="home-section" id="service">
+      <div class="home-wrap">
+        <p class="home-kicker">체험 방법</p>
+        <h2>세 단계면 결과가 나와요</h2>
+        <ol class="home-steps" id="process">
+          <li>
+            <span>1</span>
+            <h3>유전자형 선택</h3>
+            <p>CYP1A2와 AHR 관련 유전자형 4개를 고릅니다. 모르는 항목은 ‘모름’으로 두거나 가상 예시를 불러올 수 있어요.</p>
+          </li>
+          <li>
+            <span>2</span>
+            <h3>민감도 지수 확인</h3>
+            <p>0–100점 지수와 세 가지 유형 중 어디에 해당하는지, 유전자형별 근거와 함께 보여 드려요.</p>
+          </li>
+          <li>
+            <span>3</span>
+            <h3>생활 가이드와 리포트</h3>
+            <p>커피 마시는 시간과 양을 조절할 때 참고할 문장을 확인하고, 리포트를 PDF로 저장할 수 있어요.</p>
+          </li>
+        </ol>
       </div>
     </section>
 
-    <section class="portal-section model-section" id="model">
-      <div class="section-head wide">
-        <div>
-          <p class="eyebrow">Scoring model</p>
-          <h2>점수 산출 기준을 공개합니다</h2>
+    <section class="home-section home-section-soft" id="report">
+      <div class="home-wrap">
+        <p class="home-kicker">결과 유형</p>
+        <h2>결과는 세 가지 유형으로 알려 드려요</h2>
+        <p class="home-section-lead">민감도 지수 구간에 따라 유형이 정해져요. 모형 안의 연구 참조분포에서 내 점수가 어디쯤인지도 함께 보여 드려요. 실제 인구집단의 백분위나 개인별 안전 섭취량은 아닙니다.</p>
+        <div class="home-types">
+          <article class="home-type home-type-fast">
+            <p class="home-type-band">낮은 구간</p>
+            <h3>각성형</h3>
+            <p class="home-type-badge">빠른 대사형</p>
+            <p>카페인 관련 유전정보를 종합한 점수가 낮은 편이에요. 잘 견디는 편이어도 양을 습관처럼 늘리지 않도록 안내해요.</p>
+          </article>
+          <article class="home-type home-type-mid">
+            <p class="home-type-band">중간 구간</p>
+            <h3>잠잠형</h3>
+            <p class="home-type-badge">평균 대사형</p>
+            <p>점수가 중간 구간이에요. 하루 한두 잔부터 내 몸이 편한 양을 찾아보도록 안내해요.</p>
+          </article>
+          <article class="home-type home-type-slow">
+            <p class="home-type-band">높은 구간</p>
+            <h3>잠꾸러기형</h3>
+            <p class="home-type-badge">느린 대사형</p>
+            <p>점수가 높은 편이에요. 적은 양부터 확인하고 오후 섭취를 줄여 보도록 안내해요.</p>
+          </article>
         </div>
-        <p class="service-summary">4개 SNP를 대사 레이어와 조절 레이어로 나눠 계산합니다.<br>최종 점수는 대사 70%, 조절 30% 비율로 합산하며, 연구·교육용 참고 자료로 제공합니다.</p>
-      </div>
-      <div class="model-grid">
-        <article class="model-card">
-          <span>Metabolism</span>
-          <h3>대사 레이어</h3>
-          <p>CYP1A2 기능 변이를 중심으로 카페인이 몸에 남을 가능성을 계산합니다.</p>
-          <div class="weight-list">
-            <div><strong>CYP1A2*1F rs762551</strong><em>82%</em></div>
-            <div><strong>CYP1A2*1C rs2069514</strong><em>18%</em></div>
-          </div>
-        </article>
-        <article class="model-card">
-          <span>Regulation</span>
-          <h3>조절 레이어</h3>
-          <p>AHR 및 CYP1A1-CYP1A2 관련 좌위를 보조 신호로 반영합니다.</p>
-          <div class="weight-list">
-            <div><strong>CYP1A1-CYP1A2 rs2472297</strong><em>54%</em></div>
-            <div><strong>AHR rs6968865</strong><em>46%</em></div>
-          </div>
-        </article>
-        <article class="model-card">
-          <span>Validation</span>
-          <h3>입력 검증</h3>
-          <p>Sample ID, 보고일과 4개 항목의 선택 여부를 확인합니다. ‘모름’은 점수에서 제외하고 분석 완성도에 표시하며, 핵심 CYP1A2*1F가 ‘모름’이면 유형 판정을 보류한 정보 부족 리포트를 제공합니다.</p>
-          <div class="weight-list">
-            <div><strong>필수 항목 선택</strong><em>4/4</em></div>
-            <div><strong>저장 시각</strong><em>KST</em></div>
-          </div>
-        </article>
+        <p class="home-type-extra">핵심 유전자형(CYP1A2*1F, rs762551)을 ‘모름’으로 두면 유형 판정을 보류한 <strong>정보 부족형</strong> 리포트가 나와요.</p>
       </div>
     </section>
 
-    <section class="portal-section" id="process">
-      <div class="section-head wide">
-        <div>
-          <p class="eyebrow">Process</p>
-          <h2>체험은 이렇게 진행됩니다</h2>
+    <section class="home-section" id="model">
+      <div class="home-wrap">
+        <p class="home-kicker">산출 기준</p>
+        <h2>점수는 이렇게 계산해요</h2>
+        <p class="home-section-lead">4개 SNP를 대사 레이어와 조절 레이어로 나눠 계산하고, 대사 70%와 조절 30% 비율로 합산합니다. 이 비율은 프로젝트에서 정한 설계값이며 검증된 임상 표준값이 아닙니다.</p>
+        <div class="home-layers">
+          <article class="home-layer">
+            <p class="home-layer-weight">70%</p>
+            <h3>대사 레이어</h3>
+            <p>CYP1A2 기능 변이를 중심으로 카페인이 몸에 남을 가능성을 계산합니다.</p>
+            <ul>
+              <li><span>CYP1A2*1F <code>rs762551</code></span><em>82%</em></li>
+              <li><span>CYP1A2*1C <code>rs2069514</code></span><em>18%</em></li>
+            </ul>
+          </article>
+          <article class="home-layer">
+            <p class="home-layer-weight">30%</p>
+            <h3>조절 레이어</h3>
+            <p>AHR 및 CYP1A1-CYP1A2 관련 좌위를 보조 신호로 반영합니다.</p>
+            <ul>
+              <li><span>CYP1A1-CYP1A2 <code>rs2472297</code></span><em>54%</em></li>
+              <li><span>AHR <code>rs6968865</code></span><em>46%</em></li>
+            </ul>
+            <p class="home-layer-note">rs6968865는 프로젝트의 AHR 실험 표지자로, 이 SNP 자체의 근거는 추가 검증이 필요합니다.</p>
+          </article>
         </div>
-      </div>
-      <div class="flow-grid">
-        <article>
-          <strong>1</strong>
-          <h3>체험 시작</h3>
-          <p>체험 페이지를 열고 기본 정보를 입력합니다.</p>
-        </article>
-        <article>
-          <strong>2</strong>
-          <h3>유전자형 선택</h3>
-          <p>CYP1A2와 AHR 관련 유전자형 4개를 선택합니다.</p>
-        </article>
-        <article>
-          <strong>3</strong>
-          <h3>결과 확인</h3>
-          <p>민감도 지수와 모형의 참고 위치를 확인합니다.</p>
-        </article>
-        <article>
-          <strong>4</strong>
-          <h3>생활 가이드 확인</h3>
-          <p>커피 섭취 시간과 양을 조절할 때 참고할 문장을 확인합니다.</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="portal-section evidence-portal">
-      <div class="section-head wide">
-        <div>
-          <p class="eyebrow">Evidence</p>
-          <h2>근거와 한계를 함께 안내합니다</h2>
-        </div>
-        <p>이 리포트는 진단이나 처방이 아닙니다. 카페인 반응을 이해하기 위한 연구·교육·웰니스 안내용 자료입니다.</p>
-      </div>
-      <div class="evidence-grid">
-        <div>
-          <span>Functional layer</span>
-          <strong>CYP1A2*1F / CYP1A2*1C</strong>
-          <p>CYP1A2 변이는 카페인 대사 속도와 관련된 핵심 축으로 반영합니다.</p>
-        </div>
-        <div>
-          <span>Regulatory layer</span>
-          <strong>AHR / CYP1A1-CYP1A2</strong>
-          <p>AHR 관련 좌위는 섭취·대사 연구 근거를 바탕으로 보조 반영합니다.</p>
-        </div>
-        <div>
-          <span>Service status</span>
-          <strong>연구·교육용 안내</strong>
-          <p>설문, 증상, 대사체 데이터가 쌓이면 결과 기준을 다시 검토합니다.</p>
+        <div class="home-limits">
+          <h3>꼭 알아 두세요</h3>
+          <ul>
+            <li>연구·교육용 모델이며 개인의 카페인 반응을 진단하거나 처방, 의료적 판단을 대신하지 않습니다.</li>
+            <li>‘모름’으로 둔 항목은 점수에서 빼고 입력 완성도로 표시해요. 입력 완성도는 예측 정확도가 아닙니다.</li>
+            <li>참조분포는 연구에서 확보한 검사결과를 참고해 구성한 7개 점수 구간이에요. 설문, 증상, 대사체 데이터가 쌓이면 기준을 다시 검토합니다.</li>
+          </ul>
         </div>
       </div>
     </section>
 
-    <section class="notice-support" id="support">
-      <div class="notice-board">
-        <div class="section-head compact">
-          <div>
-            <p class="eyebrow">Notice</p>
-            <h2>공지와 자료</h2>
-          </div>
-          <a class="inline-cta compact-cta" href="./board-write.html">문의 보내기</a>
-        </div>
-        <a class="notice-row" href="./analyzer.html">
-          <span>리포트</span>
-          <strong>카페인 민감도 리포트 이용 안내</strong>
-          <small>바로가기</small>
-        </a>
-        <a class="notice-row" href="./account.html" hidden data-disabled-feature="account">
-          <span>회원</span>
-          <strong>회원가입·로그인과 데이터 축적 설계</strong>
-          <small>안내</small>
-        </a>
-      </div>
-
-      <div class="support-card">
-        <p class="eyebrow">Customer center</p>
-        <h2>고객센터</h2>
-        <p>피드백이나 문의사항은 아래 메일로 보내주세요. 서비스와 자료에 관한 내용은 담당 기관에서 안내해 드립니다.</p>
-        <div class="support-info">
-          <span>담당 기관</span>
-          <strong>동의대학교 임상병리학과 분자진단연구실</strong>
-          <strong>동의대학교 바이오헬스혁신융합대학사업단</strong>
-        </div>
-        <div class="support-info">
-          <span>주소</span>
-          <strong>부산광역시 부산진구 엄광로 176 동의대학교</strong>
-        </div>
-        <div class="support-info">
-          <span>문의 메일</span>
-          <strong><a href="mailto:20221600@office.deu.ac.kr">20221600@office.deu.ac.kr</a></strong>
-        </div>
-      </div>
-    </section>
-
-    <section class="portal-section faq-section">
-      <div class="section-head wide">
+    <section class="home-section home-section-soft" id="support">
+      <div class="home-wrap home-support">
         <div>
-          <p class="eyebrow">FAQ</p>
-          <h2>자주 묻는 질문</h2>
+          <p class="home-kicker">자료와 문의</p>
+          <h2>궁금한 점이 있으신가요?</h2>
+          <p class="home-section-lead">이용 안내와 공지는 자료실에서, 피드백은 문의로 보내 주세요.</p>
+          <div class="home-support-links">
+            <a href="./board.html">자료실 보기</a>
+            <a href="./board-write.html">문의 보내기</a>
+          </div>
         </div>
-      </div>
-      <div class="faq-list">
-        <details open>
-          <summary>체험은 어디에서 시작하나요?</summary>
-          <p>상단과 첫 화면의 체험 시작 버튼을 누르면 생성 페이지가 열립니다.</p>
-        </details>
-        <details>
-          <summary>결과를 진단이나 처방에 사용할 수 있나요?</summary>
-          <p>아니요. 현재 모델은 연구·교육·웰니스 안내용이며 의료적 판단을 대체하지 않습니다.</p>
-        </details>
+        <dl class="home-contact">
+          <div><dt>담당 기관</dt><dd>동의대학교 임상병리학과 분자진단연구실<br>동의대학교 바이오헬스혁신융합대학사업단</dd></div>
+          <div><dt>주소</dt><dd>부산광역시 부산진구 엄광로 176 동의대학교</dd></div>
+          <div><dt>문의 메일</dt><dd><a href="mailto:20221600@office.deu.ac.kr">20221600@office.deu.ac.kr</a></dd></div>
+        </dl>
       </div>
     </section>
 
-    <section class="final-cta">
-      <div>
-        <p class="eyebrow">Start report</p>
-        <h2>약 3분 입력으로 카페인 민감도를 확인하세요</h2>
+    <section class="home-final">
+      <div class="home-wrap home-final-inner">
+        <h2>약 3분이면 내 카페인 유형을 알 수 있어요</h2>
+        <a class="home-button home-button-light" href="./analyzer.html">체험 시작</a>
       </div>
-      <a class="hero-button primary" href="./analyzer.html">체험 시작</a>
     </section>
+  </main>
 
-    <footer class="site-footer">
-      <span>Caffeine Atlas</span>
-      <p>Research-use caffeine response interpretation report prototype. Not for diagnosis or medical prescription.</p>
-    <p class="policy-links"><a href="https://haru-today.github.io/caffeine-atlas/privacy.html">개인정보 처리 안내</a> · <a href="https://haru-today.github.io/caffeine-atlas/terms.html">서비스 이용 안내</a></p>
-</footer>
-  </div>
+  <footer class="home-footer">
+    <div class="home-wrap">
+      <p><strong>Caffeine Atlas</strong> · 연구·교육용 카페인 반응 해석 리포트 시제품 · 진단이나 처방에 사용할 수 없습니다.</p>
+      <p class="policy-links"><a href="https://haru-today.github.io/caffeine-atlas/privacy.html">개인정보 처리 안내</a> · <a href="https://haru-today.github.io/caffeine-atlas/terms.html">서비스 이용 안내</a></p>
+    </div>
+  </footer>
 </body>
 </html>

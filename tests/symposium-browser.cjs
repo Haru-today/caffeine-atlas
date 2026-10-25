@@ -45,8 +45,16 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.ok(landingMetrics.buttonHeight >= 46, name + ": login-free CTA too small");
     if (viewport.width <= 760) {
       assert.ok(landingMetrics.buttonWidth >= 150, name + ": mobile login-free CTA too narrow");
-      const navScrollable = await page.locator(".nav-links").evaluate(el => getComputedStyle(el).overflowX);
-      assert.equal(navScrollable, "auto", name + ": mobile menu must scroll within its own container");
+      // Every homepage menu item must be fully on screen and easy to tap, with no hidden scroller.
+      const menu = await page.locator(".home-menu a").evaluateAll(links => links.map(a => {
+        const r = a.getBoundingClientRect();
+        return { text: a.textContent.trim(), left: r.left, right: r.right, height: r.height, visible: r.width > 0 };
+      }));
+      assert.equal(menu.length, 4, name + ": homepage menu items");
+      for (const item of menu) {
+        assert.ok(item.visible && item.left >= 0 && item.right <= landingMetrics.viewport + 1, name + ": menu item off screen: " + item.text);
+        assert.ok(item.height >= 44, name + ": menu item too small to tap: " + item.text);
+      }
     }
     await cta.click();
     await page.waitForURL(/\/caffeine-sensitivity-app\/analyzer\.html$/);
