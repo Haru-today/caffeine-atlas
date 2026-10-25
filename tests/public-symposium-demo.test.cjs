@@ -130,10 +130,41 @@ test("homepage styles live in home.css and never reach other pages", () => {
   assert.doesNotMatch(home, /@import|url\(\s*["']?(?:https?:)?\/\//, "no external font or asset requests");
 });
 
-test("homepage sample result is a score the model can actually produce", () => {
-  const score = Number(landing.match(/class="home-sample-score">([\d.]+)</)[1]);
-  const [met, beh] = [...landing.matchAll(/class="home-bar-value">(\d+)%</g)].map(match => Number(match[1]));
-  assert.equal((0.7 * met + 0.3 * beh).toFixed(1), score.toFixed(1));
-  assert.ok(score >= 66.67, "the sample is labelled 잠꾸러기형, the high band in classify()");
-  assert.match(landing, /class="home-sample-type">잠꾸러기형/);
+test("homepage sample card is exactly what the model returns for the analyzer's fictional example", () => {
+  const demo = source.match(/var exampleGenotypes = \[([\s\S]*?)\];/)[1];
+  const pairs = [...demo.matchAll(/\["(rs\d+)", "([ACGT]{2})"\]/g)].map(match => [match[1], match[2]]);
+  assert.equal(pairs.length, 4);
+  for (const [rsid, code] of pairs) assert.ok(landing.includes(`<span>${rsid} ${code}</span>`), rsid);
+  assert.match(landing, /가상 예시\(DEMO-001\)/);
+
+  // Run the real scoring code from app.js instead of copying its weights or thresholds.
+  const window = {};
+  const document = { getElementById: () => ({ value: "", options: [], classList: { toggle() {} } }) };
+  assert.match(source, /  init\(\);\s*\}\(\)\);/);
+  require("node:vm").runInNewContext(source.replace("  init();",
+    "  window.__model = { genes: genes, getGenotype: getGenotype, buildComputedResult: buildComputedResult };"),
+    { window, document, console });
+  const { genes, getGenotype, buildComputedResult } = window.__model;
+  const selection = {};
+  for (const [rsid, code] of pairs) {
+    const gene = genes.find(item => item.id === rsid);
+    selection[rsid] = getGenotype(gene, code);
+  }
+  const result = buildComputedResult(selection);
+
+  const card = landing.match(/<figure class="home-sample"[\s\S]*?<\/figure>/)[0];
+  const text = cls => card.match(new RegExp(`class="${cls}">([^<]*)`))[1].trim();
+  assert.equal(text("home-sample-score"), result.score.toFixed(1));
+  assert.equal(text("home-sample-type"), result.category.label);
+  assert.match(card, new RegExp(`class="home-sample-type">[^<]*<span>${result.category.badge}</span>`));
+  assert.equal(text("home-sample-title"), result.category.title);
+  const tip = text("home-sample-tip");
+  assert.ok(result.category.text.includes(tip) || result.category.recommendations.includes(tip), "tip is an existing report sentence");
+
+  const values = [...card.matchAll(/class="home-bar-value">([^<]+)</g)].map(match => match[1]);
+  const widths = [...card.matchAll(/<i style="width:(\d+)%"><\/i>/g)].map(match => Number(match[1]));
+  const met = Math.round(result.metabolismNorm * 100);
+  const beh = Math.round(result.behaviorNorm * 100);
+  assert.deepEqual(values, [met + "%", beh + "%", result.valid.length + "/" + genes.length]);
+  assert.deepEqual(widths, [met, beh, result.confidence]);
 });
