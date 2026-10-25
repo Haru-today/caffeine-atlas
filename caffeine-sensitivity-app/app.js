@@ -841,7 +841,7 @@
     ctx.save();
     ctx.translate(16, padTop + chartH / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText("예시 분포", 0, 0);
+    ctx.fillText("연구 참조분포", 0, 0);
     ctx.restore();
 
     if (typeof userScore === "number") {
