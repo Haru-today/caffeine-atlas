@@ -26,7 +26,7 @@
 
 ## 공개 정책 연결
 
-- <https://haru-today.github.io/privacy.html>
-- <https://haru-today.github.io/terms.html>
+- <https://haru-today.github.io/caffeine-atlas/privacy.html>
+- <https://haru-today.github.io/caffeine-atlas/terms.html>
 
 이 파일은 공개 소스코드 점검에 근거한 운영 과제이며, 실제 Google 계정·Sheets 공유 현황 또는 정보주체 동의를 독립적으로 확인한 결과가 아닙니다.
