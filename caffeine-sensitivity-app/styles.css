@@ -217,6 +217,17 @@ a {
   color: #fff;
 }
 
+.hero-text-link {
+  display: inline-flex;
+  min-height: 46px;
+  padding: 0 6px;
+  align-items: center;
+  color: #d6eeee;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
 .top-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2996,6 +3007,8 @@ body { line-height: 1.6; }
     min-height: 48px;
     justify-content: center;
   }
+  .landing .nav-cta { display: none; }
+  .hero-text-link { justify-self: center; }
   .portal-hero { min-height: 0; }
   .portal-hero-layout { padding: 32px 21px 26px; gap: 22px; }
   .portal-copy h1 { font-size: clamp(28px, 7.7vw, 38px); line-height: 1.25; }
