@@ -117,29 +117,6 @@ a {
   color: var(--teal-dark);
 }
 
-.nav-links .portal-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--teal-dark);
-}
-
-.portal-link-badge {
-  display: inline-flex;
-  min-width: 29px;
-  min-height: 21px;
-  padding: 0 6px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(8, 118, 110, 0.24);
-  border-radius: 999px;
-  background: #eaf4f3;
-  color: var(--teal-dark);
-  font-size: 10px;
-  font-weight: 950;
-  letter-spacing: 0.04em;
-}
-
 .nav-cta {
   display: inline-flex;
   min-height: 42px;
@@ -2897,7 +2874,7 @@ a {
   }
 }
 
-/* Shared LABDAM policy links and explicit genetic-data cloud storage disclosure. */
+/* Shared policy links and explicit genetic-data cloud storage disclosure. */
 .policy-links{margin:12px 0 0;font-size:.86rem;line-height:1.65;color:#546a74}
 .policy-links a,.privacy-genetic-note a,.consent-card a{color:#175d70;text-decoration:underline;text-underline-offset:3px}
 .policy-links a:focus-visible,.privacy-genetic-note a:focus-visible,.consent-card a:focus-visible{outline:2px solid #246e72;outline-offset:3px}

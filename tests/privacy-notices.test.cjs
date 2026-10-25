@@ -7,7 +7,7 @@ const vm = require("node:vm");
 
 const appDir = path.join(__dirname, "..", "caffeine-sensitivity-app");
 
-test("Caffeine Atlas public pages have independent privacy and terms links without LABDAM login", () => {
+test("Caffeine Atlas public pages have independent privacy and terms links without a login", () => {
   for (const page of ["index.html", "analyzer.html", "account.html", "board.html", "board-write.html"]) {
     const html = fs.readFileSync(path.join(appDir, page), "utf8");
     assert.match(html, /href="https:\/\/haru-today\.github\.io\/caffeine-atlas\/privacy\.html"/, page);
@@ -19,7 +19,7 @@ test("Caffeine Atlas public pages have independent privacy and terms links witho
 });
 
 
-test("standalone public policy pages survive LABDAM root login cutover", () => {
+test("standalone public policy pages work without any portal login", () => {
   const root = path.join(appDir, "..");
   const privacy = fs.readFileSync(path.join(root, "privacy.html"), "utf8");
   const terms = fs.readFileSync(path.join(root, "terms.html"), "utf8");
