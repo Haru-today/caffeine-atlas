@@ -4,16 +4,16 @@
    requests, which the privacy notice does not cover. */
 
 body.landing {
-  --home-bg: #faf7f2;
-  --home-soft: #f3eee6;
-  --home-surface: #ffffff;
-  --home-ink: #1d2a2c;
-  --home-muted: #56635f;
-  --home-line: #e5ddd1;
-  --home-teal: #0b6b64;
-  --home-teal-deep: #0a4f4a;
-  --home-teal-soft: #e2f0ed;
-  --home-coffee: #7b4b27;
+  /* Only the existing Caffeine Atlas palette from styles.css :root. */
+  --home-bg: var(--bg);
+  --home-soft: var(--surface-soft);
+  --home-surface: var(--surface);
+  --home-ink: var(--ink);
+  --home-muted: var(--muted);
+  --home-line: var(--line);
+  --home-teal: var(--teal);
+  --home-teal-deep: var(--teal-dark);
+  --home-teal-soft: #e9f6f7;
   --home-radius: 18px;
   margin: 0;
   background: var(--home-bg);
@@ -43,7 +43,7 @@ body.landing figure {
 }
 
 body.landing a:focus-visible {
-  outline: 3px solid #2f6fd6;
+  outline: 3px solid #367fdd;
   outline-offset: 3px;
   border-radius: 6px;
 }
@@ -58,7 +58,7 @@ body.landing .home-top {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(250, 247, 242, 0.94);
+  background: rgba(244, 246, 247, 0.94);
   border-bottom: 1px solid var(--home-line);
   backdrop-filter: blur(10px);
 }
@@ -120,7 +120,7 @@ body.landing .home-button {
   color: #fff;
   font-size: 17px;
   font-weight: 700;
-  box-shadow: 0 10px 24px rgba(11, 107, 100, 0.22);
+  box-shadow: 0 10px 24px rgba(8, 118, 110, 0.22);
 }
 
 body.landing .home-button:hover {
@@ -229,7 +229,7 @@ body.landing .home-sample {
   border: 1px solid var(--home-line);
   border-radius: 26px;
   background: var(--home-surface);
-  box-shadow: 0 30px 60px rgba(60, 44, 24, 0.10);
+  box-shadow: var(--shadow);
 }
 
 body.landing .home-sample-tag {
@@ -239,13 +239,13 @@ body.landing .home-sample-tag {
   padding: 4px 12px;
   border-radius: 999px;
   background: var(--home-soft);
-  color: var(--home-coffee);
+  color: var(--home-teal-deep);
   font-size: 13px;
   font-weight: 700;
 }
 
 body.landing .home-sample-type {
-  color: #4a3f7a;
+  color: var(--coral);
   font-size: 20px;
   font-weight: 800;
 }
@@ -308,7 +308,7 @@ body.landing .home-sample-bars i {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--home-teal), #6a5fb0);
+  background: linear-gradient(90deg, var(--teal), var(--amber));
 }
 
 body.landing .home-sample-tip {
@@ -392,22 +392,25 @@ body.landing .home-types {
 
 body.landing .home-type {
   padding: 30px 28px;
+  border-top: 5px solid var(--type-accent);
   border-radius: var(--home-radius);
+  background: var(--type-tint);
 }
 
-body.landing .home-type-fast { background: #fff2d4; --type-ink: #6e4600; }
-body.landing .home-type-mid { background: #dff0ea; --type-ink: #0b5751; }
-body.landing .home-type-slow { background: #e9e6f6; --type-ink: #463b78; }
+/* Same low-to-high scale as the analyzer gauge: green, amber, coral. */
+body.landing .home-type-fast { --type-accent: var(--green); --type-tint: #eef8f1; }
+body.landing .home-type-mid { --type-accent: var(--amber); --type-tint: #fff6df; }
+body.landing .home-type-slow { --type-accent: var(--coral); --type-tint: #fff2ef; }
 
 body.landing .home-type-band {
-  color: var(--type-ink);
+  color: var(--home-muted);
   font-size: 13px;
   font-weight: 700;
 }
 
 body.landing .home-type h3 {
   margin-top: 10px;
-  color: var(--type-ink);
+  color: var(--home-ink);
   font-size: 28px;
   font-weight: 800;
 }
@@ -417,8 +420,8 @@ body.landing .home-type-badge {
   margin-top: 6px;
   padding: 2px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.7);
-  color: var(--type-ink);
+  background: var(--home-surface);
+  color: var(--home-ink);
   font-size: 13px;
   font-weight: 700;
 }
@@ -499,7 +502,8 @@ body.landing .home-layer em {
 
 body.landing .home-layer .home-layer-note {
   margin-top: 14px;
-  color: var(--home-coffee);
+  color: var(--home-muted);
+  font-weight: 600;
   font-size: 14px;
 }
 
