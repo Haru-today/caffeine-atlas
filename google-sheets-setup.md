@@ -2,11 +2,9 @@
 
 리포트 결과를 아래 Google Sheet에 축적하려면 Google Apps Script 웹앱 URL이 필요합니다.
 
-대상 시트:
-`https://docs.google.com/spreadsheets/d/1v0-AhubC4vXzK-dzmA1G_S0qR8DYLOe1woqnAl7VL0s/edit`
+대상 시트는 `google-apps-script/Code.gs`의 `SPREADSHEET_ID`로 지정합니다.
 
-Spreadsheet ID:
-`1v0-AhubC4vXzK-dzmA1G_S0qR8DYLOe1woqnAl7VL0s`
+시트의 공유 설정은 반드시 **일반 액세스: 제한됨**으로 둡니다. 웹앱은 `나`로 실행되므로 시트를 공개하지 않아도 저장이 됩니다. 시트 ID가 공개 저장소에 있으므로, 링크 공유를 켜면 누구나 유전자형 데이터를 내려받을 수 있습니다.
 
 ## 1. Apps Script 열기
 
@@ -41,13 +39,15 @@ Spreadsheet ID:
 
 이미 웹앱을 배포한 상태에서 일괄 업로드 기능을 추가하는 경우에는 코드를 붙여넣은 뒤 `배포 > 배포 관리 > 수정 > 새 버전`으로 다시 배포해야 합니다. 같은 배포를 수정하면 기존 `/exec` URL을 유지할 수 있습니다.
 
-사이트는 직접 입력과 일괄 저장 모두 전송 전에 `confirmedSave`, `globalSampleIdCheck`, `ahrAlleles: "A/T"` 지원 여부를 확인합니다. 현재 버전은 `2026-09-16-confirmed-v3`입니다. 구버전 서버에는 저장 요청을 보내지 않습니다.
+사이트는 직접 입력과 일괄 저장 모두 전송 전에 `confirmedSave`, `globalSampleIdCheck`, `ahrAlleles: "A/T"` 지원 여부를 확인합니다. 현재 버전은 `2026-11-03-confirmed-v4`입니다. 구버전 서버에는 저장 요청을 보내지 않습니다.
 
 서버는 같은 잠금 안에서 기존 Responses의 Sample ID와 새 요청을 비교한 뒤 기록합니다. 앞뒤 공백은 제거하며 대소문자는 구분합니다. 하나라도 중복이면 요청 전체를 거절합니다. 과거 중복 행은 자동 삭제하지 않습니다.
 
 브라우저의 POST는 여전히 `no-cors`이므로 그 응답만으로 성공을 판단하지 않습니다. 요청마다 무작위 128비트 ID를 생성하고, 서버는 `setValues` → `flush` → 기록된 행 전체 읽기 검증 후 10분짜리 저장 확인 정보를 캐시에 남깁니다. 브라우저는 JSONP로 해당 ID의 상태와 저장 건수를 조회해 일치할 때만 완료를 표시합니다. 확인 정보에는 Sample ID·유전자형·리포트를 포함하지 않습니다. 시간 초과·캐시 유실·통신 오류는 미확인으로 처리하며 재전송 전에 실제 시트를 확인해야 합니다. 이는 영구 영수증이나 자동 재시도 기능은 아닙니다.
 
 rs6968865는 `AA / AT / TT / 모름`만 허용합니다. 기존 `GG/TG` 기록은 원자료를 대조하기 전까지 자동 변환하지 않습니다. 수정된 다운로드 양식을 사용하세요. 이 변경은 표기·입력 검증 오류 수정이며, 민감도 점수 모델의 임상적 검증을 의미하지 않습니다.
+
+시트 템플릿(Dashboard·Summary·Consent Log·Data Dictionary)을 다시 만들 때는 Apps Script 편집기에서 `setupTemplate` 함수를 직접 실행합니다. 웹앱 요청으로는 실행할 수 없습니다.
 
 ## 4. 사이트에 URL 넣기
 
