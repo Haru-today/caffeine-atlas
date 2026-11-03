@@ -1,7 +1,7 @@
 const SPREADSHEET_ID = "1v0-AhubC4vXzK-dzmA1G_S0qR8DYLOe1woqnAl7VL0s";
 const SHEET_NAME = "Responses";
 const KOREA_TIME_ZONE = "Asia/Seoul";
-const ENDPOINT_VERSION = "2026-09-16-confirmed-v3";
+const ENDPOINT_VERSION = "2026-11-03-confirmed-v4";
 const MAX_BATCH_ROWS = 200;
 const BATCH_EXAMPLE_SAMPLE_ID = "예시-저장안됨";
 
@@ -59,8 +59,6 @@ function doGet(e) {
   let response = {
     ok: true,
     message: "Caffeine Atlas Google Sheets endpoint is active.",
-    spreadsheetId: SPREADSHEET_ID,
-    sheetName: SHEET_NAME,
     version: ENDPOINT_VERSION,
     capabilities: {
       batchSave: true,
@@ -95,10 +93,6 @@ function doPost(e) {
     requestId = String(payload.requestId || "");
     if (!/^[a-f0-9]{32}$/.test(requestId)) throw new Error("A valid request ID is required.");
     let result;
-    if (payload.action === "setupTemplate") {
-      setupTemplate();
-      return jsonResponse({ ok: true, action: "setupTemplate" });
-    }
     if (payload.action === "batchSave") {
       result = saveBatchRows_(payload);
     } else {
@@ -222,6 +216,7 @@ function jsonResponse(value) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+// Run from the Apps Script editor only; the public web app must not expose it.
 function setupTemplate() {
   const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
   spreadsheet.setSpreadsheetTimeZone(KOREA_TIME_ZONE);
