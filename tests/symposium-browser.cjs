@@ -1,12 +1,36 @@
 "use strict";
-const { chromium, webkit, devices } = require("playwright");
+const { chromium, webkit } = require("playwright");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const XLSX = require("../caffeine-sensitivity-app/vendor/xlsx.full.min.js");
 
-const base = "http://127.0.0.1:8765";
-const artifacts = path.join(process.cwd(), "test-artifacts");
+const base = process.env.CAFFEINE_TEST_BASE_URL || "http://127.0.0.1:8765";
+const artifacts = process.env.CAFFEINE_TEST_ARTIFACTS_DIR || path.join(process.cwd(), "test-artifacts");
 fs.mkdirSync(artifacts, { recursive: true });
+
+async function serveLocalFiles(context) {
+  const root = path.resolve(__dirname, "..");
+  const mime = {
+    ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  };
+  // Render the real static files without a network listener on restricted PCs.
+  await context.route("**/*", async route => {
+    const url = new URL(route.request().url());
+    if (url.origin !== new URL(base).origin) return route.abort();
+    try {
+      let file = path.resolve(root, "." + decodeURIComponent(url.pathname));
+      if (file !== root && !file.startsWith(root + path.sep)) return route.abort();
+      if (fs.statSync(file).isDirectory()) file = path.join(file, "index.html");
+      await route.fulfill({ status: 200, body: fs.readFileSync(file),
+        contentType: mime[path.extname(file)] || "application/octet-stream" });
+    } catch (_) {
+      await route.fulfill({ status: 404, body: "Not found" });
+    }
+  });
+}
 
 async function runCase(name, browserType, viewport, deviceOverrides = {}) {
   const browser = await browserType.launch({ headless: true });
@@ -15,6 +39,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     acceptDownloads: true,
     ...deviceOverrides
   });
+  if (process.env.CAFFEINE_TEST_OFFLINE === "1") await serveLocalFiles(context);
   const page = await context.newPage();
   const errors = [];
   const outgoing = [];
@@ -69,7 +94,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
 
     assert.equal(await page.locator(".public-demo-notice").isVisible(), true);
     assert.equal(await page.locator("#sheetSaveBtn").isVisible(), false);
-    assert.equal(await page.locator("#batchModeBtn").isVisible(), false);
+    assert.equal(await page.locator("#batchModeBtn").isVisible(), true);
     assert.equal(await page.locator("#sheetConsent").isVisible(), false);
 
     // The poster audience generally has no personal genotyping data.
@@ -83,6 +108,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     ]) {
       assert.equal(await page.locator('[data-gene="' + gene + '"][data-genotype="' + genotype + '"]').getAttribute("class")
         .then(classes => classes.includes("active")), true, gene);
+      assert.equal(await page.locator('[data-gene="' + gene + '"][data-genotype="' + genotype + '"]').getAttribute("aria-pressed"), "true", gene);
     }
     assert.equal(await page.locator("#resultReport").isVisible(), true);
     assert.match(await page.locator("#referenceRankText").textContent(), /참조자료 대비 순서/);
@@ -95,6 +121,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     await page.locator("#resetBtn").click();
     assert.equal(await page.locator("#sampleId").inputValue(), "");
     assert.equal(await page.locator(".gt-button.active").count(), 0);
+    assert.equal(await page.locator('.gt-button[aria-pressed="true"]').count(), 0);
 
     // The original manual 4-SNP input and PDF flow also remain functional.
     await page.locator("#sampleId").fill("DEMO-001");
@@ -129,13 +156,88 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.match(content, /SNP coverage/);
     await popup.close();
 
-    assert.deepEqual(outgoing, [], name + ": unapproved Sheets API call observed");
-    assert.deepEqual(errors, [], name + ": runtime JavaScript error observed");
+    // Local batch processing must work on the public QR URL with no Sheets consent.
+    await page.locator("#editBtn").click();
+    await page.locator("#batchModeBtn").click();
+    assert.equal(await page.locator("#batchModePanel").isVisible(), true);
+    assert.equal(await page.locator("#batchConsent").isVisible(), false);
+    assert.equal(await page.locator("#batchAnalyzeSaveBtn").isVisible(), false);
+    assert.equal(await page.locator("#batchClearBtn").isEnabled(), false);
+    await page.locator("#batchModeBtn").press("Home");
+    assert.equal(await page.locator("#singleModeBtn").getAttribute("aria-selected"), "true");
+    await page.locator("#singleModeBtn").press("End");
+    assert.equal(await page.locator("#batchModeBtn").getAttribute("aria-selected"), "true");
+    const templateLink = page.getByRole("link", { name: /엑셀 양식 다운로드/ });
+    let templateBytes;
+    if (process.env.CAFFEINE_TEST_OFFLINE === "1") {
+      // A browser-managed HTTP download requires network access even when the
+      // page itself is routed. Read the exact linked asset for offline QA.
+      const href = await templateLink.getAttribute("href");
+      assert.match(href, /^\.\/assets\/caffeine-atlas-batch-template\.xlsx/);
+      templateBytes = fs.readFileSync(path.resolve(__dirname, "../caffeine-sensitivity-app/assets/caffeine-atlas-batch-template.xlsx"));
+    } else {
+      const templateWait = page.waitForEvent("download");
+      await templateLink.click();
+      templateBytes = fs.readFileSync(await (await templateWait).path());
+    }
+    const templateBook = XLSX.read(templateBytes, { type: "buffer" });
+    assert.ok(templateBook.Sheets["일괄 입력"]);
+    XLSX.utils.sheet_add_aoa(templateBook.Sheets["일괄 입력"], [
+      ["0001", "2026-11-08", "2026-11-07", "구강상피세포", "미기재", "AA", "GG", "CC", "AT"],
+      ["DEMO-ERROR", "2026-11-08", "", "구강상피세포", "미기재", "AA", "GG", "CC", "GG"]
+    ], { origin: "A3" });
+    await page.locator("#batchFile").setInputFiles({
+      name: "fictional-batch.xlsx",
+      mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      buffer: Buffer.from(XLSX.write(templateBook, { type: "buffer", bookType: "xlsx" }))
+    });
+    await page.locator("#batchAnalyzeBtn").click();
+    await page.waitForFunction(() => document.querySelectorAll("#batchResultsBody tr").length === 2);
+    assert.match(await page.locator("#batchResultsBody").textContent(), /0001/);
+    assert.match(await page.locator("#batchResultsBody").textContent(), /DEMO-ERROR/);
+    assert.equal(await page.locator("#batchDownloadBtn").isEnabled(), true);
+    const batchDownloadWait = page.waitForEvent("download");
+    await page.locator("#batchDownloadBtn").click();
+    const batchDownload = await batchDownloadWait;
+    assert.match(batchDownload.suggestedFilename(), /\.xlsx$/);
+    const resultBook = XLSX.read(fs.readFileSync(await batchDownload.path()), { type: "buffer" });
+    for (const sheetName of ["분석 결과", "입력 오류", "해석 안내"]) assert.ok(resultBook.Sheets[sheetName], sheetName);
+    const rows = XLSX.utils.sheet_to_json(resultBook.Sheets["분석 결과"], { header: 1, defval: "" });
+    assert.equal(rows.length, 3);
+    assert.ok(rows.some(row => row.includes("0001")), "leading-zero Sample ID must survive download");
+    assert.match(JSON.stringify(XLSX.utils.sheet_to_json(resultBook.Sheets["입력 오류"], { header: 1 })), /DEMO-ERROR/);
+
     const overflow = await page.evaluate(() =>
       document.documentElement.scrollWidth > window.innerWidth + 1);
     assert.equal(overflow, false, name + ": horizontal overflow");
     await page.screenshot({ path: path.join(artifacts, name + ".png"), fullPage: true });
-    console.log("PASS " + name + " — QR, one-tap fictional demo, safe reset, manual SNP, downloads, PDF and no Sheets calls");
+
+    // A failed replacement must not offer the previous visitor's results.
+    const invalidBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(invalidBook, XLSX.utils.aoa_to_sheet([["wrong input"]]), "잘못된 시트");
+    await page.locator("#batchFile").setInputFiles({
+      name: "wrong-sheet.xlsx",
+      mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      buffer: Buffer.from(XLSX.write(invalidBook, { type: "buffer", bookType: "xlsx" }))
+    });
+    assert.equal(await page.locator("#batchDownloadBtn").isEnabled(), false);
+    await page.locator("#batchAnalyzeBtn").click();
+    await page.waitForFunction(() => document.getElementById("batchStatus").classList.contains("error"));
+    assert.equal(await page.locator("#batchResults").isVisible(), false);
+    assert.equal(await page.locator("#batchDownloadBtn").isEnabled(), false);
+    await page.locator("#batchClearBtn").click();
+    assert.equal(await page.locator("#batchFile").evaluate(input => input.files.length), 0);
+    assert.equal(await page.locator("#batchResultsBody").textContent(), "");
+    assert.equal(await page.locator("#batchAnalyzeBtn").isEnabled(), false);
+    assert.equal(await page.locator("#batchClearBtn").isEnabled(), false);
+    assert.equal(await page.locator("#batchFile").evaluate(input => input === document.activeElement), true);
+
+    assert.deepEqual(outgoing, [], name + ": unapproved Sheets API call observed");
+    assert.deepEqual(errors, [], name + ": runtime JavaScript error observed");
+    console.log("PASS " + name + " — QR, demo, PDF, batch import/export, invalid replacement, clear and no Sheets calls");
+  } catch (error) {
+    try { await page.screenshot({ path: path.join(artifacts, name + "-failure.png"), fullPage: true }); } catch (_) {}
+    throw error;
   } finally {
     await context.close();
     await browser.close();

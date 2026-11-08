@@ -1,7 +1,9 @@
 # 카페인 민감도 모델 근거자료 패키지
 
 작성일: 2026-07-01
-정정일: 2026-07-02
+정정일: 2026-11-08
+
+> 2026-11-08 검토: 기존 점수와 가중치는 이전 결과의 재현을 위해 유지한다. 아래 공식은 임상적으로 검증된 민감도·수면 예측식이 아니다. rs2472297 및 rs6968865의 T allele에는 커피 섭취량 증가에 대한 직접 GWAS 근거가 있으나, 그 방향을 민감도·카페인 잔류 증가로 변환하는 것은 별도의 모형 가정이다. 종합점수만으로 빠른/느린 대사자나 수면 유형을 판정하지 않는다.
 
 ## 1. 현재 앱 모델의 성격
 
@@ -36,15 +38,17 @@ RegulationScore =
 점수 방향:
 
 ```text
-FinalScore 높음 = 카페인 잔류 가능성/민감 반응 가능성 높음
-FinalScore 낮음 = 카페인 빠른 처리 가능성 높음
+FinalScore 높음 = 프로젝트 모형에서 높은 지수 구간
+FinalScore 낮음 = 프로젝트 모형에서 낮은 지수 구간
 ```
+
+점수는 실제 분해 속도, 반감기, 각성 강도, 내성, 수면의 질 또는 안전 섭취량의 측정값이 아니다. 대사 관련 지표와 섭취/조절 지표를 합한 종합값이므로, 높은/낮은 종합점수를 곧바로 느린/빠른 대사자에 대응시키지 않는다. 기존 별칭 ‘각성형·잠잠형·잠꾸러기형’은 ‘민감도 지수 낮음·중간·높음’으로 교체한다.
 
 앱 내 유전자형 점수화:
 
 ```text
 score_rs762551: AA = 0, AC = 0.5, CC = 1
-  - C allele / CYP1A2*1F carrier를 느린 대사형 방향으로 반영
+  - C allele 수를 기존 모형에서 높은 대사 관련 지표 방향으로 반영
 
 score_rs2069514: GG = 0, AG = 0.5, AA = 1
   - A allele을 보조적인 민감도 증가 방향으로 반영
@@ -54,14 +58,16 @@ score_rs2069514: GG = 0, AG = 0.5, AA = 1
 
 | SNP | 유전자/좌위 | 앱 내 역할 | 점수화 방향 | 근거 수준 |
 |---|---|---:|---|---|
-| rs762551 | CYP1A2*1F | 대사 핵심 변수 | C allele / *1F carrier를 민감도 증가 방향으로 반영 | JAMA 2006의 *1F slow metabolizer 구분 + 기능 자료 |
+| rs762551 | CYP1A2 (구 명칭 *1F 관련) | 대사 핵심 변수 | C allele 수를 높은 대사 관련 모형값 방향으로 반영 | 대사 유도성 연구; 단일 SNP로 star allele 또는 생체 대사 표현형 확정 불가 |
 | rs2069514 | CYP1A2*1C | 대사 보조 변수 | A allele 증가를 보조적으로 민감도 증가 방향으로 반영 | 내부 기능자료상 효과 약함 |
-| rs2472297 | CYP1A1-CYP1A2 locus | 섭취/조절 변수 | 프로젝트 기존 계수 기반 | GWAS locus-level 근거 필요 |
-| rs6968865 | AHR | AHR 실험 타깃/조절 변수 | 프로젝트 실험 타깃으로 반영 | gene-level AHR 근거는 강함, rs6968865 SNP-specific 근거는 추가 확인 필요 |
+| rs2472297 | CYP1A1-CYP1A2 locus | 섭취/조절 변수 | 프로젝트 기존 계수 기반 | T allele의 커피 섭취량 증가 연관이 원논문에 보고됨; 민감도·잔류 방향은 미검증 |
+| rs6968865 | AHR 인근 | AHR 실험 타깃/조절 변수 | 프로젝트 기존 계수 기반 | T allele의 커피 섭취량 증가 연관이 원논문에 보고됨; 민감도·잔류 방향은 미검증 |
+
+**명칭 주의:** PharmVar GeneFocus (2026, DOI: 10.1002/cpt.70286)는 rs762551의 -163C>A가 과거 *1F 관련 변이이며 현재 *30 계열 등의 여러 haplotype에 존재한다고 설명한다. 따라서 C allele을 ‘*1F carrier’로 단정하지 않고 rsID와 실제 입력 염기를 기준으로 기술한다. *1C 역시 이전 문헌의 명칭이며 최신 PharmVar의 완전한 haplotype 정의와 동의어로 취급하지 않는다.
 
 ## 4. 1F:1C 가중치 도출
 
-업로드 자료 `1C, 1F 어떻게 할지.pdf`에 정리된 CYP1A2 기능 자료는 대사 레이어의 상대 가중치 산정에 사용했다. 다만 rs762551의 최종 점수 방향은 Cornelis et al. (2006), JAMA의 CYP1A2*1A/*1A rapid metabolizer 및 CYP1A2*1F carrier slow metabolizer 구분을 우선 적용한다.
+업로드 자료 `1C, 1F 어떻게 할지.pdf`에 정리된 CYP1A2 기능 자료는 기존 대사 레이어의 상대 가중치 설계에 사용했다. 이하 수치는 이전 내부 메모를 보존한 것이며, 이번 검토에서 원자료·대조군·활성 지표 정의를 확인한 값은 아니다. rs762551 입력 염기에 부여한 점수 방향은 이전 결과 재현을 위해 유지하되, SNP만으로 생체 대사 표현형을 확정하지 않는다.
 
 ### CYP1A2*1F, rs762551
 
@@ -99,8 +105,8 @@ AA가 non-AA보다 CYP1A2 활성이 낮음
 2026-07-02 정정:
 
 ```text
-현재 앱의 rs762551 점수 방향은 AA = 빠른 대사형, AC/CC = 느린 대사형 방향이다.
-즉 C allele / CYP1A2*1F carrier를 민감도 증가 방향으로 반영한다.
+이전 앱은 rs762551 AA에 낮은 값, AC/CC에 높은 값을 부여하며 이를 빠른/느린 대사형 방향으로 설명했다.
+즉 C allele 수를 높은 모형값 방향으로 반영한다. 이를 *1F carrier 판정으로 표현하지 않는다.
 위 내부 요약 통계의 AA 방향 해석은 allele coding 또는 활성 지표 정의를 원논문에서 재확인하기 전까지 앱 점수 방향의 근거로 사용하지 않는다.
 ```
 
@@ -137,18 +143,18 @@ AA 평균이 낮아 A allele을 민감도 증가 쪽으로 볼 수 있으나 CI�
 1C / 1F = 0.55 / 3.06 ≈ 0.18
 ```
 
-따라서 대사 레이어 내부 가중치를 다음처럼 설정:
+기존 프로젝트는 이 비율을 참고해 대사 레이어 내부 가중치를 다음처럼 설정했다:
 
 ```text
 CYP1A2*1F = 0.82
 CYP1A2*1C = 0.18
 ```
 
-주의: 이 수치는 원자료가 아닌 업로드된 분석 메모의 요약 통계에서 유도한 상대 가중치다. rs762551의 점수 방향은 JAMA 2006의 *1F slow metabolizer 구분을 우선 적용하며, 논문에 최종 인용하려면 원논문 PDF/DOI와 allele coding 확인이 필요하다.
+주의: 0.55 / 3.06 ≈ 0.18은 두 효과크기의 비율이며, 두 가중치를 합이 1이 되도록 정규화한 값은 아니다. 직접 정규화하면 3.06 / (3.06 + 0.55) ≈ 0.848, 0.55 / (3.06 + 0.55) ≈ 0.152이다. 따라서 0.82/0.18은 원논문에서 검증된 효과 가중치가 아닌 프로젝트 설계값으로 기술해야 한다. 이번 변경에서 수치는 변경하지 않았다. 원논문 PDF/DOI, allele coding 및 효과 추정 방법의 확인이 필요하다.
 
 ## 5. 대사 70%, 조절 30% 설계 근거
 
-카페인 민감도는 단순 섭취량보다 체내 처리 속도와 더 직접적으로 연결된다. 그러므로 CYP1A2 기능 변이를 메인 레이어로 두고, AHR/CYP1A1-CYP1A2 조절/섭취 관련 변이를 보조 레이어로 둔다.
+기존 프로젝트는 CYP1A2 관련 변이를 메인 레이어로 두고, AHR/CYP1A1-CYP1A2 조절/섭취 관련 변이를 보조 레이어로 두었다. 카페인 처리 과정과 각성·수면 반응은 구분해야 하며, 이 설계만으로 실제 민감도 예측 성능이 입증되는 것은 아니다.
 
 ```text
 Metabolism layer: CYP1A2*1F + CYP1A2*1C
@@ -190,7 +196,7 @@ AHR = 0.26 / (0.31 + 0.26) = 0.456 ≈ 0.46
 
 주의:
 
-업로드 자료 `11111.pdf`에는 AHR 후보 SNP로 `rs6968554-A`가 기록되어 있고, 외부 GWAS 문헌에서는 AHR locus 대표 SNP로 `rs4410790`이 자주 보고된다. 현재 앱의 `rs6968865`는 프로젝트의 AHR 실험 타깃이다. 따라서 `rs6968865`는 "AHR gene-level biological plausibility를 가진 project assay marker"로 표현해야 하며, `rs4410790` 또는 `rs6968554`와 동일한 문헌 근거 수준이라고 쓰면 안 된다.
+업로드 자료 `11111.pdf`의 이전 SNP 표기와 별개로, Sulem et al. (2011)은 앱에 사용한 rs2472297와 rs6968865 자체의 T allele이 커피 섭취량 증가와 연관됨을 직접 보고했다. 따라서 rs6968865에 SNP 수준 근거가 없다는 기존 설명은 정정한다. 다만 커피 섭취량 관련 계수를 민감도·잔류 증가 점수로 사용하는 것은 원논문에서 검증한 변환이 아니며, 현재 0.54/0.46은 프로젝트 가중치다. rs4410790 등 다른 SNP의 효과를 rs6968865에 그대로 대입하지 않는다.
 
 ## 7. 논문/공식 근거자료
 
@@ -220,9 +226,9 @@ Cornelis et al. (2006), JAMA.
 핵심 근거:
 
 - 커피 섭취와 비치명적 심근경색 위험의 관련성이 CYP1A2 genotype에 따라 달라지는지 분석.
-- 논문은 CYP1A2*1A/*1A를 rapid metabolizer, CYP1A2*1F carrier를 slow metabolizer로 구분.
-- 현재 앱은 이 구분에 맞춰 rs762551 AA를 빠른 대사형 방향, AC/CC를 느린 대사형 방향으로 점수화.
-- *1F carrier에서 높은 커피 섭취와 MI risk 증가가 더 뚜렷하게 나타남.
+- 논문에서 사용한 당시의 빠른/느린 대사 분류를 기존 프로젝트가 rs762551 점수 방향의 참고로 사용했다.
+- 앱은 rs762551 AA에 낮은 모형값, AC/CC에 높은 모형값을 부여하며, 이를 개인의 실제 대사 속도 판정으로 제시하지 않는다.
+- 당시 논문의 star allele 표현을 최신 PharmVar 정의와 동일하게 사용하지 않는다. 심근경색 연관 연구를 수면·각성 예측의 검증 자료로 사용할 수 없다.
 
 논문 링크:
 
@@ -234,13 +240,25 @@ Cornelis MC, El-Sohemy A, Kabagambe EK, Campos H. Coffee, CYP1A2 Genotype, and R
 
 ### C. rs2472297 / CYP1A1-CYP1A2 / AHR coffee consumption
 
-추가 확인 권장 논문:
+원문 확인 논문 (2026-11-08):
 
 Sulem P, Gudbjartsson DF, Geller F, et al. Sequence variants at CYP1A1-CYP1A2 and AHR associate with coffee consumption. Human Molecular Genetics. 2011;20(10):2071-2077. doi:10.1093/hmg/ddr086.
 
-이 논문은 rs2472297 및 AHR/CYP1A1-CYP1A2 coffee consumption association 확인용 후보로 사용해야 한다. 최종 논문 작성 전 원문에서 effect allele, beta, population을 직접 확인하는 것이 필요하다.
+원문: https://pmc.ncbi.nlm.nih.gov/articles/PMC3080612/
 
-### D. 프로젝트 내부 베이스 자료
+rs2472297-T 및 rs6968865-T 모두 커피 섭취량 증가와 연관되었다. 논문은 높은 카페인 제거율이 가능한 설명이라고 제안하지만 실험 검증이 필요하다고 명시한다. 따라서 이 결과를 카페인 잔류 증가 또는 불면의 직접 근거로 사용하지 않는다.
+
+### D. 분해·각성·수면 및 CYP1A2 명칭의 구분
+
+Rétey JV et al. Clin Pharmacol Ther. 2007;81(5):692-698. DOI: 10.1038/sj.clpt.6100102. PMID: 17329997. https://pubmed.ncbi.nlm.nih.gov/17329997/
+
+이 인간 연구에서는 ADORA2A 변이와 카페인의 주관적·객관적 수면 반응 차이를 보고했다. 현재 앱은 ADORA2A를 포함하지 않으며, 4개 SNP만으로 수면·각성 반응이나 내성을 판정하지 않는다.
+
+PharmVar GeneFocus: CYP1A2—Clinical Impact, Genetic Variation, and Updated Nomenclature. Clin Pharmacol Ther. 2026;120(2):313-323. DOI: 10.1002/cpt.70286. PMID: 41992662. https://doi.org/10.1002/cpt.70286
+
+PharmVar 공식 명명 검토에 따르면 단일 rs762551 검사는 완전한 CYP1A2 haplotype 또는 생체 내 대사 표현형을 확정하는 검사가 아니다. 기존 *1F 관련 -163C>A 변이는 최신 명명에서 *30 계열 등을 포함한 여러 haplotype과 연결된다. 앱에서는 rsID·유전자형을 우선 제시한다.
+
+### E. 프로젝트 내부 베이스 자료
 
 1. `1C, 1F 어떻게 할지.pdf`
    - CYP1A2*1F, CYP1A2*1C 기능 자료 요약
@@ -265,11 +283,11 @@ Sulem P, Gudbjartsson DF, Geller F, et al. Sequence variants at CYP1A1-CYP1A2 an
 
 ## 8. 논문 Methods에 넣을 수 있는 문장 초안
 
-> We developed an evidence-informed caffeine response interpretation score by integrating two CYP1A2 variants and two regulatory/intake-related loci. The metabolism layer included CYP1A2*1F (rs762551), scored in the slow-metabolizer direction for CYP1A2*1F carriers, and CYP1A2*1C (rs2069514), scored as a supportive marker. The regulation layer included a CYP1A1-CYP1A2 locus marker and an AHR assay marker. The final score was calculated as a weighted sum of the metabolism layer (70%) and the regulation layer (30%), then scaled to a 0-100 index, where higher values indicate greater predicted caffeine persistence or sensitivity.
+> We implemented a research-use genotype interpretation index using two CYP1A2 variants and two coffee-intake-associated loci. The legacy metabolism and regulation components were combined using project-defined weights of 70% and 30%, respectively, and scaled to a 0–100 index. Legacy coefficients were preserved for reproducibility. The index has not been validated to estimate individual caffeine clearance, sensitivity, sleep responses, or safe intake.
 
 ## 9. 논문 Limitations에 넣을 수 있는 문장 초안
 
-> This report and interpretation model is intended for research, education, and wellness guidance and has not been clinically validated as a diagnostic or prescribing tool. The AHR marker rs6968865 was selected as a project assay target; although AHR has strong biological plausibility and GWAS support at the gene/locus level, SNP-specific evidence for rs6968865 requires further validation. The assigned layer weights were derived from available summary statistics and project-specific assumptions and should be recalibrated in an independent cohort with measured caffeine pharmacokinetic or symptom-response phenotypes.
+> The index is intended for research and education. Although rs2472297-T and rs6968865-T have reported associations with greater coffee intake, translating intake associations into sensitivity or persistence scores remains an unvalidated project assumption. CYP1A2 SNP genotypes alone do not establish a complete star-allele assignment or an in vivo metabolic phenotype. The index requires independent calibration against measured pharmacokinetics and response outcomes, including sleep, before individual prediction claims can be made.
 
 ## 10. 후속 보강 필요사항
 
@@ -277,7 +295,7 @@ Sulem P, Gudbjartsson DF, Geller F, et al. Sequence variants at CYP1A1-CYP1A2 an
 
 1. CYP1A2*1F/*1C 기능 자료의 원논문 PDF/DOI 확보
 2. rs762551 내부 요약 통계와 JAMA 2006 allele coding 차이 재확인
-3. rs2472297의 effect allele, beta, phenotype 확인
+3. rs2472297 및 rs6968865의 커피 섭취량 연관성을 실제 민감도·잔류 지수로 변환하는 방향과 가중치 재검토
 4. rs6968865에 대한 dbSNP/NCBI 위치, allele, nearby gene annotation 정리
-5. rs6968865와 caffeine phenotype의 직접 association이 없으면 "project assay marker"로 명확히 제한
+5. 완전한 haplotype 검사 없이 CYP1A2 star allele을 단정하지 않도록 rsID 중심 명칭 및 최신 PharmVar 표기 검토
 6. 앱 점수와 실제 카페인 증상 설문 또는 대사체 측정값 간 correlation 검증

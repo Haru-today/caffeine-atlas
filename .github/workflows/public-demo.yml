@@ -63,9 +63,12 @@ jobs:
       - name: Exercise real Chromium, iPhone WebKit, downloads, popup, network
         run: node tests/symposium-browser.cjs
       - name: Upload symposium browser screenshots
-        if: always()
+        # Keep screenshots local by default; opt in only for failed-run diagnosis.
+        if: failure() && vars.CAFFEINE_UPLOAD_BROWSER_ARTIFACTS == 'true'
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: caffeine-public-qr-demo-browser
           path: test-artifacts/
           if-no-files-found: ignore
+          retention-days: 1

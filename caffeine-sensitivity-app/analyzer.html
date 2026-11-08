@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>리포트 생성 | Caffeine Atlas</title>
-  <link rel="stylesheet" href="./styles.css?v=readability-20261016">
+  <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=batch-controls-20261108">
 </head>
 <body class="public-demo">
   <div class="app-shell">
@@ -24,11 +24,11 @@
       <div>
         <p class="eyebrow">Report generator</p>
         <h1>카페인 반응 리포트 생성</h1>
-        <p class="top-summary">4개 SNP 유전자형을 직접 선택하거나 가상 예시 리포트로 체험할 수 있습니다. 분석 결과는 연구·교육용 모델 지표이며 개인의 실제 카페인 반응이나 안전 섭취량을 확정하지 않습니다.</p>
+        <p class="top-summary">4개 SNP 유전자형을 직접 입력하거나 엑셀로 최대 200명을 한 번에 분석할 수 있습니다. 분석 결과는 연구·교육용 모델 지표이며 개인의 실제 카페인 반응이나 안전 섭취량을 확정하지 않습니다.</p>
       </div>
       <div class="top-actions">
         <div class="privacy-chip">브라우저 내부 계산</div>
-        <div class="version-chip">Report v0.3</div>
+        <div class="version-chip">Report v0.4</div>
       </div>
     </header>
 
@@ -39,7 +39,7 @@
       </div>
       <div class="status-card">
         <span>Core marker</span>
-        <strong>CYP1A2*1F rs762551</strong>
+        <strong>CYP1A2 rs762551</strong>
       </div>
       <div class="status-card">
         <span>Reference</span>
@@ -75,7 +75,7 @@
           </button>
         </div>
 
-        <div class="input-mode-switch research-only" role="tablist" aria-label="리포트 입력 방식">
+        <div class="input-mode-switch" role="tablist" aria-label="리포트 입력 방식">
           <button class="input-mode-button active" id="singleModeBtn" type="button" role="tab" aria-selected="true" aria-controls="singleModePanel">
             1명 직접 입력
           </button>
@@ -89,7 +89,7 @@
         <div class="sample-card detailed-form">
           <div class="field">
             <label for="sampleId">Sample ID</label>
-            <input id="sampleId" type="text" placeholder="예: DEMO-001 (실명 입력 금지)" autocomplete="off" required>
+            <input id="sampleId" type="text" placeholder="예: DEMO-001 (실명 입력 금지)" autocomplete="off" maxlength="120" required>
           </div>
           <div class="field">
             <label for="reportDate">Report date</label>
@@ -151,7 +151,7 @@
         <div class="submit-panel">
           <div>
             <strong>리포트 준비 상태</strong>
-            <p id="validationText">Sample ID와 4개 항목을 선택해 주세요. 확인할 수 없는 유전자형은 ‘모름’으로 선택할 수 있습니다.</p>
+            <p id="validationText" role="status" aria-live="polite">Sample ID와 4개 항목을 선택해 주세요. 확인할 수 없는 유전자형은 ‘모름’으로 선택할 수 있습니다.</p>
           </div>
           <button class="tool-button primary analyze-button" id="analyzeBtn" type="button">
             리포트 생성
@@ -159,14 +159,14 @@
         </div>
         </div>
 
-        <section class="batch-panel research-only" id="batchModePanel" role="tabpanel" aria-labelledby="batchModeBtn" hidden>
+        <section class="batch-panel" id="batchModePanel" role="tabpanel" aria-labelledby="batchModeBtn" hidden>
           <div class="batch-intro">
             <div>
               <p class="eyebrow">Batch report generator</p>
               <h3>여러 명의 결과를 한 번에 처리</h3>
-              <p>지정 양식에 Sample ID와 4개 유전자형을 입력한 뒤 업로드하면, 브라우저에서 일괄 분석하고 유효한 결과를 Google Sheets에 한 번에 저장합니다.</p>
+              <p>양식에 코드형 Sample ID와 4개 유전자형을 입력한 뒤 업로드하세요. 브라우저 안에서 분석하고 전체 결과와 오류 목록을 엑셀 파일로 내려받습니다. 파일과 결과는 서버로 전송하지 않습니다.</p>
             </div>
-            <a class="tool-button ghost" href="./assets/caffeine-atlas-batch-template.xlsx?v=20260916" download>
+            <a class="tool-button ghost" href="./assets/caffeine-atlas-batch-template.xlsx?v=20261108" download>
               <span aria-hidden="true">↓</span>
               엑셀 양식 다운로드
             </a>
@@ -176,14 +176,14 @@
             <li><strong>1</strong><span>양식 다운로드</span></li>
             <li><strong>2</strong><span>대상자 정보 입력</span></li>
             <li><strong>3</strong><span>파일 업로드</span></li>
-            <li><strong>4</strong><span>일괄 분석·저장</span></li>
+            <li><strong>4</strong><span>분석·결과 다운로드</span></li>
           </ol>
 
           <div class="batch-upload-card">
             <label class="batch-file-field" for="batchFile">
               <span>작성한 엑셀 파일</span>
               <input id="batchFile" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
-              <small>2행의 예시는 자동으로 제외됩니다. ‘일괄 입력’ 시트의 3행부터 최대 200명까지 입력해 주세요.</small>
+              <small>최대 200명 · 파일 5 MB 이하. 2행의 ‘예시-저장안됨’은 제외합니다. ‘일괄 입력’ 시트의 3행부터 작성하고, 모르는 유전자형은 빈칸 대신 ‘모름’으로 입력하세요. 실명·환자번호·학번은 입력하지 마세요.</small>
             </label>
             <div class="batch-file-summary" id="batchFileSummary">
               <span>선택된 파일 없음</span>
@@ -191,7 +191,7 @@
             </div>
           </div>
 
-          <label class="consent-card batch-consent-card">
+          <label class="consent-card batch-consent-card research-only">
             <input id="batchConsent" type="checkbox">
             <span>
               <strong>일괄 저장 동의 확인</strong>
@@ -202,11 +202,15 @@
           <div class="submit-panel batch-submit-panel">
             <div>
               <strong>일괄 처리 준비 상태</strong>
-              <p id="batchStatus">양식을 작성한 뒤 엑셀 파일을 선택해 주세요. 업로드된 엑셀 내용은 먼저 브라우저에서 분석되며, 동의 후 저장 요청을 실행하면 유전자형과 리포트가 Google Sheets로 전송됩니다.</p>
+              <p id="batchStatus" role="status" aria-live="polite">양식을 작성한 뒤 파일을 선택하세요. 분석 후 정상 결과와 입력 오류를 함께 내려받을 수 있습니다. 새로고침하면 파일을 다시 선택해야 합니다.</p>
             </div>
-            <button class="tool-button primary analyze-button" id="batchAnalyzeSaveBtn" type="button" disabled>
-              일괄 분석 및 시트 저장
-            </button>
+            <div class="batch-actions">
+              <button class="tool-button ghost" id="batchClearBtn" type="button" disabled>파일·결과 비우기</button>
+              <button class="tool-button primary analyze-button" id="batchAnalyzeBtn" type="button" disabled>일괄 분석</button>
+              <button class="tool-button primary analyze-button research-only" id="batchAnalyzeSaveBtn" type="button" disabled>
+                일괄 분석 및 시트 저장
+              </button>
+            </div>
           </div>
 
           <div class="batch-results" id="batchResults" hidden>
@@ -216,8 +220,9 @@
                 <h3>일괄 처리 결과</h3>
               </div>
               <div class="batch-result-counts" id="batchResultCounts"></div>
+              <button class="tool-button primary" id="batchDownloadBtn" type="button" disabled>결과 엑셀 다운로드</button>
             </div>
-            <div class="batch-table-wrap">
+            <div class="batch-table-wrap" tabindex="0" role="region" aria-label="일괄 처리 결과표">
               <table class="batch-table">
                 <thead>
                   <tr>
@@ -226,7 +231,7 @@
                     <th>처리 상태</th>
                     <th>민감도 점수</th>
                     <th>결과 유형</th>
-                    <th>대사 판정</th>
+                    <th>대사 관련 지표</th>
                     <th>입력 완성도</th>
                     <th>확인 사항</th>
                   </tr>
@@ -234,7 +239,7 @@
                 <tbody id="batchResultsBody"></tbody>
               </table>
             </div>
-            <p class="sync-status" id="batchSheetStatus">Google Sheets 저장 상태가 여기에 표시됩니다.</p>
+            <p class="sync-status" id="batchSheetStatus">분석 결과는 이 브라우저에서만 처리됩니다. 결과 엑셀은 직접 내려받아 보관하세요.</p>
           </div>
         </section>
       </section>
@@ -285,9 +290,9 @@
                 <div class="gauge-marker" id="gaugeMarker"></div>
               </div>
               <div class="gauge-scale">
-                <span>각성형</span>
-                <span>잠잠형</span>
-                <span>잠꾸러기형</span>
+                <span>지수 낮음</span>
+                <span>지수 중간</span>
+                <span>지수 높음</span>
               </div>
             </div>
           </div>
@@ -314,10 +319,14 @@
         </div>
 
         <div class="metabolism-type-card">
-          <span>카페인이 몸에 남는 시간</span>
+          <span>대사 관련 모형 지표</span>
           <strong id="metabolismTypeName">--</strong>
-          <p id="metabolismTypeDesc">유전자형을 바탕으로 카페인이 비교적 빨리 빠지는지, 오래 남는지 보여드립니다.</p>
+          <p id="metabolismTypeDesc">대사 관련 유전자형을 반영한 모형값입니다. 실제 분해 시간이나 수면 반응을 측정한 결과가 아닙니다.</p>
         </div>
+        <aside class="response-explainer" role="note">
+          <strong>커피를 마시고 잘 잔다고, 빨리 분해한다는 뜻일까요?</strong>
+          <p>카페인 분해 속도와 각성·수면 반응은 서로 다릅니다. ‘민감도 지수 낮음·중간·높음’은 이 모형의 점수 구간이며, 잘 자는 유형이나 잠이 깨는 유형을 뜻하지 않습니다. ‘커피를 잘 마신다’는 체감이나 수면 능력·내성·안전 섭취량도 이 결과로 판정할 수 없습니다.</p>
+        </aside>
 
         <div class="layer-stack">
           <h3>결과를 볼 때 참고한 항목</h3>
@@ -407,6 +416,6 @@
 
   <nav class="policy-links" aria-label="이용 정책" style="text-align:center;margin:12px auto 24px;font-size:.9rem;"><p class="policy-links"><a href="https://haru-today.github.io/caffeine-atlas/privacy.html">개인정보 처리 안내</a> · <a href="https://haru-today.github.io/caffeine-atlas/terms.html">서비스 이용 안내</a></p></nav>
   <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
-  <script src="./app.js?v=approved-result-copy-20261016"></script>
+  <script src="./app.js?v=batch-controls-20261108"></script>
 </body>
 </html>

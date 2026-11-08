@@ -4,6 +4,8 @@
 
 ## 현재 공개 코드에서 확인되는 처리
 
+- 2026-11-08: 공개 엑셀 일괄 분석은 파일을 브라우저 메모리에서 읽고 XLSX 결과를 기기에 내려받는 경로로 제공. 서버 전송·브라우저 영구 저장을 수행하지 않음.
+- 연구용 서버 일괄 저장 경로는 아래 설명과 별개이며 공개 코드의 `RESEARCH_STORAGE_MODE = false`, 빈 endpoint 제한을 유지.
 - 사용자 선택 데이터: Sample ID, reportDate, collectionDate, specimen, sex, institution, SNP 네 항목의 유전자형.
 - 브라우저 분석 후 선택적 저장: 결과 점수, 유형, 백분위, 세부 점수, 전체 reportJson.
 - 단건 저장 및 최대 200개 샘플 일괄 저장은 Google Apps Script의 동일 Google Sheets 백엔드를 이용하도록 코드가 구성되어 있음.
