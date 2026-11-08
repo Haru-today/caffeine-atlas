@@ -3035,6 +3035,9 @@ body { line-height: 1.6; }
 .batch-file-field small, .batch-file-summary strong { overflow-wrap: anywhere; }
 .batch-results .tool-button { min-height: 44px; }
 .batch-table td { overflow-wrap: anywhere; max-width: 300px; }
+.batch-table .batch-pdf-button { display: flex; margin-top: 8px; min-width: 88px; white-space: nowrap; font-size: 12px; }
+.batch-pdf-button:focus-visible { outline: 3px solid #245baa; outline-offset: 3px; }
+.batch-pdf-help { color: #495d70; font-size: .86rem; line-height: 1.7; margin: 12px 0; }
 .response-explainer {
   padding: 18px 20px;
   margin: 16px 0;

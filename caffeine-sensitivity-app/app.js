@@ -1537,7 +1537,11 @@
       return [
         '<tr class="', hasError ? "has-error" : "", '">',
         "<td>", record.rowNumber, "</td>",
-        "<td><strong>", escapeHtml(record.sampleId), "</strong></td>",
+        "<td><strong>", escapeHtml(record.sampleId), "</strong>",
+        '<button class="tool-button ghost batch-pdf-button" type="button" data-batch-pdf-row="', record.rowNumber,
+        '" aria-label="', escapeHtml(record.sampleId + " PDF 저장 화면 열기"), '"',
+        hasError ? ' disabled title="입력 오류를 수정한 뒤 PDF를 저장할 수 있습니다."' : ' title="개별 PDF 저장 화면 열기"',
+        '>PDF 저장</button></td>',
         '<td><span class="status-pill ', hasError ? "error" : "", '">', hasError ? "입력 오류" : (result.score === null ? "판정 보류" : "분석 완료"), "</span></td>",
         "<td>", !hasError && typeof result.score === "number" ? result.score.toFixed(1) + "점" : (!hasError ? "산출 없음" : "--"), "</td>",
         "<td>", !hasError ? escapeHtml(result.category.label) : "--", "</td>",
@@ -1991,13 +1995,7 @@
     ].join("");
   }
 
-  function savePdfReport() {
-    var data = buildReportData();
-    if (!data) {
-      window.alert("먼저 리포트 생성 버튼을 눌러 결과를 생성해 주세요.");
-      return;
-    }
-
+  function openPdfReport(data) {
     var printWindow = window.open("", "_blank", "width=920,height=1120");
     if (!printWindow) {
       window.alert("PDF 리포트 창을 열 수 없습니다. 브라우저의 팝업 차단을 해제한 뒤 다시 시도해 주세요.");
@@ -2006,6 +2004,26 @@
     printWindow.document.open();
     printWindow.document.write(buildPdfReportHtml(data));
     printWindow.document.close();
+  }
+
+  function savePdfReport() {
+    var data = buildReportData();
+    if (!data) {
+      window.alert("먼저 리포트 생성 버튼을 눌러 결과를 생성해 주세요.");
+      return;
+    }
+    openPdfReport(data);
+  }
+
+  function saveBatchPdfReport(rowNumber) {
+    if (batchBusy) return;
+    var record = batchResults.find(function (item) { return item.rowNumber === rowNumber; });
+    if (!record || record.errors.length || !record.reportData) {
+      setBatchStatus("현재 분석 결과에서 입력 오류가 없는 대상자의 PDF를 선택해 주세요.", "error");
+      return;
+    }
+    // Use this row's immutable report data, never the single-person form state.
+    openPdfReport(record.reportData);
   }
 
   function bindEvents() {
@@ -2042,6 +2060,11 @@
     elements.batchAnalyzeSaveBtn.addEventListener("click", processBatchUpload);
     elements.batchAnalyzeBtn.addEventListener("click", processLocalBatchUpload);
     elements.batchDownloadBtn.addEventListener("click", downloadBatchResults);
+    elements.batchResultsBody.addEventListener("click", function (event) {
+      var button = event.target.closest("[data-batch-pdf-row]");
+      if (!button || button.disabled) return;
+      saveBatchPdfReport(Number(button.getAttribute("data-batch-pdf-row")));
+    });
     [elements.singleModeBtn, elements.batchModeBtn].forEach(function (tab) {
       tab.addEventListener("keydown", function (event) {
         if (["ArrowLeft", "ArrowRight", "Home", "End"].indexOf(event.key) === -1) return;

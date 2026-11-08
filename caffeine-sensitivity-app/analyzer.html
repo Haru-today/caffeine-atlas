@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>리포트 생성 | Caffeine Atlas</title>
-  <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=batch-controls-20261108">
+  <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=batch-pdf-20261108">
 </head>
 <body class="public-demo">
   <div class="app-shell">
@@ -227,7 +227,7 @@
                 <thead>
                   <tr>
                     <th>행</th>
-                    <th>Sample ID</th>
+                    <th>Sample ID / 개별 PDF</th>
                     <th>처리 상태</th>
                     <th>민감도 점수</th>
                     <th>결과 유형</th>
@@ -239,6 +239,7 @@
                 <tbody id="batchResultsBody"></tbody>
               </table>
             </div>
+            <p class="batch-pdf-help">각 Sample ID 아래의 ‘PDF 저장’을 누른 뒤 인쇄 화면에서 ‘PDF로 저장’을 선택하세요. 입력 오류가 있는 행은 먼저 수정해야 하며, ‘판정 보류’ 리포트에는 점수를 표시하지 않습니다.</p>
             <p class="sync-status" id="batchSheetStatus">분석 결과는 이 브라우저에서만 처리됩니다. 결과 엑셀은 직접 내려받아 보관하세요.</p>
           </div>
         </section>
@@ -416,6 +417,6 @@
 
   <nav class="policy-links" aria-label="이용 정책" style="text-align:center;margin:12px auto 24px;font-size:.9rem;"><p class="policy-links"><a href="https://haru-today.github.io/caffeine-atlas/privacy.html">개인정보 처리 안내</a> · <a href="https://haru-today.github.io/caffeine-atlas/terms.html">서비스 이용 안내</a></p></nav>
   <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
-  <script src="./app.js?v=batch-controls-20261108"></script>
+  <script src="./app.js?v=batch-pdf-20261108"></script>
 </body>
 </html>
