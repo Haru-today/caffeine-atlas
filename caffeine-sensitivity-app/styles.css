@@ -3021,3 +3021,26 @@ body { line-height: 1.6; }
 @media (prefers-reduced-motion: reduce) {
   .nav-links { scroll-behavior: auto; }
 }
+
+/* Local batch analysis and interpretation clarity (2026-11-08). */
+.batch-results, .batch-panel, .batch-intro > div { min-width: 0; }
+.batch-results-head, .batch-submit-panel { flex-wrap: wrap; }
+.batch-file-field small, .batch-file-summary strong { overflow-wrap: anywhere; }
+.batch-results .tool-button { min-height: 44px; }
+.batch-table td { overflow-wrap: anywhere; max-width: 300px; }
+.response-explainer {
+  padding: 18px 20px;
+  margin: 16px 0;
+  border: 1px solid #c9dde0;
+  border-radius: 10px;
+  background: #f0f7f7;
+  line-height: 1.75;
+}
+.response-explainer p { margin: 8px 0 0; }
+.gauge-scale { gap: 8px; }
+@media (max-width: 760px) {
+  .batch-submit-panel > .tool-button, #batchDownloadBtn { width: 100%; }
+  .batch-results { padding: 12px; }
+  .batch-upload-card { min-width: 0; }
+  .response-explainer { padding: 15px; }
+}

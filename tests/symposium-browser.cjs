@@ -3,6 +3,7 @@ const { chromium, webkit, devices } = require("playwright");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const XLSX = require("../caffeine-sensitivity-app/vendor/xlsx.full.min.js");
 
 const base = "http://127.0.0.1:8765";
 const artifacts = path.join(process.cwd(), "test-artifacts");
@@ -69,7 +70,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
 
     assert.equal(await page.locator(".public-demo-notice").isVisible(), true);
     assert.equal(await page.locator("#sheetSaveBtn").isVisible(), false);
-    assert.equal(await page.locator("#batchModeBtn").isVisible(), false);
+    assert.equal(await page.locator("#batchModeBtn").isVisible(), true);
     assert.equal(await page.locator("#sheetConsent").isVisible(), false);
 
     // The poster audience generally has no personal genotyping data.
@@ -129,13 +130,49 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.match(content, /SNP coverage/);
     await popup.close();
 
+    // Local batch processing must work on the public QR URL with no Sheets consent.
+    await page.locator("#editBtn").click();
+    await page.locator("#batchModeBtn").click();
+    assert.equal(await page.locator("#batchModePanel").isVisible(), true);
+    assert.equal(await page.locator("#batchConsent").isVisible(), false);
+    assert.equal(await page.locator("#batchAnalyzeSaveBtn").isVisible(), false);
+    const templateWait = page.waitForEvent("download");
+    await page.getByRole("link", { name: /엑셀 양식 다운로드/ }).click();
+    const templateDownload = await templateWait;
+    const templateBook = XLSX.read(fs.readFileSync(await templateDownload.path()), { type: "buffer" });
+    assert.ok(templateBook.Sheets["일괄 입력"]);
+    XLSX.utils.sheet_add_aoa(templateBook.Sheets["일괄 입력"], [
+      ["0001", "2026-11-08", "2026-11-07", "구강상피세포", "미기재", "AA", "GG", "CC", "AT"],
+      ["DEMO-ERROR", "2026-11-08", "", "구강상피세포", "미기재", "AA", "GG", "CC", "GG"]
+    ], { origin: "A3" });
+    await page.locator("#batchFile").setInputFiles({
+      name: "fictional-batch.xlsx",
+      mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      buffer: XLSX.write(templateBook, { type: "buffer", bookType: "xlsx" })
+    });
+    await page.locator("#batchAnalyzeBtn").click();
+    await page.waitForFunction(() => document.querySelectorAll("#batchResultsBody tr").length === 2);
+    assert.match(await page.locator("#batchResultsBody").textContent(), /0001/);
+    assert.match(await page.locator("#batchResultsBody").textContent(), /DEMO-ERROR/);
+    assert.equal(await page.locator("#batchDownloadBtn").isEnabled(), true);
+    const batchDownloadWait = page.waitForEvent("download");
+    await page.locator("#batchDownloadBtn").click();
+    const batchDownload = await batchDownloadWait;
+    assert.match(batchDownload.suggestedFilename(), /\.xlsx$/);
+    const resultBook = XLSX.read(fs.readFileSync(await batchDownload.path()), { type: "buffer" });
+    for (const sheetName of ["분석 결과", "입력 오류", "해석 안내"]) assert.ok(resultBook.Sheets[sheetName], sheetName);
+    const rows = XLSX.utils.sheet_to_json(resultBook.Sheets["분석 결과"], { header: 1, defval: "" });
+    assert.equal(rows.length, 3);
+    assert.ok(rows.some(row => row.includes("0001")), "leading-zero Sample ID must survive download");
+    assert.match(JSON.stringify(XLSX.utils.sheet_to_json(resultBook.Sheets["입력 오류"], { header: 1 })), /DEMO-ERROR/);
+
     assert.deepEqual(outgoing, [], name + ": unapproved Sheets API call observed");
     assert.deepEqual(errors, [], name + ": runtime JavaScript error observed");
     const overflow = await page.evaluate(() =>
       document.documentElement.scrollWidth > window.innerWidth + 1);
     assert.equal(overflow, false, name + ": horizontal overflow");
     await page.screenshot({ path: path.join(artifacts, name + ".png"), fullPage: true });
-    console.log("PASS " + name + " — QR, one-tap fictional demo, safe reset, manual SNP, downloads, PDF and no Sheets calls");
+    console.log("PASS " + name + " — QR, fictional demo, reset, manual SNP, PDF, batch template/import/export and no Sheets calls");
   } finally {
     await context.close();
     await browser.close();

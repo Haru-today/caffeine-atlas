@@ -4,32 +4,32 @@
   var genes = [
     {
       id: "rs762551",
-      name: "CYP1A2*1F",
+      name: "CYP1A2 · rs762551",
       rsid: "rs762551",
       layer: "metabolism",
       layerLabel: "대사",
       allele: "C",
-      description: "CYP1A2 유도성과 관련된 핵심 변이입니다. C allele은 CYP1A2*1F carrier로 느린 대사형, AA는 빠른 대사형 방향으로 해석합니다.",
-      evidence: "C allele 느린 대사",
+      description: "CYP1A2 유도성과 관련된 변이입니다. 기존 모형은 C allele 수를 높은 지표 방향으로 반영합니다. 단일 SNP만으로 실제 대사 속도나 CYP1A2 star allele을 판정하지 않습니다.",
+      evidence: "CYP1A2 유도성 연관",
       source: "기능 연구",
-      evidenceGrade: "High",
+      evidenceGrade: "Functional association",
       weightText: "대사 82%",
       genotypes: [
-        { code: "CC", alleleCount: 2, evidenceScore: 1, label: "저속" },
-        { code: "AC", alleleCount: 1, evidenceScore: 0.5, label: "중간" },
-        { code: "AA", alleleCount: 0, evidenceScore: 0, label: "고속" },
+        { code: "CC", alleleCount: 2, evidenceScore: 1, label: "C 2개" },
+        { code: "AC", alleleCount: 1, evidenceScore: 0.5, label: "C 1개" },
+        { code: "AA", alleleCount: 0, evidenceScore: 0, label: "C 0개" },
         { code: "unknown", alleleCount: null, evidenceScore: null, label: "모름" }
       ]
     },
     {
       id: "rs2069514",
-      name: "CYP1A2*1C",
+      name: "CYP1A2 · rs2069514",
       rsid: "rs2069514",
       layer: "metabolism",
       layerLabel: "대사",
       allele: "A",
-      description: "CYP1A2 기능 보조 변수입니다. A allele이 많을수록 카페인 잔류 가능성 증가 방향으로 보조 반영합니다.",
-      evidence: "A allele 민감도 증가 가능",
+      description: "CYP1A2 관련 보조 변이입니다. 기존 모형은 A allele 수를 높은 지표 방향으로 반영합니다. 가중치와 실제 반응 예측 성능은 별도 검증이 필요합니다.",
+      evidence: "기능 관련 보조 변수",
       source: "기능 연구",
       evidenceGrade: "Supportive",
       weightText: "대사 18%",
@@ -47,10 +47,10 @@
       layer: "behavior",
       layerLabel: "섭취/조절",
       allele: "T",
-      description: "CYP1A1-CYP1A2 좌위의 섭취 성향 및 조절 신호를 보조 레이어로 계산합니다.",
-      evidence: "GWAS 기반",
+      description: "T allele은 커피 섭취량 증가와 연관되어 보고되었습니다. 이 연관성을 개인의 민감도나 분해 속도와 동일하게 해석하지 않습니다.",
+      evidence: "커피 섭취량 연관",
       source: "GWAS",
-      evidenceGrade: "Moderate",
+      evidenceGrade: "Intake association",
       weightText: "조절 54%",
       genotypes: [
         { code: "CC", alleleCount: 0, evidenceScore: 0, label: "T 0개" },
@@ -66,10 +66,10 @@
       layer: "behavior",
       layerLabel: "섭취/조절",
       allele: "T",
-      description: "AHR은 CYP1A2 발현 조절 축과 연결됩니다. rs6968865를 조절 레이어에 반영합니다.",
-      evidence: "AHR 조절자",
-      source: "AHR 후보",
-      evidenceGrade: "Moderate",
+      description: "AHR 인근의 T allele은 커피 섭취량 증가와 연관되어 보고되었습니다. 프로젝트 실험 표지자이며, 민감도·수면 반응으로 변환하는 모형은 별도 검증이 필요합니다.",
+      evidence: "커피 섭취량 연관",
+      source: "GWAS",
+      evidenceGrade: "Intake association",
       weightText: "조절 46%",
       genotypes: [
         { code: "AA", alleleCount: 0, evidenceScore: 0, label: "T 0개" },
@@ -106,6 +106,8 @@
   var BATCH_SHEET_NAME = "일괄 입력";
   var BATCH_EXAMPLE_SAMPLE_ID = "예시-저장안됨";
   var MAX_BATCH_ROWS = 200;
+  var MAX_BATCH_FILE_BYTES = 5 * 1024 * 1024;
+  var batchBusy = false;
   var BATCH_HEADERS = [
     "Sample ID",
     "리포트 날짜",
@@ -154,6 +156,8 @@
     batchFileSummary: document.getElementById("batchFileSummary"),
     batchConsent: document.getElementById("batchConsent"),
     batchAnalyzeSaveBtn: document.getElementById("batchAnalyzeSaveBtn"),
+    batchAnalyzeBtn: document.getElementById("batchAnalyzeBtn"),
+    batchDownloadBtn: document.getElementById("batchDownloadBtn"),
     batchStatus: document.getElementById("batchStatus"),
     batchResults: document.getElementById("batchResults"),
     batchResultCounts: document.getElementById("batchResultCounts"),
@@ -371,7 +375,7 @@
       ? getMetabolismSubtype(result.metabolismNorm)
       : {
         name: "판정 보류",
-        desc: "핵심 대사 표지자인 CYP1A2*1F rs762551가 '모름'이어서 카페인이 몸에 남는 시간을 판정하지 않았습니다."
+        desc: "핵심 표지자 rs762551가 '모름'이어서 대사 관련 모형 지표를 판정하지 않았습니다. 실제 분해 시간은 이 리포트로 측정할 수 없습니다."
       };
     var sensitivityRank = hasScore ? calculateRankFromPercentile(percentile.percentile) : null;
     var coverageNote = unknownCount > 0 && hasScore
@@ -415,49 +419,48 @@
   function classify(score) {
     if (score < 33.34) {
       return {
-        label: "각성형",
-        badge: "빠른 대사형",
-        emoji: "⚡",
-        desc: "입력하신 유전자형을 바탕으로 계산한 결과, 카페인 민감도 지수가 낮은 구간에 해당합니다.",
-        title: "카페인 민감도 지수가 낮은 편이에요!",
-        text: "유전자형 분석 결과, 카페인 관련 유전정보를 종합한 점수가 낮은 구간으로 나타났어요.\n\n이는 카페인 대사와 섭취에 관련된 유전적 특징을 참고한 결과예요. 실제로 카페인을 빠르게 분해하거나 커피를 많이 마셔도 괜찮다는 의미는 아니랍니다.\n\n평소 커피를 마신 뒤 잠드는 시간이나 몸의 반응을 함께 살펴보세요. 나에게 잘 맞는 카페인 섭취 습관을 알아가는 데 도움이 될 수 있어요.",
+        label: "민감도 지수 낮음",
+        badge: "낮은 구간",
+        emoji: "L",
+        desc: "연구·교육용 모형에서 계산한 민감도 지수가 낮은 구간입니다. 실제 분해 속도나 각성·수면 반응을 판정한 결과는 아닙니다.",
+        title: "모형 기반 민감도 지수가 낮은 구간입니다",
+        text: "입력한 유전자형을 프로젝트 모형에 적용한 종합 지수가 낮은 구간으로 나타났습니다.\n\n카페인 분해 속도와 각성·수면 반응은 구분해서 살펴보아야 합니다. 지수가 낮아도 커피를 잘 견디거나, 마신 뒤 잘 자거나, 많은 양을 마셔도 안전하다고 판단할 수 없습니다.\n\n이 서비스는 실제 분해 속도나 반감기를 측정하지 않습니다. 평소 섭취 시간·양과 잠드는 시간, 두근거림 등 실제 반응을 함께 확인해 주세요.",
         recommendations: [
-          "커피를 잘 견디는 편이어도 하루 3-4잔 이상은 습관처럼 늘리지 않는 것이 좋습니다.",
-          "오후 커피를 마신 날 잠드는 시간이 늦어지면, 다음부터는 시간을 조금 앞당겨 보세요.",
-          "운동 전 커피를 마실 때 가슴 두근거림, 속 불편함, 손 떨림이 있으면 양을 줄여보세요.",
-          "잠을 설친 날, 스트레스가 많은 날에는 평소보다 카페인이 더 강하게 느껴질 수 있습니다."
+          "음료의 표시 카페인 함량과 마신 시간, 잠든 시간, 몸 반응을 함께 기록해 보세요.",
+          "섭취 후 잠이 얕아지거나 잠드는 시간이 늦어지면 양과 섭취 시간을 조절해 보세요.",
+          "커피 외에 차, 에너지드링크 등으로 섭취한 카페인도 함께 살펴보세요.",
+          "유전자형 지수만으로 개인별 안전 섭취량을 정하지 마세요."
         ]
       };
     }
     if (score < 66.67) {
       return {
-        label: "잠잠형",
-        badge: "평균 대사형",
-        emoji: "🌿",
-        desc: "입력하신 유전자형을 바탕으로 계산한 결과, 카페인 민감도 지수가 중간 구간에 해당합니다.",
-        title: "카페인 민감도 지수가 중간 구간이에요!",
-        text: "유전자형 분석 결과, 카페인 관련 유전정보를 종합한 점수가 중간 구간으로 나타났어요.\n\n다만 중간 구간이라는 결과가 다른 사람들과 카페인에 비슷하게 반응한다는 의미는 아니에요. 실제 카페인 반응은 수면 상태, 섭취량, 생활습관 등에 따라서도 달라질 수 있답니다.\n\n커피를 마시는 시간과 양, 마신 뒤의 몸 상태를 함께 확인해 보세요. 자신의 카페인 섭취 습관을 이해하는 데 좋은 참고가 될 거예요.",
+        label: "민감도 지수 중간",
+        badge: "중간 구간",
+        emoji: "M",
+        desc: "연구·교육용 모형에서 계산한 민감도 지수가 중간 구간입니다. 인구집단의 평균 반응이나 평균 대사 속도를 뜻하지 않습니다.",
+        title: "모형 기반 민감도 지수가 중간 구간입니다",
+        text: "입력한 유전자형을 프로젝트 모형에 적용한 종합 지수가 중간 구간으로 나타났습니다.\n\n카페인 분해 속도와 각성·수면 반응은 구분해서 살펴보아야 합니다. 중간 구간은 사람들의 평균 반응이나 평균 대사 속도를 뜻하지 않으며, 개인의 안전 섭취량도 제시하지 않습니다.\n\n이 서비스는 실제 분해 속도나 반감기를 측정하지 않습니다. 평소 섭취 시간·양과 잠드는 시간, 두근거림 등 실제 반응을 함께 확인해 주세요.",
         recommendations: [
-          "하루 1-2잔 정도부터 시작해 내 몸이 편한 양을 찾아보세요.",
-          "오후 커피 후 잠이 얕아지거나 늦게 잠들면, 오후 2-3시 이후에는 줄이는 것이 좋습니다.",
-          "커피를 마신 뒤 속쓰림, 불안감, 두근거림이 있으면 양보다 농도부터 낮춰보세요.",
-          "잠이 부족한 날에는 같은 커피 한 잔도 더 예민하게 느껴질 수 있습니다."
+          "음료의 표시 카페인 함량과 마신 시간, 잠든 시간, 몸 반응을 함께 기록해 보세요.",
+          "섭취 후 잠이 얕아지거나 잠드는 시간이 늦어지면 양과 섭취 시간을 조절해 보세요.",
+          "커피 외에 차, 에너지드링크 등으로 섭취한 카페인도 함께 살펴보세요.",
+          "유전자형 지수만으로 개인별 안전 섭취량을 정하지 마세요."
         ]
       };
     }
     return {
-      label: "잠꾸러기형",
-      badge: "느린 대사형",
-      emoji: "🌙",
-      desc: "입력하신 유전자형을 바탕으로 계산한 결과, 카페인 민감도 지수가 높은 구간에 해당합니다.",
-      title: "카페인 민감도 지수가 높은 편이에요!",
-      text: "유전자형 분석 결과, 카페인 관련 유전정보를 종합한 점수가 높은 구간으로 나타났어요.\n\n이는 카페인과 관련된 유전적 특징을 참고해 볼 만하다는 의미예요. 하지만 실제로 카페인이 몸에 오래 남거나, 커피 한 잔에도 잠을 이루기 어렵다는 뜻은 아니랍니다.\n\n특히 늦은 시간에 커피를 마셨을 때 수면이나 몸 상태에 변화가 있는지 살펴보세요. 불편함이 느껴진다면 카페인 섭취 시간과 양을 조금씩 조절해 보는 것도 좋겠습니다.",
+      label: "민감도 지수 높음",
+      badge: "높은 구간",
+      emoji: "H",
+      desc: "연구·교육용 모형에서 계산한 민감도 지수가 높은 구간입니다. 잠이 많은 성향이나 실제 불면·민감 반응을 판정한 결과는 아닙니다.",
+      title: "모형 기반 민감도 지수가 높은 구간입니다",
+      text: "입력한 유전자형을 프로젝트 모형에 적용한 종합 지수가 높은 구간으로 나타났습니다.\n\n카페인 분해 속도와 각성·수면 반응은 구분해서 살펴보아야 합니다. 높은 구간은 잠이 많은 성향이나, 커피를 마시면 잠들기 어렵다는 판정이 아닙니다.\n\n이 서비스는 실제 분해 속도나 반감기를 측정하지 않습니다. 평소 섭취 시간·양과 잠드는 시간, 두근거림 등 실제 반응을 함께 확인해 주세요.",
       recommendations: [
-        "처음에는 반 잔이나 연한 커피처럼 적은 양부터 확인해 보세요.",
-        "가능하면 오전에만 마시고, 오후에는 디카페인이나 카페인이 없는 음료를 선택해 보세요.",
-        "에너지드링크, 진한 녹차, 초콜릿에도 카페인이 들어 있을 수 있습니다.",
-        "커피를 마신 날 잠을 설치거나 두근거림이 반복되면 며칠 쉬어보는 것이 좋습니다.",
-        "불면, 심한 두근거림, 불안감이 자주 반복되면 의료진과 상담해 주세요."
+        "음료의 표시 카페인 함량과 마신 시간, 잠든 시간, 몸 반응을 함께 기록해 보세요.",
+        "섭취 후 잠이 얕아지거나 잠드는 시간이 늦어지면 양과 섭취 시간을 조절해 보세요.",
+        "커피 외에 차, 에너지드링크 등으로 섭취한 카페인도 함께 살펴보세요.",
+        "유전자형 지수만으로 개인별 안전 섭취량을 정하지 마세요."
       ]
     };
   }
@@ -469,17 +472,17 @@
       badge: "유형 판정 보류",
       emoji: "?",
       desc: hasSupportingData
-        ? "확인된 보조 유전자형은 있지만 핵심 CYP1A2*1F가 '모름'이어서 카페인 민감도 유형을 판정하지 않았습니다."
+        ? "확인된 보조 유전자형은 있지만 핵심 CYP1A2 rs762551가 '모름'이어서 카페인 민감도 유형을 판정하지 않았습니다."
         : "확인된 유전자형이 없어 카페인 민감도 유형을 판정하지 않았습니다.",
       title: "핵심 유전자형을 확인하면 유형을 계산할 수 있어요",
       text: hasSupportingData
-        ? "확인된 " + confirmedCount + "개 유전자형의 레이어 값은 리포트에 표시하지만, 핵심 대사 표지자인 CYP1A2*1F rs762551가 '모름'이므로 최종 민감도 점수와 비교 위치는 산출하지 않았습니다."
+        ? "확인된 " + confirmedCount + "개 유전자형의 레이어 값은 리포트에 표시하지만, 핵심 표지자인 CYP1A2 rs762551가 '모름'이므로 최종 민감도 점수와 비교 위치는 산출하지 않았습니다."
         : "4개 유전자형이 모두 '모름'으로 입력되어 민감도 점수와 비교 위치를 산출하지 않았습니다. 임의의 평균값으로 대체하지 않고, 입력 내용과 일반적인 카페인 섭취 주의사항을 담은 정보 부족 리포트를 제공합니다.",
       recommendations: [
         "유전자형을 확인하기 전에는 카페인을 적은 양부터 섭취하고 실제 몸 반응을 살펴보세요.",
         "오후나 저녁에는 카페인을 줄이고, 수면에 영향이 있으면 섭취 시간을 앞당겨 보세요.",
         "두근거림, 불안감, 속 불편함이 나타나면 섭취를 중단하거나 양을 줄여보세요.",
-        "유형 결과가 필요하면 먼저 핵심 표지자인 CYP1A2*1F rs762551 유전자형을 확인해 다시 입력해 주세요."
+        "유형 결과가 필요하면 먼저 핵심 표지자인 CYP1A2 rs762551 유전자형을 확인해 다시 입력해 주세요."
       ]
     };
   }
@@ -488,26 +491,26 @@
     if (metabolismNorm === null || typeof metabolismNorm !== "number") {
       return {
         name: "판정 보류",
-        desc: "확인된 대사 관련 유전자형이 없어 카페인이 몸에서 빠져나가는 속도를 판정하지 않았습니다."
+        desc: "확인된 대사 관련 유전자형이 없어 대사 관련 모형 지표를 계산하지 않았습니다."
       };
     }
 
     var score = clamp(metabolismNorm * 100, 0, 100);
     if (score <= 33.33) {
       return {
-        name: "고속 대사형",
-        desc: "카페인이 몸에 오래 남기보다는 비교적 빨리 처리될 가능성이 있습니다."
+        name: "대사 관련 지표 낮음",
+        desc: "CYP1A2 관련 모형 지표가 낮은 구간입니다. 실제 분해 속도·반감기나 수면 반응을 측정한 값은 아닙니다."
       };
     }
     if (score <= 66.67) {
       return {
-        name: "중간 대사형",
-        desc: "카페인이 특별히 빨리 빠지거나 오래 남는 편으로 보이지는 않습니다."
+        name: "대사 관련 지표 중간",
+        desc: "CYP1A2 관련 모형 지표가 중간 구간입니다. 실제 사람들의 평균 대사 속도를 뜻하지 않습니다."
       };
     }
     return {
-      name: "저속 대사형",
-      desc: "카페인이 몸에 비교적 오래 남을 수 있어, 적은 양에도 늦은 시간까지 영향을 느낄 수 있습니다."
+      name: "대사 관련 지표 높음",
+      desc: "CYP1A2 관련 모형 지표가 높은 구간입니다. 실제 분해 속도·반감기나 수면 반응을 측정한 값은 아닙니다."
     };
   }
 
@@ -574,7 +577,7 @@
       var selectedCount = genes.length - getMissingGenes().length;
       var unknownCount = getUnknownGenes().length;
       var confirmedCount = selectedCount - unknownCount;
-      elements.validationText.textContent = "입력 진행률 " + selectedCount + "/4 (확인 " + confirmedCount + "개, 모름 " + unknownCount + "개). '모름'도 선택할 수 있으며, 핵심 CYP1A2*1F가 '모름'이면 유형 판정은 보류됩니다.";
+      elements.validationText.textContent = "입력 진행률 " + selectedCount + "/4 (확인 " + confirmedCount + "개, 모름 " + unknownCount + "개). '모름'도 선택할 수 있으며, 핵심 CYP1A2 rs762551가 '모름'이면 유형 판정은 보류됩니다.";
     }
     elements.validationText.classList.toggle("error", Boolean(isError));
   }
@@ -585,9 +588,18 @@
 
     if (!elements.sampleId.value.trim()) {
       errors.push("Sample ID를 입력해 주세요.");
+    } else if (elements.sampleId.value.trim().length > 120) {
+      errors.push("Sample ID는 120자 이내로 입력해 주세요.");
     }
-    if (!elements.reportDate.value) {
-      errors.push("Report date를 입력해 주세요.");
+    var reportDate = normalizeBatchDate(elements.reportDate.value, true);
+    var collectionDate = normalizeBatchDate(elements.collectionDate.value, false);
+    if (!reportDate) {
+      errors.push("유효한 Report date를 입력해 주세요.");
+    }
+    if (!collectionDate) {
+      errors.push("유효한 Collection date를 입력해 주세요.");
+    } else if (reportDate && collectionDate !== "--" && collectionDate > reportDate) {
+      errors.push("채취일은 리포트 날짜보다 늦을 수 없습니다.");
     }
     if (missingGenes.length > 0) {
       errors.push("아직 입력하지 않은 유전자형 항목: " + missingGenes.map(function (gene) {
@@ -1067,6 +1079,8 @@
       recommendations: result.category.recommendations,
       limitations: [
         "본 결과는 연구·교육용 해석 리포트이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다.",
+        "민감도 지수와 대사 관련 지표는 프로젝트 모형값입니다. 실제 카페인 분해 속도, 반감기, 각성·수면 반응, 내성 또는 개인별 안전 섭취량을 판정하지 않습니다.",
+        "커피 섭취량 연관 변이를 민감도 지수로 합산하는 방향과 가중치는 별도 검증이 필요합니다. 단일 SNP로 CYP1A2 star allele이나 생체 대사 표현형을 확정하지 않습니다.",
         "실제 카페인 반응은 수면, 약물, 간 기능, 임신, 흡연, 스트레스, 섭취량과 섭취 시간의 영향을 받을 수 있습니다.",
         result.confidence < 100 ? "'모름'으로 선택한 유전자형은 점수에서 제외했으며, 분석 완성도가 낮을수록 결과의 불확실성이 큽니다." : ""
       ].filter(Boolean)
@@ -1162,11 +1176,13 @@
   }
 
   function setInputMode(mode) {
-    var isBatch = RESEARCH_STORAGE_MODE && mode === "batch";
+    var isBatch = mode === "batch";
     elements.singleModeBtn.classList.toggle("active", !isBatch);
     elements.batchModeBtn.classList.toggle("active", isBatch);
     elements.singleModeBtn.setAttribute("aria-selected", String(!isBatch));
     elements.batchModeBtn.setAttribute("aria-selected", String(isBatch));
+    elements.singleModeBtn.tabIndex = isBatch ? -1 : 0;
+    elements.batchModeBtn.tabIndex = isBatch ? 0 : -1;
     elements.singleModePanel.hidden = isBatch;
     elements.batchModePanel.hidden = !isBatch;
     elements.resetBtn.hidden = isBatch;
@@ -1187,10 +1203,11 @@
   function resetBatchOutput() {
     batchRows = [];
     batchResults = [];
+    elements.batchDownloadBtn.disabled = true;
     elements.batchResults.hidden = true;
     elements.batchResultCounts.innerHTML = "";
     elements.batchResultsBody.innerHTML = "";
-    setBatchSheetStatus("Google Sheets 저장 상태가 여기에 표시됩니다.");
+    setBatchSheetStatus("분석 결과는 이 브라우저에서만 처리됩니다. 결과 엑셀은 직접 내려받아 보관하세요.");
   }
 
   function handleBatchFileChange() {
@@ -1200,6 +1217,7 @@
     if (!batchFile) {
       elements.batchFileSummary.innerHTML = "<span>선택된 파일 없음</span><strong>엑셀 파일을 선택해 주세요</strong>";
       elements.batchAnalyzeSaveBtn.disabled = true;
+      elements.batchAnalyzeBtn.disabled = true;
       setBatchStatus("양식을 작성한 뒤 엑셀 파일을 선택해 주세요. 파일 내용은 분석 전까지 외부로 전송되지 않습니다.");
       return;
     }
@@ -1208,7 +1226,16 @@
     if (extension !== "xlsx" && extension !== "xls") {
       elements.batchFileSummary.innerHTML = "<span>지원하지 않는 파일</span><strong>" + escapeHtml(batchFile.name) + "</strong>";
       elements.batchAnalyzeSaveBtn.disabled = true;
+      elements.batchAnalyzeBtn.disabled = true;
       setBatchStatus(".xlsx 또는 .xls 형식의 엑셀 파일만 업로드할 수 있습니다.", "error");
+      return;
+    }
+
+    if (batchFile.size > MAX_BATCH_FILE_BYTES) {
+      elements.batchAnalyzeSaveBtn.disabled = true;
+      elements.batchAnalyzeBtn.disabled = true;
+      elements.batchFileSummary.textContent = "파일이 5 MB를 초과합니다.";
+      setBatchStatus("5 MB 이하의 엑셀 파일을 선택해 주세요.", "error");
       return;
     }
 
@@ -1217,7 +1244,8 @@
       "<strong>", escapeHtml(batchFile.name), "</strong>"
     ].join("");
     elements.batchAnalyzeSaveBtn.disabled = false;
-    setBatchStatus("파일이 선택되었습니다. 동의를 확인한 뒤 일괄 분석 및 시트 저장을 실행해 주세요.");
+    elements.batchAnalyzeBtn.disabled = false;
+    setBatchStatus("파일이 선택되었습니다. ‘일괄 분석’으로 입력을 확인한 뒤 결과 엑셀을 내려받으세요. 서버로 전송되지 않습니다.");
   }
 
   function formatFileSize(bytes) {
@@ -1274,7 +1302,7 @@
       "기존 유전자형 데이터": { label: "기존 유전자형 데이터", value: "Raw genotype data" },
       "raw genotype data": { label: "기존 유전자형 데이터", value: "Raw genotype data" }
     };
-    return options[key] || null;
+    return Object.prototype.hasOwnProperty.call(options, key) ? options[key] : null;
   }
 
   function normalizeSex(value) {
@@ -1290,13 +1318,14 @@
       "기타": { label: "기타", value: "Other" },
       "other": { label: "기타", value: "Other" }
     };
-    return options[key] || null;
+    return Object.prototype.hasOwnProperty.call(options, key) ? options[key] : null;
   }
 
   function normalizeGenotype(gene, value) {
     var text = String(value === null || value === undefined ? "" : value).trim().toUpperCase();
     if (text === "모름" || text === "UNKNOWN") return getGenotype(gene, "unknown");
-    text = text.replace(/[\s/|_-]+/g, "");
+    if (!/^[ACGT]\s*(?:[/|]\s*)?[ACGT]$/.test(text)) return null;
+    text = text.replace(/[\s/|]+/g, "");
 
     var direct = getGenotype(gene, text);
     if (direct) return direct;
@@ -1312,7 +1341,8 @@
 
   function parseBatchRow(row, rowNumber, headerMap, seenSampleIds) {
     var errors = [];
-    var sampleId = String(getBatchCell(row, headerMap, "Sample ID") || "").trim();
+    var sampleValue = getBatchCell(row, headerMap, "Sample ID");
+    var sampleId = String(sampleValue === null || sampleValue === undefined ? "" : sampleValue).trim();
     var reportDate = normalizeBatchDate(getBatchCell(row, headerMap, "리포트 날짜"), true);
     var collectionRaw = getBatchCell(row, headerMap, "채취일");
     var collectionDate = normalizeBatchDate(collectionRaw, false);
@@ -1331,6 +1361,9 @@
     }
 
     if (!reportDate) errors.push("리포트 날짜 형식 오류 (YYYY-MM-DD)");
+    if (reportDate && collectionDate && collectionDate !== "--" && collectionDate > reportDate) {
+      errors.push("채취일이 리포트 날짜보다 늦음");
+    }
     if (collectionRaw !== null && collectionRaw !== undefined && String(collectionRaw).trim() !== "" && !collectionDate) {
       errors.push("채취일 형식 오류 (YYYY-MM-DD)");
     }
@@ -1355,6 +1388,7 @@
     return {
       rowNumber: rowNumber,
       sampleId: sampleId || "(미입력)",
+      inputValues: BATCH_HEADERS.map(function (header) { return getBatchCell(row, headerMap, header); }),
       errors: errors,
       selectionMap: selectionMap,
       reportInfo: {
@@ -1374,21 +1408,32 @@
     if (!window.XLSX) {
       return Promise.reject(new Error("엑셀 처리 모듈을 불러오지 못했습니다. 페이지를 새로고침한 뒤 다시 시도해 주세요."));
     }
+    if (!file || file.size > MAX_BATCH_FILE_BYTES) {
+      return Promise.reject(new Error("5 MB 이하의 엑셀 파일을 선택해 주세요."));
+    }
 
     return file.arrayBuffer().then(function (buffer) {
-      var workbook = window.XLSX.read(buffer, { type: "array", cellDates: true });
+      if (buffer.byteLength > MAX_BATCH_FILE_BYTES) throw new Error("파일 크기가 5 MB를 초과합니다.");
+      // Bound expansion of an accidentally oversized worksheet before building arrays.
+      var workbook = window.XLSX.read(buffer, { type: "array", cellDates: false, sheetRows: 10002 });
       var sheet = workbook.Sheets[BATCH_SHEET_NAME];
       if (!sheet) {
         throw new Error("‘" + BATCH_SHEET_NAME + "’ 시트를 찾을 수 없습니다. 제공된 양식의 시트 이름을 바꾸지 말아 주세요.");
       }
 
-      var matrix = window.XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "", blankrows: true });
+      var range = window.XLSX.utils.decode_range(sheet["!fullref"] || sheet["!ref"] || "A1");
+      if (range.e.r >= 10000 || range.e.c >= 32) {
+        throw new Error("시트 범위가 너무 큽니다. 제공된 양식의 A:I열에 최대 200명만 작성해 주세요.");
+      }
+      var matrix = window.XLSX.utils.sheet_to_json(sheet, { header: 1, range: 0, raw: true, defval: "", blankrows: true });
       if (!matrix.length) throw new Error("‘" + BATCH_SHEET_NAME + "’ 시트가 비어 있습니다.");
 
       var headers = matrix[0].map(function (value) { return String(value || "").trim(); });
-      var headerMap = {};
+      var headerMap = Object.create(null);
       headers.forEach(function (header, index) {
-        if (header && headerMap[header] === undefined) headerMap[header] = index;
+        if (!header) return;
+        if (headerMap[header] !== undefined) throw new Error("중복된 열 이름이 있습니다: " + header);
+        headerMap[header] = index;
       });
       var missingHeaders = BATCH_HEADERS.filter(function (header) { return headerMap[header] === undefined; });
       if (missingHeaders.length) {
@@ -1412,10 +1457,43 @@
         throw new Error("한 번에 최대 " + MAX_BATCH_ROWS + "명까지 처리할 수 있습니다. 현재 " + dataRows.length + "명이 입력되어 있습니다.");
       }
 
+      var date1904 = Boolean(workbook.Workbook && workbook.Workbook.WBProps && workbook.Workbook.WBProps.date1904);
       var seenSampleIds = Object.create(null);
-      return dataRows.map(function (entry) {
-        return parseBatchRow(entry.row, entry.rowNumber, headerMap, seenSampleIds);
+      var records = dataRows.map(function (entry) {
+        var formulaHeaders = [];
+        BATCH_HEADERS.forEach(function (header) {
+          var col = headerMap[header];
+          var cell = sheet[window.XLSX.utils.encode_cell({ r: entry.rowNumber - 1, c: col })];
+          if (cell && cell.f) formulaHeaders.push(header);
+          if (header === "Sample ID" && cell && cell.t === "n") {
+            // Retain zero-padding from Excel number formats (e.g. 00001).
+            entry.row[col] = window.XLSX.utils.format_cell(cell);
+          }
+          if ((header === "리포트 날짜" || header === "채취일") && typeof entry.row[col] === "number") {
+            var parts = window.XLSX.SSF.parse_date_code(entry.row[col], { date1904: date1904 });
+            entry.row[col] = parts && isValidDateParts(parts.y, parts.m, parts.d)
+              ? parts.y + "-" + padDatePart(parts.m) + "-" + padDatePart(parts.d) : "날짜 오류";
+          }
+        });
+        var record = parseBatchRow(entry.row, entry.rowNumber, headerMap, seenSampleIds);
+        if (formulaHeaders.length) record.errors.push("수식 대신 값으로 입력해 주세요: " + formulaHeaders.join(", "));
+        return record;
       });
+      var idRows = Object.create(null);
+      records.forEach(function (record) {
+        if (record.reportInfo.sampleId) {
+          var key = record.reportInfo.sampleId;
+          (idRows[key] || (idRows[key] = [])).push(record.rowNumber);
+        }
+      });
+      records.forEach(function (record) {
+        var rows = idRows[record.reportInfo.sampleId];
+        if (rows && rows.length > 1) {
+          record.errors = record.errors.filter(function (message) { return message.indexOf("파일 안에서 Sample ID 중복") !== 0; });
+          record.errors.push("파일 안에서 Sample ID 중복 (" + rows.join(", ") + "행)");
+        }
+      });
+      return records;
     });
   }
 
@@ -1425,7 +1503,7 @@
     var reportData = buildReportDataFor(result, record.reportInfo, record.selectionMap);
     record.result = result;
     record.reportData = reportData;
-    record.payload = buildSheetPayloadFor(reportData, record.selectionMap, true);
+    record.payload = buildSheetPayloadFor(reportData, record.selectionMap, false);
     return record;
   }
 
@@ -1446,15 +1524,124 @@
         '<tr class="', hasError ? "has-error" : "", '">',
         "<td>", record.rowNumber, "</td>",
         "<td><strong>", escapeHtml(record.sampleId), "</strong></td>",
-        '<td><span class="status-pill ', hasError ? "error" : "", '">', hasError ? "수정 필요" : "분석 완료", "</span></td>",
+        '<td><span class="status-pill ', hasError ? "error" : "", '">', hasError ? "입력 오류" : (result.score === null ? "판정 보류" : "분석 완료"), "</span></td>",
         "<td>", !hasError && typeof result.score === "number" ? result.score.toFixed(1) + "점" : (!hasError ? "산출 없음" : "--"), "</td>",
         "<td>", !hasError ? escapeHtml(result.category.label) : "--", "</td>",
         "<td>", !hasError ? escapeHtml(result.metabolismSubtype.name) : "--", "</td>",
         "<td>", !hasError ? result.confidence + "%" : "--", "</td>",
-        "<td>", hasError ? escapeHtml(record.errors.join(" · ")) : "확인됨", "</td>",
+        "<td>", hasError ? escapeHtml(record.errors.join(" · ")) : escapeHtml(result.unknownCount ? ("모름 " + result.unknownCount + "개 · " + (result.score === null ? "핵심 유전자형 확인 필요" : "제한적 결과")) : "확인됨"), "</td>",
         "</tr>"
       ].join("");
     }).join("");
+  }
+
+  function setBatchBusy(busy) {
+    batchBusy = busy;
+    elements.batchFile.disabled = busy;
+    elements.batchAnalyzeBtn.disabled = busy || !batchFile;
+    elements.batchAnalyzeSaveBtn.disabled = busy || !batchFile;
+    elements.batchDownloadBtn.disabled = busy || !batchResults.length;
+  }
+
+  function processLocalBatchUpload() {
+    if (batchBusy || !batchFile) return Promise.resolve();
+    resetBatchOutput();
+    setBatchBusy(true);
+    elements.batchAnalyzeBtn.textContent = "분석 중…";
+    setBatchStatus("엑셀 입력값을 확인하고 있습니다. 파일은 서버로 전송되지 않습니다.");
+    return parseBatchWorkbook(batchFile).then(function (records) {
+      batchRows = records;
+      batchResults = records.map(analyzeBatchRow);
+      renderBatchResults(batchResults);
+      var errors = batchResults.filter(function (record) { return record.errors.length; }).length;
+      setBatchStatus("전체 " + records.length + "명 중 " + (records.length - errors) + "명의 리포트를 생성했습니다. " +
+        (errors ? "입력 오류 " + errors + "명은 결과를 산출하지 않았습니다. 결과 엑셀의 ‘입력 오류’ 시트를 확인해 주세요." : "결과 엑셀을 내려받으세요."), errors ? "error" : "success");
+      setBatchSheetStatus("로컬 분석 완료 · 서버 전송 없음 · 원본 파일은 수정하지 않았습니다.");
+    }).catch(function (error) {
+      setBatchStatus(error.message || "엑셀 파일을 읽지 못했습니다. 양식을 확인해 주세요.", "error");
+    }).finally(function () {
+      setBatchBusy(false);
+      elements.batchAnalyzeBtn.textContent = "일괄 분석";
+    });
+  }
+
+  function buildBatchResultWorkbook(records) {
+    var xlsx = window.XLSX;
+    if (!xlsx) throw new Error("엑셀 처리 모듈을 불러오지 못했습니다.");
+    var headers = ["원본 행", "Sample ID", "처리 상태", "리포트 날짜", "채취일", "검체 종류", "성별",
+      "rs762551", "rs2069514", "rs2472297", "rs6968865", "민감도 지수 (0-100)", "결과 구간",
+      "대사 관련 지표", "대사 레이어 (%)", "조절 레이어 (%)", "입력 완성도 (%)", "확인된 SNP 수",
+      "모름 SNP 수", "해석", "생활 참고 안내", "오류·확인 사항", "생성 시각 (KST)", "모델 버전"];
+    var generatedAt = getKoreaDateTimeString();
+    var output = [headers];
+    var errors = [["원본 행"].concat(BATCH_HEADERS, ["오류 내용"])];
+    records.forEach(function (record) {
+      var result = record.result;
+      var data = record.reportData;
+      var info = record.reportInfo;
+      var hasError = record.errors.length > 0;
+      var raw = record.inputValues || [];
+      var genotypes = genes.map(function (gene, index) {
+        return hasError ? String(raw[index + 5] === undefined ? "" : raw[index + 5]) : getGenotypeValueFor(record.selectionMap, gene.id);
+      });
+      output.push([record.rowNumber, record.sampleId, hasError ? "입력 오류" : (result.score === null ? "판정 보류" : "분석 완료"),
+        info.reportDate, info.collectionDate, info.sampleType, info.sex].concat(genotypes, [
+        hasError ? null : data.result.score, hasError ? "산출 없음" : result.category.label,
+        hasError ? "산출 없음" : result.metabolismSubtype.name,
+        hasError ? null : data.result.metabolismScore, hasError ? null : data.result.regulationScore,
+        hasError ? null : result.confidence, hasError ? null : result.valid.length,
+        hasError ? null : result.unknownCount, hasError ? "" : result.interpretation,
+        hasError ? "" : result.category.recommendations.join("\n"),
+        hasError ? record.errors.join(" · ") : (result.unknownCount ? "모름 항목 제외 · " + (result.score === null ? "핵심 유전자형 확인 필요" : "제한적 결과") : ""),
+        generatedAt, "0.4 / scoring 0.3"]));
+      if (hasError) errors.push([record.rowNumber].concat(raw, [record.errors.join(" · ")]));
+    });
+    var guide = [
+      ["항목", "안내"],
+      ["결과 파일", "분석 결과: 모든 입력 행 / 입력 오류: 수정할 행과 원본 입력 / 해석 안내: 기준 및 한계"],
+      ["처리 상태", "분석 완료: 핵심 SNP 확인 / 판정 보류: rs762551 모름 / 입력 오류: 점수 미산출"],
+      ["유형", "민감도 지수 낮음: 33.34 미만 / 중간: 33.34 이상 66.67 미만 / 높음: 66.67 이상. 반올림 전 점수로 구분합니다."],
+      ["모름", "누락과 다릅니다. 명시적으로 ‘모름’을 입력한 SNP는 제외하고 확인된 항목의 가중치를 다시 계산합니다. 서로 다른 입력 완성도의 점수를 직접 비교하지 마세요."],
+      ["입력 완성도", "확인된 SNP 수 ÷ 4 × 100 (%). 예측 정확도나 통계적 신뢰도가 아닙니다."],
+      ["점수", "대사 70% + 조절 30%의 연구·교육용 모형 지수. 기존 점수식은 유지했으며 임상 검증된 PRS가 아닙니다."],
+      ["양식의 구 명칭", "CYP1A2*1F/*1C 열 이름은 기존 양식과의 호환을 위해 유지했습니다. 분석은 rs762551/rs2069514 유전자형 기준이며 완전한 star allele 판정이 아닙니다."],
+      ["대사와 수면", "카페인 분해 속도와 각성·수면 반응은 구분해서 살펴보아야 합니다. 이 점수로 실제 분해 속도, 수면 능력, 내성, 안전 섭취량을 판정할 수 없습니다."],
+      ["개인정보", "코드형 Sample ID를 사용하세요. 파일은 브라우저에서 처리하며 이 다운로드 동작은 서버 저장을 수행하지 않습니다."],
+      ["보관", "유전자형이 포함된 결과 파일은 접근 권한을 제한해 보관하고 공용 기기에 남기지 마세요. 페이지를 새로 열면 재업로드가 필요합니다."],
+      ["사용 범위", "연구·교육용. 질병 진단, 의학적 처방, 치료 판단에 사용할 수 없습니다."],
+      ["생성 시각 (KST)", generatedAt], ["모델 버전", "0.4 / scoring 0.3"]
+    ];
+    var workbook = xlsx.utils.book_new();
+    [["분석 결과", output], ["입력 오류", errors], ["해석 안내", guide]].forEach(function (entry) {
+      var rows = entry[1].map(function (row) {
+        return row.map(function (value) { return typeof value === "string" ? value.slice(0, 32767) : value; });
+      });
+      var sheet = xlsx.utils.aoa_to_sheet(rows);
+      // User text always remains string data, including values beginning with '='.
+      Object.keys(sheet).forEach(function (key) {
+        if (key.charAt(0) !== "!" && typeof sheet[key].v === "string") {
+          sheet[key].t = "s";
+          delete sheet[key].f;
+        }
+      });
+      sheet["!cols"] = rows[0].map(function (_, index) {
+        return { wch: entry[0] === "해석 안내" && index === 1 ? 110 : (index >= 19 ? 65 : 23) };
+      });
+      if (entry[0] !== "해석 안내") sheet["!autofilter"] = { ref: sheet["!ref"] };
+      xlsx.utils.book_append_sheet(workbook, sheet, entry[0]);
+    });
+    return workbook;
+  }
+
+  function downloadBatchResults() {
+    if (!batchResults.length || batchBusy) return;
+    try {
+      var workbook = buildBatchResultWorkbook(batchResults);
+      window.XLSX.writeFile(workbook, "Caffeine-Atlas-Batch-Results-" + getKoreaDateTimeString().replace(/[^0-9]/g, "").slice(0, 14) + ".xlsx", { compression: true });
+      setBatchStatus("결과 엑셀 다운로드를 요청했습니다. 브라우저의 다운로드 목록을 확인해 주세요.", "success");
+    } catch (error) {
+      setBatchStatus("결과 파일을 만들지 못했습니다. " + error.message, "error");
+    }
   }
 
   function buildBatchId() {
@@ -1564,6 +1751,7 @@
       setBatchStatus("공개 체험에서는 일괄 서버 저장이 제공되지 않습니다.", "error");
       return;
     }
+    if (batchBusy) return;
     if (!batchFile) {
       setBatchStatus("먼저 작성한 엑셀 파일을 선택해 주세요.", "error");
       return;
@@ -1577,7 +1765,7 @@
       return;
     }
 
-    elements.batchAnalyzeSaveBtn.disabled = true;
+    setBatchBusy(true);
     elements.batchAnalyzeSaveBtn.textContent = "엑셀 확인 중...";
     setBatchStatus("엑셀 양식과 입력값을 확인하고 있습니다.");
     resetBatchOutput();
@@ -1600,7 +1788,7 @@
       return saveConfirmedPayload({
         action: "batchSave",
         batchId: buildBatchId(),
-        rows: batchResults.map(function (record) { return record.payload; })
+        rows: batchResults.map(function (record) { return Object.assign({}, record.payload, { consent: true }); })
       }, batchResults.length).then(function () {
         setBatchStatus(batchResults.length + "명의 분석과 저장이 완료되었습니다.", "success");
         setBatchSheetStatus("Google Sheets에 " + batchResults.length + "명 저장 완료. 서버에서 기록된 행을 확인했습니다.", "success");
@@ -1611,7 +1799,7 @@
         setBatchSheetStatus(error.message || "저장 여부를 확인하지 못했습니다. 시트의 실제 기록을 확인해 주세요.", "error");
       }
     }).finally(function () {
-      elements.batchAnalyzeSaveBtn.disabled = !batchFile;
+      setBatchBusy(false);
       elements.batchAnalyzeSaveBtn.textContent = "일괄 분석 및 시트 저장";
     });
   }
@@ -1762,7 +1950,7 @@
       "<title>", escapeHtml(filename), "</title><style>",
       "@page{size:A4 portrait;margin:0}",
       "*{box-sizing:border-box}html,body{margin:0;background:#e9eef2;color:#17222c;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;letter-spacing:0}",
-      "body{padding:18px}.pdf-sheet{width:210mm;height:297mm;margin:0 auto;background:#fff;padding:10mm 12mm 9mm;box-shadow:0 12px 40px rgba(13,31,40,.14);display:flex;flex-direction:column;gap:4.2mm;overflow:hidden}",
+      "body{padding:18px}.pdf-sheet{width:210mm;min-height:297mm;margin:0 auto;background:#fff;padding:10mm 12mm 9mm;box-shadow:0 12px 40px rgba(13,31,40,.14);display:flex;flex-direction:column;gap:4.2mm;overflow:visible}",
       ".pdf-controls{width:210mm;margin:0 auto 12px;display:flex;justify-content:flex-end;gap:8px}.pdf-controls button{border:1px solid #bac7ce;background:#fff;color:#17313a;padding:9px 14px;font-weight:800;cursor:pointer}.pdf-controls .primary{border-color:#126f72;background:#126f72;color:#fff}",
       ".pdf-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:3.5mm;border-bottom:1.5px solid #163e46}.pdf-brand img{display:block;width:52mm;height:auto}.pdf-brand p{margin:1.5mm 0 0;color:#587079;font-size:7.5pt;font-weight:700}.pdf-title{text-align:right}.pdf-title h1{margin:0;color:#173e47;font-size:18pt}.pdf-title p{margin:1.5mm 0 0;color:#60737b;font-size:7.5pt}",
       ".pdf-meta{display:grid;grid-template-columns:1.05fr .85fr .85fr .8fr 1.45fr;border:1px solid #d6e0e3}.pdf-meta div{min-width:0;padding:2.4mm 2.7mm;border-right:1px solid #d6e0e3}.pdf-meta div:last-child{border-right:0}.pdf-meta span,.metric span{display:block;color:#647981;font-size:6.8pt;font-weight:800;text-transform:uppercase}.pdf-meta strong{display:block;margin-top:1mm;font-size:8.2pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
@@ -1772,13 +1960,13 @@
       "table{width:100%;border-collapse:collapse;font-size:7pt}th{padding:1.6mm;text-align:left;color:#587078;background:#eef4f5;border-bottom:1px solid #cbd8dc}td{padding:1.5mm;border-bottom:1px solid #e2e9eb}td small{display:block;margin-top:.5mm;color:#71848b;font-size:5.8pt}tbody tr:last-child td{border-bottom:0}",
       ".pdf-content{display:grid;grid-template-columns:1fr 1fr;gap:4mm}.interpretation{border-left:2mm solid #d45b38}.interpretation h3,.guide h3{margin:0 0 1.5mm;color:#183e47;font-size:9.5pt}.interpretation strong{display:block;margin-bottom:1mm;font-size:8.2pt}.interpretation p{margin:0;color:#4f646c;font-size:7pt;line-height:1.45;white-space:pre-line}.guide ul{margin:0;padding-left:4mm}.guide li{margin:0 0 1mm;color:#4f646c;font-size:6.8pt;line-height:1.35}.guide li:last-child{margin-bottom:0}",
       ".pdf-footer{margin-top:auto;padding-top:3mm;border-top:1px solid #cfdadd;display:grid;grid-template-columns:1fr auto;gap:5mm;align-items:end}.notice strong{display:block;margin-bottom:1mm;color:#173f47;font-size:7pt}.notice p{margin:0;color:#687b82;font-size:6.2pt;line-height:1.45}.footer-mark{text-align:right;color:#6c7f86;font-size:6pt;white-space:nowrap}.footer-mark strong{display:block;color:#173f47;font-size:7pt}",
-      "@media print{html,body{width:210mm;height:297mm;background:#fff}body{padding:0}.pdf-controls{display:none}.pdf-sheet{margin:0;box-shadow:none;page-break-after:avoid}}",
+      "@media print{html,body{width:210mm;height:auto;background:#fff}body{padding:0}.pdf-controls{display:none}.pdf-sheet{margin:0;box-shadow:none;page-break-after:avoid}.pdf-summary,.pdf-main,.pdf-content,.pdf-footer{break-inside:avoid}}",
       "</style></head><body>",
       "<div class=\"pdf-controls\"><button onclick=\"window.close()\">닫기</button><button class=\"primary\" onclick=\"window.print()\">PDF로 저장</button></div>",
       "<main class=\"pdf-sheet\" style=\"--score:", hasScore ? result.score : 0, "%\">",
       "<header class=\"pdf-header\"><div class=\"pdf-brand\"><img src=\"", escapeHtml(logoUrl), "\" alt=\"Caffeine Atlas\"><p>Evidence-based caffeine response interpretation</p></div><div class=\"pdf-title\"><h1>Caffeine Atlas Report</h1><p>", escapeHtml(data.generatedAt), "</p></div></header>",
       "<section class=\"pdf-meta\"><div><span>Sample ID</span><strong>", escapeHtml(info.sampleId), "</strong></div><div><span>Report date</span><strong>", escapeHtml(info.reportDate), "</strong></div><div><span>Collection</span><strong>", escapeHtml(info.collectionDate), "</strong></div><div><span>Specimen / Sex</span><strong>", escapeHtml(info.sampleType), " / ", escapeHtml(info.sex), "</strong></div><div><span>Institution</span><strong>", escapeHtml(info.institution), "</strong></div></section>",
-      "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", escapeHtml(result.category), "</h2><p>", escapeHtml(result.typeDescription), "</p></div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div><div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>각성형</span><span>잠잠형</span><span>잠꾸러기형</span></div></div></section>",
+      "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", escapeHtml(result.category), "</h2><p>", escapeHtml(result.typeDescription), "</p></div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div><div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>지수 낮음</span><span>지수 중간</span><span>지수 높음</span></div></div></section>",
       "<section class=\"metrics\"><div class=\"metric\"><span>Result type</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>Metabolism</span><strong>", escapeHtml(result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>Model position</span><strong>", pdfRankText, "</strong></div><div class=\"metric\"><span>SNP coverage</span><strong>", result.confidence, "%</strong></div></section>",
       "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><div><h3>연구 참조분포</h3><span>검사결과 기반 · 7개 점수 구간</span></div><strong>", pdfPercentileText, "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>입력 완성도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
       "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>Score</th></tr></thead><tbody>", genotypeRows, "</tbody></table></div></section>",
@@ -1836,6 +2024,17 @@
     elements.batchModeBtn.addEventListener("click", function () { setInputMode("batch"); });
     elements.batchFile.addEventListener("change", handleBatchFileChange);
     elements.batchAnalyzeSaveBtn.addEventListener("click", processBatchUpload);
+    elements.batchAnalyzeBtn.addEventListener("click", processLocalBatchUpload);
+    elements.batchDownloadBtn.addEventListener("click", downloadBatchResults);
+    [elements.singleModeBtn, elements.batchModeBtn].forEach(function (tab) {
+      tab.addEventListener("keydown", function (event) {
+        if (["ArrowLeft", "ArrowRight", "Home", "End"].indexOf(event.key) === -1) return;
+        event.preventDefault();
+        var mode = event.key === "Home" ? "single" : (event.key === "End" ? "batch" : (elements.batchModePanel.hidden ? "batch" : "single"));
+        setInputMode(mode);
+        (mode === "batch" ? elements.batchModeBtn : elements.singleModeBtn).focus();
+      });
+    });
     window.addEventListener("resize", function () {
       window.clearTimeout(chartResizeTimer);
       chartResizeTimer = window.setTimeout(function () {
@@ -1850,7 +2049,7 @@
     elements.institution.value = FIXED_INSTITUTION;
     elements.reportDate.value = getKoreaDateString();
     elements.collectionDate.value = getKoreaDateString();
-    setInputMode("single");
+    setInputMode(window.location.hash === "#batch" ? "batch" : "single");
     updateReportMeta();
     renderEmpty();
     drawReferenceChart(null);

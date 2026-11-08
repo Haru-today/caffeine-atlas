@@ -19,7 +19,6 @@ test("landing page clearly launches an unrestricted public trial", () => {
   assert.match(landing, /로그인 없이 체험 시작/);
   assert.match(landing, /href="\.\/analyzer\.html"/);
   assert.match(landing, /연구·교육용/);
-  assert.doesNotMatch(landing, /href="\.\/assets\/caffeine-atlas-batch-template\.xlsx/);
 });
 
 test("public analyzer preserves genetic interpretation and user-side PDF and report downloads", () => {
@@ -35,14 +34,20 @@ test("public analyzer preserves genetic interpretation and user-side PDF and rep
   assert.match(analyzer, /개인식별정보/);
 });
 
-test("cloud storage and batch upload controls remain in DOM but hidden only in public mode", () => {
-  assert.match(analyzer, /<div class="input-mode-switch research-only"/);
+test("local batch analysis is public while cloud storage requires research mode", () => {
+  assert.match(analyzer, /<div class="input-mode-switch"/);
   assert.match(analyzer, /<label class="consent-card research-only"/);
-  assert.match(analyzer, /<section class="batch-panel research-only" id="batchModePanel"/);
+  assert.match(analyzer, /<section class="batch-panel" id="batchModePanel"/);
   assert.match(analyzer, /<button class="tool-button primary research-only" id="sheetSaveBtn"/);
   assert.match(css, /body\.public-demo \.research-only\s*,\s*body\.research-mode \.public-only\s*\{\s*display:\s*none\s*!important/);
   assert.match(analyzer, /id="sheetConsent"/);
   assert.match(analyzer, /id="batchAnalyzeSaveBtn"/);
+  assert.match(analyzer, /id="batchAnalyzeBtn"/);
+  assert.match(analyzer, /id="batchDownloadBtn"/);
+  assert.match(analyzer, /href="\.\/assets\/caffeine-atlas-batch-template\.xlsx/);
+  assert.match(source, /function processLocalBatchUpload\(\)/);
+  assert.match(source, /function buildBatchResultWorkbook\(records\)/);
+  assert.match(source, /function downloadBatchResults\(\)/);
 });
 
 test("public Caffeine Atlas bundle has no working Google Apps Script endpoint", () => {
