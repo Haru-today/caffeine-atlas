@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>자료실 | Caffeine Atlas</title>
-  <link rel="stylesheet" href="./styles.css?v=privacy-notice-20261013">
+  <link rel="stylesheet" href="./styles.css?v=privacy-notice-20261013&amp;rev=type-characters-20261109">
 </head>
 <body>
   <div class="app-shell">
@@ -42,7 +42,7 @@
           </div>
           <label class="board-search">
             <span>검색</span>
-            <input type="search" placeholder="제목 또는 분류 검색">
+            <input id="boardSearch" type="search" placeholder="제목 또는 분류 검색" aria-controls="notice-list" aria-describedby="boardSearchStatus">
           </label>
         </div>
 
@@ -51,13 +51,13 @@
             <span>분류</span>
             <span>제목</span>
             <span>등록일</span>
-            <span>조회</span>
+            <span>안내</span>
           </div>
           <a class="board-row pinned" href="#post-open">
             <span>공지</span>
             <strong>카페인 반응 리포트 생성 페이지 오픈</strong>
             <small>2026.07.01</small>
-            <em>128</em>
+            <em>이용 안내</em>
           </a>
           <a class="board-row" href="./account.html" hidden data-disabled-feature="account">
             <span>회원</span>
@@ -66,6 +66,7 @@
             <em>52</em>
           </a>
         </div>
+        <p id="boardSearchStatus" class="form-notice" role="status" aria-live="polite">공지 1개</p>
 
         <article class="board-detail" id="post-open">
           <div class="detail-head">
@@ -75,7 +76,8 @@
               <p>등록일 2026.07.01 · 담당 Caffeine Atlas 운영팀</p>
             </div>
           </div>
-          <p>유전자형 입력 후 결과 화면으로 전환되는 카페인 반응 리포트 생성 페이지를 공개했습니다. 결과 리포트에서는 민감도 지수, 백분위 위치, 대사 유형, 권장 섭취 가이드, 저장 가능한 상세 결과를 확인할 수 있습니다.</p>
+          <p>4개 유전자형을 직접 입력하거나 엑셀로 최대 200명을 일괄 분석할 수 있습니다. 각성형·잠잠형·잠꾸러기형은 연구·교육용 모형 점수 구간의 별칭입니다. 결과의 참조자료 내 상대 위치와 입력 완성도를 확인하고, 대상자별 PDF·상세 리포트와 전체 결과 엑셀을 저장할 수 있습니다.</p>
+          <p>실제 카페인 분해 속도·수면 반응·안전 섭취량을 판정하지 않습니다. 문의는 메일 앱으로 전달하며, 공개 서비스는 회원가입이나 서버 저장 없이 이용합니다.</p>
           <div class="post-actions">
             <a class="tool-button primary" href="./analyzer.html" target="_blank" rel="noopener">리포트 생성 페이지 열기</a>
             <a class="tool-button ghost" href="#notice-list">목록으로</a>
@@ -114,5 +116,18 @@
       <p class="policy-links"><a href="https://haru-today.github.io/caffeine-atlas/privacy.html">개인정보 처리 안내</a> · <a href="https://haru-today.github.io/caffeine-atlas/terms.html">서비스 이용 안내</a></p>
     </footer>
   </div>
+  <script>
+    const search = document.getElementById("boardSearch");
+    const rows = [...document.querySelectorAll(".board-row:not([data-disabled-feature])")];
+    search.addEventListener("input", () => {
+      const query = search.value.trim().toLocaleLowerCase("ko");
+      let count = 0;
+      rows.forEach(row => {
+        row.hidden = !row.textContent.toLocaleLowerCase("ko").includes(query);
+        if (!row.hidden) count++;
+      });
+      document.getElementById("boardSearchStatus").textContent = count ? "검색 결과 " + count + "개" : "검색 결과가 없습니다. 다른 검색어를 입력해 주세요.";
+    });
+  </script>
 </body>
 </html>

@@ -17,8 +17,8 @@
   <meta name="twitter:title" content="Caffeine Atlas | 카페인 민감도 유전자 리포트">
   <meta name="twitter:description" content="유전자형을 입력하면 카페인 민감도와 섭취 가이드를 바로 확인할 수 있습니다.">
   <meta name="twitter:image" content="https://haru-today.github.io/caffeine-atlas/caffeine-sensitivity-app/assets/hero-caffeine-genetics.png">
-  <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=batch-20261108">
-  <link rel="stylesheet" href="./home.css?v=redesign-20261025">
+  <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=type-characters-20261109">
+  <link rel="stylesheet" href="./home.css?v=type-characters-20261109">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -69,9 +69,10 @@
 
         <figure class="home-sample" aria-label="예시 결과 화면">
           <figcaption class="home-sample-tag">예시 결과</figcaption>
-          <p class="home-sample-type">민감도 지수 낮음 <span>낮은 구간</span></p>
+          <span class="type-art type-art--awake home-sample-art" role="img" aria-label="각성형 커피콩 캐릭터"><img src="./assets/caffeine-types-illustration.png?v=type-characters-20261109" alt="" width="2172" height="724"></span>
+          <p class="home-sample-type">각성형 <span>낮은 구간</span></p>
           <p class="home-sample-score">6.9<small>/100</small></p>
-          <p class="home-sample-title">모형 기반 민감도 지수가 낮은 구간입니다</p>
+          <p class="home-sample-title">각성형 · 낮은 지수 구간</p>
           <dl class="home-sample-bars">
             <div><dt>대사 레이어</dt><dd aria-hidden="true"><i style="width:0%"></i></dd><dd class="home-bar-value">0%</dd></div>
             <div><dt>조절 레이어</dt><dd aria-hidden="true"><i style="width:23%"></i></dd><dd class="home-bar-value">23%</dd></div>
@@ -110,24 +111,27 @@
     <section class="home-section home-section-soft" id="report">
       <div class="home-wrap">
         <p class="home-kicker">결과 유형</p>
-        <h2>결과는 지수의 낮음·중간·높음으로 알려 드려요</h2>
+          <h2>각성형·잠잠형·잠꾸러기형으로 만나보세요</h2>
         <p class="home-section-lead">유형 이름은 연구·교육용 모형 점수의 구간을 뜻해요. 커피를 잘 마시는지, 마신 뒤 얼마나 각성하는지, 잠을 잘 자는지를 판정하는 이름이 아닙니다. 모형의 연구 참조분포에서 점수 위치도 함께 보여 드려요. 실제 인구집단의 백분위나 개인별 안전 섭취량은 아닙니다.</p>
         <div class="home-types">
           <article class="home-type home-type-fast">
+              <span class="type-art type-art--awake" role="img" aria-label="각성형 커피콩 캐릭터"><img src="./assets/caffeine-types-illustration.png?v=type-characters-20261109" alt="" width="2172" height="724" loading="lazy"></span>
             <p class="home-type-band">낮은 구간</p>
-            <h3>민감도 지수 낮음</h3>
+              <h3>각성형</h3>
             <p class="home-type-badge">낮은 구간</p>
             <p>모형에서 계산한 종합 지수가 낮은 구간이에요. 실제 분해 속도나 커피를 마신 뒤 잘 잘 수 있는지는 이 결과만으로 알 수 없어요.</p>
           </article>
           <article class="home-type home-type-mid">
+              <span class="type-art type-art--calm" role="img" aria-label="잠잠형 커피콩 캐릭터"><img src="./assets/caffeine-types-illustration.png?v=type-characters-20261109" alt="" width="2172" height="724" loading="lazy"></span>
             <p class="home-type-band">중간 구간</p>
-            <h3>민감도 지수 중간</h3>
+              <h3>잠잠형</h3>
             <p class="home-type-badge">중간 구간</p>
             <p>모형에서 계산한 종합 지수가 중간 구간이에요. 실제 사람들의 평균 반응이나 평균 대사 속도를 뜻하지 않아요.</p>
           </article>
           <article class="home-type home-type-slow">
+              <span class="type-art type-art--sleepy" role="img" aria-label="잠꾸러기형 커피콩 캐릭터"><img src="./assets/caffeine-types-illustration.png?v=type-characters-20261109" alt="" width="2172" height="724" loading="lazy"></span>
             <p class="home-type-band">높은 구간</p>
-            <h3>민감도 지수 높음</h3>
+              <h3>잠꾸러기형</h3>
             <p class="home-type-badge">높은 구간</p>
             <p>모형에서 계산한 종합 지수가 높은 구간이에요. 잠이 많은 성향이나 커피 한 잔으로 불면이 생긴다는 의미는 아니에요.</p>
           </article>

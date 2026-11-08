@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>리포트 생성 | Caffeine Atlas</title>
-  <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=batch-pdf-20261108">
+  <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=type-characters-20261109">
 </head>
 <body class="public-demo">
   <div class="app-shell">
@@ -164,7 +164,7 @@
             <div>
               <p class="eyebrow">Batch report generator</p>
               <h3>여러 명의 결과를 한 번에 처리</h3>
-              <p>양식에 코드형 Sample ID와 4개 유전자형을 입력한 뒤 업로드하세요. 브라우저 안에서 분석하고 전체 결과와 오류 목록을 엑셀 파일로 내려받습니다. 파일과 결과는 서버로 전송하지 않습니다.</p>
+              <p>엑셀 파일 한 개로 최대 200명의 결과를 분석합니다. 분석 후 각 Sample ID 아래의 <strong>개별 PDF 저장</strong>으로 대상자별 리포트를 저장하고, 전체 결과·오류 목록은 엑셀로 내려받으세요. 파일과 결과는 브라우저 안에서 처리하며 서버로 전송하지 않습니다.</p>
             </div>
             <a class="tool-button ghost" href="./assets/caffeine-atlas-batch-template.xlsx?v=20261108" download>
               <span aria-hidden="true">↓</span>
@@ -176,7 +176,7 @@
             <li><strong>1</strong><span>양식 다운로드</span></li>
             <li><strong>2</strong><span>대상자 정보 입력</span></li>
             <li><strong>3</strong><span>파일 업로드</span></li>
-            <li><strong>4</strong><span>분석·결과 다운로드</span></li>
+            <li><strong>4</strong><span>개별 PDF·전체 엑셀 저장</span></li>
           </ol>
 
           <div class="batch-upload-card">
@@ -202,7 +202,7 @@
           <div class="submit-panel batch-submit-panel">
             <div>
               <strong>일괄 처리 준비 상태</strong>
-              <p id="batchStatus" role="status" aria-live="polite">양식을 작성한 뒤 파일을 선택하세요. 분석 후 정상 결과와 입력 오류를 함께 내려받을 수 있습니다. 새로고침하면 파일을 다시 선택해야 합니다.</p>
+              <p id="batchStatus" role="status" aria-live="polite">파일 선택 → 일괄 분석 → 대상자별 PDF 또는 전체 결과 엑셀 저장 순서로 진행하세요. 새로고침하면 파일을 다시 선택해야 합니다.</p>
             </div>
             <div class="batch-actions">
               <button class="tool-button ghost" id="batchClearBtn" type="button" disabled>파일·결과 비우기</button>
@@ -213,11 +213,11 @@
             </div>
           </div>
 
-          <div class="batch-results" id="batchResults" hidden>
+          <div class="batch-results" id="batchResults" role="region" aria-labelledby="batch-results-title" tabindex="-1" hidden>
             <div class="batch-results-head">
               <div>
                 <p class="eyebrow">Batch results</p>
-                <h3>일괄 처리 결과</h3>
+                <h3 id="batch-results-title">일괄 처리 결과</h3>
               </div>
               <div class="batch-result-counts" id="batchResultCounts"></div>
               <button class="tool-button primary" id="batchDownloadBtn" type="button" disabled>결과 엑셀 다운로드</button>
@@ -239,7 +239,7 @@
                 <tbody id="batchResultsBody"></tbody>
               </table>
             </div>
-            <p class="batch-pdf-help">각 Sample ID 아래의 ‘PDF 저장’을 누른 뒤 인쇄 화면에서 ‘PDF로 저장’을 선택하세요. 입력 오류가 있는 행은 먼저 수정해야 하며, ‘판정 보류’ 리포트에는 점수를 표시하지 않습니다.</p>
+            <p class="batch-pdf-help">각 Sample ID 아래의 ‘개별 PDF 저장’ → 인쇄 화면의 ‘PDF로 저장’을 선택하세요. 리포트는 선택한 대상자 한 명의 결과만 포함합니다. 입력 오류 행은 먼저 수정해야 하며, ‘판정 보류’ 리포트에는 점수를 표시하지 않습니다.</p>
             <p class="sync-status" id="batchSheetStatus">분석 결과는 이 브라우저에서만 처리됩니다. 결과 엑셀은 직접 내려받아 보관하세요.</p>
           </div>
         </section>
@@ -271,6 +271,7 @@
         <div class="result-content" id="resultContent" hidden>
         <div class="report-hero-card">
           <div class="type-summary">
+            <span class="type-illustration" id="typeIllustration" hidden></span>
             <span class="type-code" id="typeEmoji">--</span>
             <div>
               <span class="type-badge" id="typeBadge">대기 중</span>
@@ -291,9 +292,9 @@
                 <div class="gauge-marker" id="gaugeMarker"></div>
               </div>
               <div class="gauge-scale">
-                <span>지수 낮음</span>
-                <span>지수 중간</span>
-                <span>지수 높음</span>
+                <span>각성형</span>
+                <span>잠잠형</span>
+                <span>잠꾸러기형</span>
               </div>
             </div>
           </div>
@@ -326,7 +327,7 @@
         </div>
         <aside class="response-explainer" role="note">
           <strong>커피를 마시고 잘 잔다고, 빨리 분해한다는 뜻일까요?</strong>
-          <p>카페인 분해 속도와 각성·수면 반응은 서로 다릅니다. ‘민감도 지수 낮음·중간·높음’은 이 모형의 점수 구간이며, 잘 자는 유형이나 잠이 깨는 유형을 뜻하지 않습니다. ‘커피를 잘 마신다’는 체감이나 수면 능력·내성·안전 섭취량도 이 결과로 판정할 수 없습니다.</p>
+          <p>각성형·잠잠형·잠꾸러기형은 모형 점수 구간에 붙인 연구·교육용 별칭입니다. 캐릭터의 표정은 유형을 구별하기 위한 표현이며, 실제 분해 속도나 각성·수면 반응을 판정하지 않습니다. 내성·안전 섭취량도 이 결과로 정할 수 없습니다.</p>
         </aside>
 
         <div class="layer-stack">
@@ -417,6 +418,6 @@
 
   <nav class="policy-links" aria-label="이용 정책" style="text-align:center;margin:12px auto 24px;font-size:.9rem;"><p class="policy-links"><a href="https://haru-today.github.io/caffeine-atlas/privacy.html">개인정보 처리 안내</a> · <a href="https://haru-today.github.io/caffeine-atlas/terms.html">서비스 이용 안내</a></p></nav>
   <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
-  <script src="./app.js?v=batch-pdf-20261108"></script>
+  <script src="./app.js?v=type-characters-20261109"></script>
 </body>
 </html>
