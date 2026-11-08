@@ -63,3 +63,11 @@ LABDAM 공통 인증 PR #7은 공개 Caffeine Atlas와 **별도 보호된 호스
 - XLSX 라이브러리 출력은 `Buffer.from()`으로 변환해 브라우저 테스트의 파일 입력 오류 수정
 - `node --test tests/*.test.cjs`로 기본 검증. Playwright가 설치된 PC에서는 `CAFFEINE_TEST_OFFLINE=1`과 `CAFFEINE_TEST_ARTIFACTS_DIR` 환경변수로 서버 없이 검증하고 화면 자료를 원하는 로컬 폴더에 보관 가능
 - 배포 시 공개 주소의 `batchClearBtn`, `batch-controls-20261108` 리소스 버전과 파일 비우기 동작 확인. 기존 QR의 현장 접속과 최종 PDF 인쇄 배치는 별도 확인 대상
+
+## 일괄 분석의 개별 PDF 저장
+
+- 일괄 결과의 각 Sample ID 아래 ‘PDF 저장’ 버튼으로 해당 대상자의 인쇄 화면을 열고 ‘PDF로 저장’을 선택. 파일 제목에 해당 Sample ID와 리포트 날짜 사용
+- 정상 행과 ‘판정 보류’ 행은 개별 리포트 제공. 보류 시 점수와 분포의 개인 표식을 표시하지 않으며 입력 오류 행의 PDF 버튼은 비활성화
+- 일괄 분석 당시 생성한 행별 리포트 데이터를 사용하므로 단일 입력 화면의 마지막 대상자와 섞이지 않음. 파일 교체·초기화 시 이전 대상자의 PDF 버튼도 제거
+- 팝업 차단 시 안내를 제공하며 원본 분석 결과를 유지. 개인정보 전송이나 연구 시트 저장을 추가하지 않음
+- `batch-pdf-20261108` 리소스 버전 사용. 기본 테스트 36개와 320px Chromium·375px iPhone WebKit·1440px Chromium에서 대상자별 PDF 내용·파일 제목·보류·오류 차단·재업로드 검증

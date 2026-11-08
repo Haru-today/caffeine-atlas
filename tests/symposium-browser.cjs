@@ -184,6 +184,8 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.ok(templateBook.Sheets["일괄 입력"]);
     XLSX.utils.sheet_add_aoa(templateBook.Sheets["일괄 입력"], [
       ["0001", "2026-11-08", "2026-11-07", "구강상피세포", "미기재", "AA", "GG", "CC", "AT"],
+      ["PDF-SECOND", "2026-11-09", "2026-11-07", "타액", "미기재", "CC", "AG", "TT", "TT"],
+      ["PDF-HOLD", "2026-11-08", "", "구강상피세포", "미기재", "모름", "GG", "CC", "AT"],
       ["DEMO-ERROR", "2026-11-08", "", "구강상피세포", "미기재", "AA", "GG", "CC", "GG"]
     ], { origin: "A3" });
     await page.locator("#batchFile").setInputFiles({
@@ -192,10 +194,30 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       buffer: Buffer.from(XLSX.write(templateBook, { type: "buffer", bookType: "xlsx" }))
     });
     await page.locator("#batchAnalyzeBtn").click();
-    await page.waitForFunction(() => document.querySelectorAll("#batchResultsBody tr").length === 2);
+    await page.waitForFunction(() => document.querySelectorAll("#batchResultsBody tr").length === 4);
     assert.match(await page.locator("#batchResultsBody").textContent(), /0001/);
     assert.match(await page.locator("#batchResultsBody").textContent(), /DEMO-ERROR/);
     assert.equal(await page.locator("#batchDownloadBtn").isEnabled(), true);
+    for (const sampleId of ["0001", "PDF-SECOND", "PDF-HOLD"]) {
+      const button = page.getByRole("button", { name: sampleId + " PDF 저장 화면 열기", exact: true });
+      assert.equal(await button.isEnabled(), true);
+      const pdfWait = page.waitForEvent("popup");
+      await button.click();
+      const pdf = await pdfWait;
+      await pdf.waitForLoadState("domcontentloaded");
+      assert.match(await pdf.title(), new RegExp("Caffeine-Atlas-Report-" + sampleId));
+      const body = await pdf.locator("body").textContent();
+      assert.ok(body.includes(sampleId));
+      for (const other of ["DEMO-001", "PDF-SECOND", "PDF-HOLD", "DEMO-ERROR"]) {
+        if (other !== sampleId) assert.equal(body.includes(other), false, "PDF must contain only its own subject");
+      }
+      if (sampleId === "PDF-HOLD") {
+        assert.equal(await pdf.locator(".gauge.is-unscored").count(), 1);
+        assert.equal(await pdf.locator(".distribution-marker").count(), 0);
+      }
+      await pdf.close();
+    }
+    assert.equal(await page.getByRole("button", { name: "DEMO-ERROR PDF 저장 화면 열기", exact: true }).isEnabled(), false);
     const batchDownloadWait = page.waitForEvent("download");
     await page.locator("#batchDownloadBtn").click();
     const batchDownload = await batchDownloadWait;
@@ -203,7 +225,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     const resultBook = XLSX.read(fs.readFileSync(await batchDownload.path()), { type: "buffer" });
     for (const sheetName of ["분석 결과", "입력 오류", "해석 안내"]) assert.ok(resultBook.Sheets[sheetName], sheetName);
     const rows = XLSX.utils.sheet_to_json(resultBook.Sheets["분석 결과"], { header: 1, defval: "" });
-    assert.equal(rows.length, 3);
+    assert.equal(rows.length, 5);
     assert.ok(rows.some(row => row.includes("0001")), "leading-zero Sample ID must survive download");
     assert.match(JSON.stringify(XLSX.utils.sheet_to_json(resultBook.Sheets["입력 오류"], { header: 1 })), /DEMO-ERROR/);
 
@@ -228,13 +250,14 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     await page.locator("#batchClearBtn").click();
     assert.equal(await page.locator("#batchFile").evaluate(input => input.files.length), 0);
     assert.equal(await page.locator("#batchResultsBody").textContent(), "");
+    assert.equal(await page.locator("[data-batch-pdf-row]").count(), 0);
     assert.equal(await page.locator("#batchAnalyzeBtn").isEnabled(), false);
     assert.equal(await page.locator("#batchClearBtn").isEnabled(), false);
     assert.equal(await page.locator("#batchFile").evaluate(input => input === document.activeElement), true);
 
     assert.deepEqual(outgoing, [], name + ": unapproved Sheets API call observed");
     assert.deepEqual(errors, [], name + ": runtime JavaScript error observed");
-    console.log("PASS " + name + " — QR, demo, PDF, batch import/export, invalid replacement, clear and no Sheets calls");
+    console.log("PASS " + name + " — QR, demo, individual/batch PDF, batch import/export, invalid replacement, clear and no Sheets calls");
   } catch (error) {
     try { await page.screenshot({ path: path.join(artifacts, name + "-failure.png"), fullPage: true }); } catch (_) {}
     throw error;

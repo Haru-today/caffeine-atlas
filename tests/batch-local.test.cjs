@@ -38,9 +38,17 @@ function toRows(sheet) {
 function localFlowHarness() {
   const objects = new Map();
   const downloads = [];
+  const popups = [];
+  const alerts = [];
+  let popupBlocked = false;
   let networkCalls = 0;
   const failNetwork = () => { networkCalls++; throw new Error("local batch must not use the network"); };
   const localWindow = { XLSX: { ...XLSX, writeFile(book, name) { downloads.push({ book, name }); } }, fetch: failNetwork };
+  localWindow.location = { href: "https://example.test/caffeine-atlas/caffeine-sensitivity-app/analyzer.html" };
+  localWindow.open = () => popupBlocked ? null : { document: {
+    open() {}, write(html) { popups.push(html); }, close() {}
+  } };
+  localWindow.alert = message => alerts.push(message);
   const localDocument = { getElementById(id) {
     if (!objects.has(id)) objects.set(id, {
       hidden: true, disabled: false, checked: false, innerHTML: "", textContent: "", files: [],
@@ -53,10 +61,59 @@ function localFlowHarness() {
       choose: function(file) { elements.batchFile.files = file ? [file] : []; handleBatchFileChange(); },
       run: processLocalBatchUpload,
       download: downloadBatchResults,
+      pdf: saveBatchPdfReport,
       snapshot: function() { return { busy: batchBusy, records: batchResults.slice() }; }
-    };`), { window: localWindow, document: localDocument, fetch: failNetwork, console });
-  return { ...localWindow.flow, element: id => objects.get(id), downloads, networkCalls: () => networkCalls };
+    };`), { window: localWindow, document: localDocument, fetch: failNetwork, URL, console });
+  return { ...localWindow.flow, element: id => objects.get(id), downloads, popups, alerts,
+    blockPopup(value) { popupBlocked = value; }, networkCalls: () => networkCalls };
 }
+
+test("each batch PDF uses its own ID, dates, genotypes and held result", async () => {
+  const flow = localFlowHarness();
+  const second = row("PDF-SECOND", ["CC", "AG", "TT", "TT"]);
+  second[1] = "2026-11-09";
+  flow.choose(file(workbook([
+    row("PDF-FIRST"), second, row("PDF-HOLD", ["모름", "GG", "CC", "AT"])
+  ])));
+  await flow.run();
+  flow.pdf(2);
+  flow.pdf(3);
+  flow.pdf(4);
+  assert.equal(flow.popups.length, 3);
+  assert.match(flow.popups[0], /<title>Caffeine-Atlas-Report-PDF-FIRST-2026-11-08<\/title>/);
+  assert.doesNotMatch(flow.popups[0], /PDF-SECOND|PDF-HOLD/);
+  assert.match(flow.popups[1], /<title>Caffeine-Atlas-Report-PDF-SECOND-2026-11-09<\/title>/);
+  assert.doesNotMatch(flow.popups[1], /PDF-FIRST|PDF-HOLD/);
+  assert.match(flow.popups[1], /<td>CC<\/td>/);
+  assert.match(flow.popups[2], /gauge is-unscored/);
+  assert.doesNotMatch(flow.popups[2], /<circle class="distribution-marker"/);
+  assert.equal(flow.networkCalls(), 0);
+});
+
+test("batch PDF rejects invalid or stale rows and recovers from popup blocking", async () => {
+  const flow = localFlowHarness();
+  flow.choose(file(workbook([row("PDF-VALID"), row("PDF-INVALID", ["GG", "GG", "CC", "AT"])])));
+  await flow.run();
+  flow.pdf(3);
+  flow.pdf(NaN);
+  assert.equal(flow.popups.length, 0);
+  flow.blockPopup(true);
+  flow.pdf(2);
+  assert.match(flow.alerts[0], /팝업 차단/);
+  assert.equal(flow.snapshot().records.length, 2);
+  flow.blockPopup(false);
+  flow.pdf(2);
+  assert.equal(flow.popups.length, 1);
+  flow.choose(file(workbook([row("PDF-REPLACEMENT")])));
+  flow.pdf(2);
+  assert.equal(flow.popups.length, 1, "old rows must be unavailable before replacement is analyzed");
+  await flow.run();
+  flow.pdf(2);
+  assert.equal(flow.popups.length, 2);
+  assert.match(flow.popups[1], /PDF-REPLACEMENT/);
+  assert.doesNotMatch(flow.popups[1], /PDF-VALID/);
+  assert.equal(flow.networkCalls(), 0);
+});
 
 test("public local analysis renders mixed rows and clears stale downloads after a failed reupload", async () => {
   const flow = localFlowHarness();
