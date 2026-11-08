@@ -1208,11 +1208,23 @@ a {
 
 .type-summary {
   display: grid;
-  grid-template-columns: 86px minmax(0, 1fr);
+  grid-template-columns: 140px minmax(0, 1fr);
   gap: 16px;
   align-items: center;
 }
 
+.type-art {
+  display: block;
+  position: relative;
+  width: 140px;
+  height: 140px;
+  overflow: hidden;
+}
+.type-art img { position: absolute; top: 0; left: 0; width: 300%; height: 100%; max-width: none; }
+.type-art--calm img { left: -100%; }
+.type-art--sleepy img { left: -200%; }
+.type-illustration[hidden], .type-code[hidden] { display: none !important; }
+.batch-type-cell .type-art { width: 68px; height: 68px; margin: 0 auto 8px; }
 .type-code {
   display: inline-flex;
   width: 86px;

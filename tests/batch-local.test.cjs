@@ -41,13 +41,20 @@ function localFlowHarness() {
   const popups = [];
   const alerts = [];
   let popupBlocked = false;
+  const reportUrls = new Map();
+  class ReportURL extends URL {}
+  ReportURL.createObjectURL = blob => { const url = "blob:test-" + reportUrls.size; reportUrls.set(url, blob.html); return url; };
+  ReportURL.revokeObjectURL = url => reportUrls.delete(url);
+  class ReportBlob { constructor(parts) { this.html = parts.join(""); } }
   let networkCalls = 0;
   const failNetwork = () => { networkCalls++; throw new Error("local batch must not use the network"); };
   const localWindow = { XLSX: { ...XLSX, writeFile(book, name) { downloads.push({ book, name }); } }, fetch: failNetwork };
   localWindow.location = { href: "https://example.test/caffeine-atlas/caffeine-sensitivity-app/analyzer.html" };
-  localWindow.open = () => popupBlocked ? null : { document: {
-    open() {}, write(html) { popups.push(html); }, close() {}
-  } };
+  localWindow.open = url => {
+    if (popupBlocked) return null;
+    popups.push(reportUrls.get(url));
+    return {};
+  };
   localWindow.alert = message => alerts.push(message);
   const localDocument = { getElementById(id) {
     if (!objects.has(id)) objects.set(id, {
@@ -63,7 +70,7 @@ function localFlowHarness() {
       download: downloadBatchResults,
       pdf: saveBatchPdfReport,
       snapshot: function() { return { busy: batchBusy, records: batchResults.slice() }; }
-    };`), { window: localWindow, document: localDocument, fetch: failNetwork, URL, console });
+    };`), { window: localWindow, document: localDocument, fetch: failNetwork, URL: ReportURL, Blob: ReportBlob, console });
   return { ...localWindow.flow, element: id => objects.get(id), downloads, popups, alerts,
     blockPopup(value) { popupBlocked = value; }, networkCalls: () => networkCalls };
 }
@@ -219,7 +226,7 @@ test("batch and individual calculations agree for complete, partial and unknown 
 });
 
 test("the separate research batch action attaches consent only after the checked storage control", async () => {
-  const researchWindow = { XLSX };
+  const researchWindow = { XLSX, location: { href: "https://example.test/caffeine-atlas/caffeine-sensitivity-app/analyzer.html" } };
   const objects = new Map();
   const researchDocument = { getElementById(id) {
     if (!objects.has(id)) objects.set(id, {
@@ -234,7 +241,7 @@ test("the separate research batch action attaches consent only after the checked
     .replace("  init();", `
       saveConfirmedPayload = function(payload, count) { window.captured = { payload, count }; return Promise.resolve(); };
       window.startBatch = function(file) { batchFile = file; processBatchUpload(); };`);
-  vm.runInNewContext(researchSource, { window: researchWindow, document: researchDocument, console });
+  vm.runInNewContext(researchSource, { window: researchWindow, document: researchDocument, URL, console });
   const inputFile = file(workbook([row("RESEARCH-TEST")]));
   researchWindow.startBatch(inputFile);
   await new Promise(setImmediate);
@@ -300,6 +307,18 @@ test("only supported allele separators and enumerated metadata values are accept
     assert.equal(app.normalizeSpecimen(value), null, value);
     assert.equal(app.normalizeSex(value), null, value);
   }
+});
+
+test("a renamed workbook processes the full 200-person limit without losing rows", async () => {
+  const input = Array.from({ length: 200 }, (_, index) => row("LIMIT-" + String(index + 1).padStart(3, "0")));
+  const records = await app.parseBatchWorkbook(file(workbook(input), { name: "최종 결과_파일명 변경.xlsx" }));
+  assert.equal(records.length, 200);
+  records.forEach(record => { assert.equal(record.errors.length, 0); app.analyzeBatchRow(record); });
+  const exported = app.buildBatchResultWorkbook(records);
+  const saved = XLSX.read(XLSX.write(exported, { type: "buffer", bookType: "xlsx" }), { type: "buffer" });
+  const output = toRows(saved.Sheets["분석 결과"]);
+  assert.equal(output.length, 201);
+  for (const source of input) assert.equal(output.filter(row => row.includes(source[0])).length, 1);
 });
 
 test("download workbook retains every row, source values, errors and safe text cells", async () => {
