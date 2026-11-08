@@ -379,11 +379,15 @@
       ? getMetabolismSubtype(result.metabolismNorm)
       : {
         name: "판정 보류",
-        desc: "핵심 표지자 rs762551가 '모름'이어서 대사 관련 모형 지표를 판정하지 않았습니다. 실제 분해 시간은 이 리포트로 측정할 수 없습니다."
+        desc: "기준이 되는 CYP1A2 rs762551 정보가 없어 분해 방향을 정하지 않았어요. 해당 유전자형을 확인한 뒤 다시 입력해 주세요. 실제 분해 속도를 측정한 결과는 아니에요."
       };
     var sensitivityRank = hasScore ? calculateRankFromPercentile(percentile.percentile) : null;
+    var knownMetabolismCount = valid.filter(function (item) { return item.gene.layer === "metabolism"; }).length;
+    if (hasCoreGenotype && knownMetabolismCount < 2) {
+      metabolismSubtype.desc += " 분해 관련 2개 항목 중 " + knownMetabolismCount + "개만 확인해 제한적으로 계산했어요.";
+    }
     var coverageNote = unknownCount > 0 && hasScore
-      ? "'모름' " + unknownCount + "개는 제외하고 확인된 " + valid.length + "개 유전자형만 반영한 제한적 결과입니다."
+      ? "‘모름’으로 둔 " + unknownCount + "개는 빼고, 확인된 " + valid.length + "개만 계산한 참고 결과예요."
       : "";
 
     return {
@@ -425,11 +429,11 @@
       return {
         label: "각성형",
         illustration: "awake",
-        badge: "낮은 구간",
+        badge: "종합 지수 낮음",
         emoji: "⚡",
-        desc: "연구·교육용 모형에서 계산한 민감도 지수가 낮은 구간입니다. 실제 분해 속도나 각성·수면 반응을 판정한 결과는 아닙니다.",
-        title: "각성형 · 낮은 지수 구간",
-        text: "입력한 유전자형을 프로젝트 모형에 적용한 종합 지수가 낮은 구간으로 나타났습니다.\n\n카페인 분해 속도와 각성·수면 반응은 구분해서 살펴보아야 합니다. 지수가 낮아도 커피를 잘 견디거나, 마신 뒤 잘 자거나, 많은 양을 마셔도 안전하다고 판단할 수 없습니다.\n\n이 서비스는 실제 분해 속도나 반감기를 측정하지 않습니다. 평소 섭취 시간·양과 잠드는 시간, 두근거림 등 실제 반응을 함께 확인해 주세요.",
+        desc: "연구용 종합 점수가 낮은 구간에 속해요. ‘각성형’은 이 구간에 붙인 캐릭터 이름이에요.",
+        title: "각성형은 무슨 뜻인가요?",
+        text: "입력한 유전자 정보를 함께 계산한 종합 점수가 낮은 구간이라는 뜻이에요.\n\n캐릭터 이름만으로 커피를 마신 뒤 잠이 깨는지, 잠을 잘 자는지 알 수는 없어요. 분해 방향은 종합 점수와 구분해 CYP1A2 정보로 따로 살펴봐요.",
         recommendations: [
           "음료의 표시 카페인 함량과 마신 시간, 잠든 시간, 몸 반응을 함께 기록해 보세요.",
           "섭취 후 잠이 얕아지거나 잠드는 시간이 늦어지면 양과 섭취 시간을 조절해 보세요.",
@@ -442,11 +446,11 @@
       return {
         label: "잠잠형",
         illustration: "calm",
-        badge: "중간 구간",
+        badge: "종합 지수 중간",
         emoji: "🌿",
-        desc: "연구·교육용 모형에서 계산한 민감도 지수가 중간 구간입니다. 인구집단의 평균 반응이나 평균 대사 속도를 뜻하지 않습니다.",
-        title: "잠잠형 · 중간 지수 구간",
-        text: "입력한 유전자형을 프로젝트 모형에 적용한 종합 지수가 중간 구간으로 나타났습니다.\n\n카페인 분해 속도와 각성·수면 반응은 구분해서 살펴보아야 합니다. 중간 구간은 사람들의 평균 반응이나 평균 대사 속도를 뜻하지 않으며, 개인의 안전 섭취량도 제시하지 않습니다.\n\n이 서비스는 실제 분해 속도나 반감기를 측정하지 않습니다. 평소 섭취 시간·양과 잠드는 시간, 두근거림 등 실제 반응을 함께 확인해 주세요.",
+        desc: "연구용 종합 점수가 중간 구간에 속해요. ‘잠잠형’은 이 구간에 붙인 캐릭터 이름이에요.",
+        title: "잠잠형은 무슨 뜻인가요?",
+        text: "입력한 유전자 정보를 함께 계산한 종합 점수가 중간 구간이라는 뜻이에요. 사람들의 평균 반응이나 평균 분해 속도와 같다는 뜻은 아니에요.\n\n캐릭터 이름과 분해 방향은 다른 항목이에요. 분해 방향은 종합 점수와 구분해 CYP1A2 정보로 따로 살펴봐요.",
         recommendations: [
           "음료의 표시 카페인 함량과 마신 시간, 잠든 시간, 몸 반응을 함께 기록해 보세요.",
           "섭취 후 잠이 얕아지거나 잠드는 시간이 늦어지면 양과 섭취 시간을 조절해 보세요.",
@@ -458,11 +462,11 @@
     return {
       label: "잠꾸러기형",
       illustration: "sleepy",
-      badge: "높은 구간",
+      badge: "종합 지수 높음",
       emoji: "🌙",
-      desc: "연구·교육용 모형에서 계산한 민감도 지수가 높은 구간입니다. 잠이 많은 성향이나 실제 불면·민감 반응을 판정한 결과는 아닙니다.",
-      title: "잠꾸러기형 · 높은 지수 구간",
-      text: "입력한 유전자형을 프로젝트 모형에 적용한 종합 지수가 높은 구간으로 나타났습니다.\n\n카페인 분해 속도와 각성·수면 반응은 구분해서 살펴보아야 합니다. 높은 구간은 잠이 많은 성향이나, 커피를 마시면 잠들기 어렵다는 판정이 아닙니다.\n\n이 서비스는 실제 분해 속도나 반감기를 측정하지 않습니다. 평소 섭취 시간·양과 잠드는 시간, 두근거림 등 실제 반응을 함께 확인해 주세요.",
+      desc: "연구용 종합 점수가 높은 구간에 속해요. ‘잠꾸러기형’은 이 구간에 붙인 캐릭터 이름이에요.",
+      title: "잠꾸러기형은 무슨 뜻인가요?",
+      text: "입력한 유전자 정보를 함께 계산한 종합 점수가 높은 구간이라는 뜻이에요. 잠이 많다거나, 커피를 마시면 잠을 못 잔다는 판정은 아니에요.\n\n캐릭터 이름과 분해 방향은 다른 항목이에요. 분해 방향은 종합 점수와 구분해 CYP1A2 정보로 따로 살펴봐요.",
       recommendations: [
         "음료의 표시 카페인 함량과 마신 시간, 잠든 시간, 몸 반응을 함께 기록해 보세요.",
         "섭취 후 잠이 얕아지거나 잠드는 시간이 늦어지면 양과 섭취 시간을 조절해 보세요.",
@@ -487,12 +491,12 @@
       badge: "유형 판정 보류",
       emoji: "?",
       desc: hasSupportingData
-        ? "확인된 보조 유전자형은 있지만 핵심 CYP1A2 rs762551가 '모름'이어서 카페인 민감도 유형을 판정하지 않았습니다."
-        : "확인된 유전자형이 없어 카페인 민감도 유형을 판정하지 않았습니다.",
-      title: "핵심 유전자형을 확인하면 유형을 계산할 수 있어요",
+        ? "일부 정보는 있지만 기준이 되는 CYP1A2 rs762551 정보가 없어 유형을 정하지 않았어요."
+        : "확인된 유전자 정보가 없어 유형을 정하지 않았어요.",
+      title: "아직 유형을 정할 수 없어요",
       text: hasSupportingData
-        ? "확인된 " + confirmedCount + "개 유전자형의 레이어 값은 리포트에 표시하지만, 핵심 표지자인 CYP1A2 rs762551가 '모름'이므로 최종 민감도 점수와 비교 위치는 산출하지 않았습니다."
-        : "4개 유전자형이 모두 '모름'으로 입력되어 민감도 점수와 비교 위치를 산출하지 않았습니다. 임의의 평균값으로 대체하지 않고, 입력 내용과 일반적인 카페인 섭취 주의사항을 담은 정보 부족 리포트를 제공합니다.",
+        ? "유전자 정보 " + confirmedCount + "개를 확인했지만, 기준이 되는 CYP1A2 rs762551 정보가 없어요. 종합 점수와 유형, 분해 방향을 정하지 않았어요. 해당 정보를 확인하면 다시 계산할 수 있어요."
+        : "4개 유전자 정보가 모두 ‘모름’이라 점수와 유형, 분해 방향을 정하지 않았어요. 빈 정보를 평균값으로 채워 넣지 않아요. 유전자 정보를 확인한 뒤 다시 입력해 주세요.",
       recommendations: [
         "유전자형을 확인하기 전에는 카페인을 적은 양부터 섭취하고 실제 몸 반응을 살펴보세요.",
         "오후나 저녁에는 카페인을 줄이고, 수면에 영향이 있으면 섭취 시간을 앞당겨 보세요.",
@@ -506,26 +510,26 @@
     if (metabolismNorm === null || typeof metabolismNorm !== "number") {
       return {
         name: "판정 보류",
-        desc: "확인된 대사 관련 유전자형이 없어 대사 관련 모형 지표를 계산하지 않았습니다."
+        desc: "분해와 관련된 유전자 정보가 없어 방향을 정하지 않았어요. 유전자형을 확인한 뒤 다시 입력해 주세요."
       };
     }
 
     var score = clamp(metabolismNorm * 100, 0, 100);
     if (score <= 33.33) {
       return {
-        name: "대사 관련 지표 낮음",
-        desc: "CYP1A2 관련 모형 지표가 낮은 구간입니다. 실제 분해 속도·반감기나 수면 반응을 측정한 값은 아닙니다."
+        name: "빠른 분해 쪽(모형)",
+        desc: "이 모형에서는 카페인을 상대적으로 빠르게 분해하는 쪽으로 분류해요. 낮은 점수가 ‘분해 능력이 낮다’는 뜻은 아니에요. 개인의 실제 분해 속도를 확인한 결과는 아니에요."
       };
     }
     if (score <= 66.67) {
       return {
-        name: "대사 관련 지표 중간",
-        desc: "CYP1A2 관련 모형 지표가 중간 구간입니다. 실제 사람들의 평균 대사 속도를 뜻하지 않습니다."
+        name: "중간 구간(모형)",
+        desc: "모형 점수가 빠른 쪽과 느린 쪽 사이에 있어요. 사람들의 평균 분해 속도와 같다는 뜻은 아니에요. 개인의 실제 분해 속도를 확인한 결과는 아니에요."
       };
     }
     return {
-      name: "대사 관련 지표 높음",
-      desc: "CYP1A2 관련 모형 지표가 높은 구간입니다. 실제 분해 속도·반감기나 수면 반응을 측정한 값은 아닙니다."
+      name: "느린 분해 쪽(모형)",
+      desc: "이 모형에서는 카페인을 상대적으로 느리게 분해하는 쪽으로 분류해요. 높은 점수가 ‘분해 능력이 좋다’는 뜻은 아니에요. 개인의 실제 분해 속도를 확인한 결과는 아니에요."
     };
   }
 
@@ -687,7 +691,7 @@
     elements.typeBadge.textContent = category.badge;
     elements.typeName.textContent = category.label;
     elements.typeDesc.textContent = lastResult.typeDescription;
-    elements.coverageText.textContent = "분석 완성도 " + confidence + "% (확인 " + valid.length + "/4 · 모름 " + unknownCount + "/4)";
+    elements.coverageText.textContent = "입력 완성도 " + confidence + "% (확인 " + valid.length + "/4 · 모름 " + unknownCount + "/4)";
     elements.gaugeFill.style.width = hasScore ? score.toFixed(2) + "%" : "0%";
     elements.gaugeMarker.style.left = hasScore ? score.toFixed(2) + "%" : "0%";
     elements.gaugeMarker.hidden = !hasScore;
@@ -698,7 +702,7 @@
     elements.confidenceBar.style.width = confidence + "%";
 
     elements.referenceRankText.textContent = hasScore ? "참조자료 대비 순서 " + sensitivityRank + "/100" : "비교 불가";
-    elements.percentileText.textContent = hasScore ? "검사결과 기반 연구 참조분포 · 100단위 환산" : "확인된 유전자형 없음";
+    elements.percentileText.textContent = hasScore ? "검사결과 기반 연구 참조분포 · 100단위 환산" : "기준 유전자 정보 미확인 · 위치 표시 보류";
     elements.detailCategory.textContent = category.label;
     elements.detailPercentile.textContent = hasScore ? "연구 참조분포의 " + lastResult.percentile.toFixed(1) + "% 지점" : "산출 없음";
     elements.detailInputQuality.textContent = "확인 " + valid.length + "개 · 모름 " + unknownCount + "개";
@@ -753,7 +757,7 @@
     elements.detailPercentile.textContent = "--";
     elements.detailInputQuality.textContent = "--";
     elements.metabolismTypeName.textContent = "--";
-    elements.metabolismTypeDesc.textContent = "유전자형을 바탕으로 카페인이 비교적 빨리 빠지는지, 오래 남는지 보여드립니다.";
+    elements.metabolismTypeDesc.textContent = "유전자 정보를 입력하면 모형 안에서 어느 방향으로 분류되는지 설명해 드려요. 실제 분해 속도를 확인하는 검사는 아니에요.";
     elements.interpretationTitle.textContent = "유전자형을 선택해 주세요";
     elements.interpretationText.textContent = "리포트 정보와 4개 유전자형 항목을 선택한 뒤 리포트 생성 버튼을 누르면 결과가 생성됩니다.";
     elements.recommendList.innerHTML = "<li>리포트 생성 후 카페인 섭취 가이드가 표시됩니다.</li>";
@@ -768,7 +772,7 @@
       var scoreText = "반영 없음";
 
       if (selected) {
-        scoreText = "민감도 반영 " + Math.round(genotype.evidenceScore * 100) + "%";
+        scoreText = "모형 반영값 " + Math.round(genotype.evidenceScore * 100) + "/100";
       }
 
       return [
@@ -1006,7 +1010,8 @@
       "",
       "점수: " + (typeof lastResult.score === "number" ? lastResult.score.toFixed(1) + "점" : "산출 없음"),
       "유형: " + lastResult.category.label,
-      "대사 레이어 판정: " + lastResult.metabolismSubtype.name,
+      "카페인 분해 방향(모형): " + lastResult.metabolismSubtype.name,
+      lastResult.metabolismSubtype.desc,
       "참조자료 대비 순서(100단위 환산): " + (typeof lastResult.sensitivityRank === "number" ? lastResult.sensitivityRank + "/100" : "산출 없음"),
       "연구 참조분포의 상대 위치: " + (typeof lastResult.percentile === "number" ? lastResult.percentile.toFixed(1) + "%" : "산출 없음"),
       "참고: 연구에 사용된 실제 검사결과를 참고해 정리한 7개 점수 구간의 비교분포입니다. 표시된 순서는 연구 참조자료 기준의 100단위 환산값으로, 대한민국 전체 인구를 대표하거나 임상적으로 검증된 민감도 순위는 아닙니다.",
@@ -1566,7 +1571,7 @@
         '<td><span class="status-pill ', hasError ? "error" : "", '">', hasError ? "입력 오류" : (result.score === null ? "판정 보류" : "분석 완료"), "</span></td>",
         "<td>", !hasError && typeof result.score === "number" ? result.score.toFixed(1) + "점" : (!hasError ? "산출 없음" : "--"), "</td>",
         '<td class="batch-type-cell">', !hasError ? typeArtworkHtml(result.category.illustration) + escapeHtml(result.category.label) : "--", "</td>",
-        "<td>", !hasError ? escapeHtml(result.metabolismSubtype.name) : "--", "</td>",
+        '<td class="batch-direction-cell">', !hasError ? "<strong>" + escapeHtml(result.metabolismSubtype.name) + '</strong><details class="batch-direction-help"><summary>쉬운 설명</summary><p>' + escapeHtml(result.metabolismSubtype.desc) + "</p></details>" : "--", "</td>",
         "<td>", !hasError ? result.confidence + "%" : "--", "</td>",
         "<td>", hasError ? escapeHtml(record.errors.join(" · ")) : escapeHtml(result.unknownCount ? ("모름 " + result.unknownCount + "개 · " + (result.score === null ? "핵심 유전자형 확인 필요" : "제한적 결과")) : "확인됨"), "</td>",
         "</tr>"
@@ -1611,7 +1616,7 @@
     if (!xlsx) throw new Error("엑셀 처리 모듈을 불러오지 못했습니다.");
     var headers = ["원본 행", "Sample ID", "처리 상태", "리포트 날짜", "채취일", "검체 종류", "성별",
       "rs762551", "rs2069514", "rs2472297", "rs6968865", "민감도 지수 (0-100)", "결과 구간",
-      "대사 관련 지표", "대사 레이어 (%)", "조절 레이어 (%)", "입력 완성도 (%)", "확인된 SNP 수",
+      "분해 방향(모형)", "분해 관련 유전형 점수 (0-100)", "섭취 관련 유전형 점수 (0-100)", "입력 완성도 (%)", "확인된 SNP 수",
       "모름 SNP 수", "해석", "생활 참고 안내", "오류·확인 사항", "생성 시각 (KST)", "모델 버전"];
     var generatedAt = getKoreaDateTimeString();
     var output = [headers];
@@ -1631,7 +1636,7 @@
         hasError ? "산출 없음" : result.metabolismSubtype.name,
         hasError ? null : data.result.metabolismScore, hasError ? null : data.result.regulationScore,
         hasError ? null : result.confidence, hasError ? null : result.valid.length,
-        hasError ? null : result.unknownCount, hasError ? "" : result.interpretation,
+        hasError ? null : result.unknownCount, hasError ? "" : result.metabolismSubtype.desc + "\n\n" + result.interpretation,
         hasError ? "" : result.category.recommendations.join("\n"),
         hasError ? record.errors.join(" · ") : (result.unknownCount ? "모름 항목 제외 · " + (result.score === null ? "핵심 유전자형 확인 필요" : "제한적 결과") : ""),
         generatedAt, "0.4 / scoring 0.3"]));
@@ -1642,6 +1647,8 @@
       ["결과 파일", "분석 결과: 모든 입력 행 / 입력 오류: 수정할 행과 원본 입력 / 해석 안내: 기준 및 한계"],
       ["처리 상태", "분석 완료: 핵심 SNP 확인 / 판정 보류: rs762551 모름 / 입력 오류: 점수 미산출"],
       ["유형", "각성형: 33.34 미만 / 잠잠형: 33.34 이상 66.67 미만 / 잠꾸러기형: 66.67 이상. 연구·교육용 별칭이며 반올림 전 점수로 구분합니다. 실제 각성·수면 반응을 판정하는 이름은 아닙니다."],
+      ["분해 방향(모형)", "분해 관련 유전형 점수가 낮으면 ‘빠른 분해 쪽’, 높으면 ‘느린 분해 쪽’으로 정한 모형입니다. 중간은 두 구간 사이이며 평균 속도를 뜻하지 않습니다. ‘낮음’은 분해 능력이 낮다는 뜻이 아닙니다. 실제 분해 속도를 확인한 검사 결과가 아닙니다."],
+      ["종합 점수와 분해 방향", "캐릭터 유형은 종합 점수의 구간 이름이고, 분해 방향은 CYP1A2 정보로 따로 계산합니다. 같은 캐릭터 유형이어도 분해 방향은 다를 수 있습니다."],
       ["모름", "누락과 다릅니다. 명시적으로 ‘모름’을 입력한 SNP는 제외하고 확인된 항목의 가중치를 다시 계산합니다. 서로 다른 입력 완성도의 점수를 직접 비교하지 마세요."],
       ["입력 완성도", "확인된 SNP 수 ÷ 4 × 100 (%). 예측 정확도나 통계적 신뢰도가 아닙니다."],
       ["점수", "대사 70% + 조절 30%의 연구·교육용 모형 지수. 기존 점수식은 유지했으며 임상 검증된 PRS가 아닙니다."],
@@ -2010,10 +2017,10 @@
       "<header class=\"pdf-header\"><div class=\"pdf-brand\"><img src=\"", escapeHtml(logoUrl), "\" alt=\"Caffeine Atlas\"><p>Evidence-based caffeine response interpretation</p></div><div class=\"pdf-title\"><h1>Caffeine Atlas Report</h1><p>", escapeHtml(data.generatedAt), "</p></div></header>",
       "<section class=\"pdf-meta\"><div><span>Sample ID</span><strong>", escapeHtml(info.sampleId), "</strong></div><div><span>Report date</span><strong>", escapeHtml(info.reportDate), "</strong></div><div><span>Collection</span><strong>", escapeHtml(info.collectionDate), "</strong></div><div><span>Specimen / Sex</span><strong>", escapeHtml(info.sampleType), " / ", escapeHtml(info.sex), "</strong></div><div><span>Institution</span><strong>", escapeHtml(info.institution), "</strong></div></section>",
       "<section class=\"pdf-summary\"><div class=\"type-panel\"><div class=\"pdf-type-identity\">", artwork, "<div class=\"pdf-type-copy\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", escapeHtml(result.category), "</h2><p>", escapeHtml(result.typeDescription), "</p></div></div></div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div><div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>각성형</span><span>잠잠형</span><span>잠꾸러기형</span></div></div></section>",
-      "<section class=\"metrics\"><div class=\"metric\"><span>Result type</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>Metabolism</span><strong>", escapeHtml(result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>Model position</span><strong>", pdfRankText, "</strong></div><div class=\"metric\"><span>SNP coverage</span><strong>", result.confidence, "%</strong></div></section>",
-      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><div><h3>연구 참조분포</h3><span>검사결과 기반 · 7개 점수 구간</span></div><strong>", pdfPercentileText, "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>입력 완성도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
-      "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>Score</th></tr></thead><tbody>", genotypeRows, "</tbody></table></div></section>",
-      "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3><strong>", escapeHtml(result.title), "</strong><p>", escapeHtml(result.interpretation), "</p></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드</h3><ul>", recommendations, "</ul></div></section>",
+      "<section class=\"metrics\"><div class=\"metric\"><span>결과 유형</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>분해 방향(모형)</span><strong>", escapeHtml(result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>연구자료 내 위치</span><strong>", pdfRankText, "</strong></div><div class=\"metric\"><span>입력 완성도</span><strong>", result.confidence, "%</strong></div></section>",
+      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><div><h3>연구 참조분포</h3><span>검사결과 기반 · 7개 점수 구간</span></div><strong>", pdfPercentileText, "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">계산에 사용한 값</h3><div class=\"layer-list\"><div class=\"layer\"><span>분해 관련 점수</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취 관련 점수</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>입력 완성도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
+      "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>반영 항목</th><th>모형 반영값</th></tr></thead><tbody>", genotypeRows, "</tbody></table></div></section>",
+      "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>쉽게 읽는 결과</h3><strong>", escapeHtml(result.metabolismSubtype.name), "</strong><p>", escapeHtml(result.metabolismSubtype.desc + "\n\n" + result.interpretation), "</p></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드</h3><ul>", recommendations, "</ul></div></section>",
       "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.join(" ")), " 검사결과를 참고해 구성한 7구간 비교도표로, 전체 한국인 인구를 대표하는 임상 검증 순위를 의미하지 않습니다.</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
       "</main><script>window.addEventListener('load',function(){if(location.protocol==='blob:')URL.revokeObjectURL(location.href);if(navigator.webdriver)return;var ready=document.fonts?document.fonts.ready:Promise.resolve();ready.then(function(){setTimeout(function(){window.print()},350)})});<\/script></body></html>"
     ].join("");

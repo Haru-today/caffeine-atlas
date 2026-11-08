@@ -1306,6 +1306,22 @@ a {
   line-height: 1.6;
 }
 
+.metabolism-type-card h3 { margin: 0; font-size: 17px; color: #173f47; }
+.metabolism-type-card { padding: 20px; border-left: 5px solid var(--teal); background: #f1f9f8; }
+.direction-guide { margin-top: 8px; border-top: 1px solid #c8dfdd; padding-top: 12px; }
+.direction-guide summary { color: #165c61; font-weight: 800; cursor: pointer; min-height: 32px; }
+.direction-guide summary:focus-visible { outline: 3px solid #245baa; outline-offset: 4px; }
+.direction-guide dl { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 12px 0; }
+.direction-guide dl div { min-width: 0; padding: 12px; background: #fff; border: 1px solid #d3e4e2; border-radius: 8px; }
+.direction-guide dt { color: #173f47; font-weight: 800; font-size: 13px; }
+.direction-guide dd { margin: 6px 0 0; font-size: 13px; line-height: 1.6; color: #47576c; }
+.direction-guide > p { font-size: 13px; }
+.batch-direction-cell { min-width: 180px; }
+.batch-direction-help summary { padding: 10px 0; min-height: 44px; color: #165c61; font-size: 12px; font-weight: 800; cursor: pointer; }
+.batch-direction-help summary:focus-visible { outline: 3px solid #245baa; outline-offset: 3px; }
+.batch-direction-help p { margin: 4px 0; max-width: 260px; line-height: 1.7; font-size: 12px; }
+@media (max-width: 760px) { .direction-guide dl { grid-template-columns: 1fr; } .metabolism-type-card { padding: 16px; } }
+
 .result-detail-grid div {
   min-height: 74px;
   padding: 10px;
