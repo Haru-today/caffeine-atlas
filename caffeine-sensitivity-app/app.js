@@ -424,6 +424,16 @@
     return clamp(Math.round(100 - percentile), 1, 100);
   }
 
+  function getPracticalGuidance() {
+    return [
+      "하루 총량: 커피뿐 아니라 차·에너지음료·초콜릿·의약품의 카페인도 합산하세요. FDA의 하루 400mg은 대부분의 건강한 성인을 위한 일반 참고치이며 목표나 개인별 안전량이 아닙니다. 한 번에 그 양을 섭취해도 된다는 뜻도 아닙니다. 이 결과는 섭취량을 늘려도 된다는 근거가 되지 않습니다.",
+      "수면: 마신 양과 시간, 잠든 시간 및 밤중 각성을 함께 기록하세요. 잠들기 어렵거나 잠이 얕아지면 섭취량을 줄이고 마지막 섭취 시간을 앞당겨 변화를 살펴보세요. 조절 후에도 문제가 지속되면 의료진과 상담하세요.",
+      "몸의 반응: 두근거림·불안·손 떨림·속 불편함이 나타나면 카페인 음료·보충제 섭취를 줄이거나 중단하고, 증상이 지속되거나 반복되면 의료진과 상담하세요. 카페인이 든 의약품은 임의로 중단하지 말고 의사·약사와 상의하세요. 가슴 통증, 심한 두근거림이나 불규칙한 심장박동, 실신, 호흡곤란, 경련 또는 의식 저하가 있으면 즉시 119에 도움을 요청하세요.",
+      "운동: 카페인이 운동에 미치는 효과와 부작용은 사람마다 다르며 유전자형으로 개인별 용량을 정할 수 없습니다. 운동 보충제·에너지음료도 총량에 합산하세요. 순수 카페인 분말이나 고농축 액상은 위험할 수 있으므로 사용하지 마세요.",
+      "별도 확인: 임신·수유 중, 어린이·청소년, 심장질환·수면장애가 있거나 약을 복용 중인 경우와 카페인에 민감한 경우에는 의료진이나 약사에게 확인하세요."
+    ];
+  }
+
   function classify(score) {
     if (score < 33.34) {
       return {
@@ -434,12 +444,7 @@
         desc: "연구용 종합 점수가 낮은 구간에 속해요. ‘각성형’은 이 구간에 붙인 캐릭터 이름이에요.",
         title: "각성형은 무슨 뜻인가요?",
         text: "입력한 유전자 정보를 함께 계산한 종합 점수가 낮은 구간이라는 뜻이에요.\n\n캐릭터 이름만으로 커피를 마신 뒤 잠이 깨는지, 잠을 잘 자는지 알 수는 없어요. 분해 방향은 종합 점수와 구분해 CYP1A2 정보로 따로 살펴봐요.",
-        recommendations: [
-          "음료의 표시 카페인 함량과 마신 시간, 잠든 시간, 몸 반응을 함께 기록해 보세요.",
-          "섭취 후 잠이 얕아지거나 잠드는 시간이 늦어지면 양과 섭취 시간을 조절해 보세요.",
-          "커피 외에 차, 에너지드링크 등으로 섭취한 카페인도 함께 살펴보세요.",
-          "유전자형 지수만으로 개인별 안전 섭취량을 정하지 마세요."
-        ]
+        recommendations: getPracticalGuidance()
       };
     }
     if (score < 66.67) {
@@ -451,12 +456,7 @@
         desc: "연구용 종합 점수가 중간 구간에 속해요. ‘잠잠형’은 이 구간에 붙인 캐릭터 이름이에요.",
         title: "잠잠형은 무슨 뜻인가요?",
         text: "입력한 유전자 정보를 함께 계산한 종합 점수가 중간 구간이라는 뜻이에요. 사람들의 평균 반응이나 평균 분해 속도와 같다는 뜻은 아니에요.\n\n캐릭터 이름과 분해 방향은 다른 항목이에요. 분해 방향은 종합 점수와 구분해 CYP1A2 정보로 따로 살펴봐요.",
-        recommendations: [
-          "음료의 표시 카페인 함량과 마신 시간, 잠든 시간, 몸 반응을 함께 기록해 보세요.",
-          "섭취 후 잠이 얕아지거나 잠드는 시간이 늦어지면 양과 섭취 시간을 조절해 보세요.",
-          "커피 외에 차, 에너지드링크 등으로 섭취한 카페인도 함께 살펴보세요.",
-          "유전자형 지수만으로 개인별 안전 섭취량을 정하지 마세요."
-        ]
+        recommendations: getPracticalGuidance()
       };
     }
     return {
@@ -467,12 +467,7 @@
       desc: "연구용 종합 점수가 높은 구간에 속해요. ‘잠꾸러기형’은 이 구간에 붙인 캐릭터 이름이에요.",
       title: "잠꾸러기형은 무슨 뜻인가요?",
       text: "입력한 유전자 정보를 함께 계산한 종합 점수가 높은 구간이라는 뜻이에요. 잠이 많다거나, 커피를 마시면 잠을 못 잔다는 판정은 아니에요.\n\n캐릭터 이름과 분해 방향은 다른 항목이에요. 분해 방향은 종합 점수와 구분해 CYP1A2 정보로 따로 살펴봐요.",
-      recommendations: [
-        "음료의 표시 카페인 함량과 마신 시간, 잠든 시간, 몸 반응을 함께 기록해 보세요.",
-        "섭취 후 잠이 얕아지거나 잠드는 시간이 늦어지면 양과 섭취 시간을 조절해 보세요.",
-        "커피 외에 차, 에너지드링크 등으로 섭취한 카페인도 함께 살펴보세요.",
-        "유전자형 지수만으로 개인별 안전 섭취량을 정하지 마세요."
-      ]
+      recommendations: getPracticalGuidance()
     };
   }
 
@@ -497,12 +492,9 @@
       text: hasSupportingData
         ? "유전자 정보 " + confirmedCount + "개를 확인했지만, 기준이 되는 CYP1A2 rs762551 정보가 없어요. 종합 점수와 유형, 분해 방향을 정하지 않았어요. 해당 정보를 확인하면 다시 계산할 수 있어요."
         : "4개 유전자 정보가 모두 ‘모름’이라 점수와 유형, 분해 방향을 정하지 않았어요. 빈 정보를 평균값으로 채워 넣지 않아요. 유전자 정보를 확인한 뒤 다시 입력해 주세요.",
-      recommendations: [
-        "유전자형을 확인하기 전에는 카페인을 적은 양부터 섭취하고 실제 몸 반응을 살펴보세요.",
-        "오후나 저녁에는 카페인을 줄이고, 수면에 영향이 있으면 섭취 시간을 앞당겨 보세요.",
-        "두근거림, 불안감, 속 불편함이 나타나면 섭취를 중단하거나 양을 줄여보세요.",
+      recommendations: getPracticalGuidance().concat([
         "유형 결과가 필요하면 먼저 핵심 표지자인 CYP1A2 rs762551 유전자형을 확인해 다시 입력해 주세요."
-      ]
+      ])
     };
   }
 
@@ -711,7 +703,10 @@
     elements.interpretationTitle.textContent = category.title;
     elements.interpretationText.textContent = lastResult.interpretation;
     elements.recommendList.innerHTML = category.recommendations.map(function (item) {
-      return "<li>" + item + "</li>";
+      var separator = item.indexOf(":");
+      if (separator < 0) return "<li><span>" + escapeHtml(item) + "</span></li>";
+      return "<li><strong>" + escapeHtml(item.slice(0, separator)) + "</strong><span>" +
+        escapeHtml(item.slice(separator + 1).trim()) + "</span></li>";
     }).join("");
 
     renderSummary();
@@ -1027,6 +1022,7 @@
     lines.push("", "[카페인 섭취 가이드]", lastResult.category.recommendations.map(function (item) {
       return "- " + item;
     }).join("\n"));
+    lines.push("", "[안내 근거]", "미국 FDA 카페인 안내: https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much", "운동과 CYP1A2 연구 검토: https://pubmed.ncbi.nlm.nih.gov/37844569/");
     lines.push("", "[주의]", "연구·교육용 해석 리포트이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다.");
     return lines.join("\n");
   }
@@ -1965,7 +1961,7 @@
         "<td>", escapeHtml(item.evidenceScore), "</td></tr>"
       ].join("");
     }).join("");
-    var recommendations = data.recommendations.slice(0, 4).map(function (item) {
+    var recommendations = data.recommendations.map(function (item) {
       return "<li>" + escapeHtml(item) + "</li>";
     }).join("");
     var filename = "Caffeine-Atlas-Report-" + safeFilePart(info.sampleId) + "-" + safeFilePart(info.reportDate);
@@ -1999,30 +1995,35 @@
       "<title>", escapeHtml(filename), "</title><style>",
       "@page{size:A4 portrait;margin:0}",
       "*{box-sizing:border-box}html,body{margin:0;background:#e9eef2;color:#17222c;font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;letter-spacing:0}",
-      "body{padding:18px}.pdf-sheet{width:210mm;min-height:297mm;margin:0 auto;background:#fff;padding:10mm 12mm 9mm;box-shadow:0 12px 40px rgba(13,31,40,.14);display:flex;flex-direction:column;gap:4.2mm;overflow:visible}",
+      "body{padding:18px}.pdf-sheet{width:210mm;min-height:297mm;margin:0 auto 18px;background:#fff;padding:8mm 12mm 7mm;box-shadow:0 12px 40px rgba(13,31,40,.14);display:flex;flex-direction:column;gap:2mm;overflow:visible}",
       ".pdf-controls{width:210mm;margin:0 auto 12px;display:flex;justify-content:flex-end;gap:8px}.pdf-controls button{border:1px solid #bac7ce;background:#fff;color:#17313a;padding:9px 14px;font-weight:800;cursor:pointer}.pdf-controls .primary{border-color:#126f72;background:#126f72;color:#fff}",
       ".type-art{display:block;position:relative;width:26mm;height:26mm;overflow:hidden;flex:0 0 26mm}.type-art img{position:absolute;top:0;left:0;width:300%;height:100%;max-width:none}.type-art--calm img{left:-100%}.type-art--sleepy img{left:-200%}.pdf-type-identity{display:flex;align-items:center;gap:2.5mm}.pdf-type-copy{min-width:0;flex:1}",
-      ".pdf-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:3.5mm;border-bottom:1.5px solid #163e46}.pdf-brand img{display:block;width:52mm;height:auto}.pdf-brand p{margin:1.5mm 0 0;color:#587079;font-size:7.5pt;font-weight:700}.pdf-title{text-align:right}.pdf-title h1{margin:0;color:#173e47;font-size:18pt}.pdf-title p{margin:1.5mm 0 0;color:#60737b;font-size:7.5pt}",
-      ".pdf-meta{display:grid;grid-template-columns:1.05fr .85fr .85fr .8fr 1.45fr;border:1px solid #d6e0e3}.pdf-meta div{min-width:0;padding:2.4mm 2.7mm;border-right:1px solid #d6e0e3}.pdf-meta div:last-child{border-right:0}.pdf-meta span,.metric span{display:block;color:#647981;font-size:6.8pt;font-weight:800;text-transform:uppercase}.pdf-meta strong{display:block;margin-top:1mm;font-size:8.2pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
+      ".pdf-header{display:flex;justify-content:space-between;align-items:flex-start;gap:5mm;padding-bottom:3.5mm;border-bottom:1.5px solid #163e46}.pdf-brand img{display:block;width:52mm;height:auto}.pdf-brand p{margin:1.5mm 0 0;color:#587079;font-size:7.5pt;font-weight:700}.pdf-title{min-width:0;max-width:110mm;text-align:right}.pdf-title h1{margin:0;color:#173e47;font-size:18pt}.pdf-title p{margin:1.5mm 0 0;color:#60737b;font-size:7.5pt;overflow-wrap:anywhere}",
+      ".pdf-meta{display:grid;grid-template-columns:.9fr .9fr 1.1fr 1.6fr;border:1px solid #d6e0e3}.pdf-meta div{min-width:0;padding:2.4mm 2.7mm;border-right:1px solid #d6e0e3}.pdf-meta div:first-child{grid-column:1 / -1;border-right:0;border-bottom:1px solid #d6e0e3}.pdf-meta div:last-child{border-right:0}.pdf-meta span,.metric span{display:block;color:#647981;font-size:7pt;font-weight:800;text-transform:uppercase}.pdf-meta strong{display:block;margin-top:1mm;font-size:8.5pt;line-height:1.3;overflow-wrap:anywhere}",
       ".pdf-summary{display:grid;grid-template-columns:1.1fr .9fr;gap:4mm}.type-panel,.score-panel,.pdf-card{border:1px solid #d6e0e3;background:#fff;padding:3.5mm}.type-panel{border-left:3mm solid #148589}.type-panel .badge{color:#0d696c;font-size:7.5pt;font-weight:900}.type-panel h2{margin:1.2mm 0 1mm;font-size:16pt}.type-panel p{margin:0;color:#52676f;font-size:8pt;line-height:1.5}.score-row{display:flex;justify-content:space-between;align-items:flex-end}.score-label{color:#60767d;font-size:7.5pt;font-weight:800}.score-value{color:#d45b38;font-size:24pt;font-weight:950;line-height:1}.score-value small{font-size:9pt}.gauge{position:relative;height:4mm;margin-top:2.5mm;background:linear-gradient(90deg,#188b91 0 33.33%,#e5ad3c 33.33% 66.67%,#d85d39 66.67%);border-radius:2mm}.gauge:after{content:'';position:absolute;left:var(--score);top:-1.4mm;width:1.4mm;height:6.8mm;background:#172f38;transform:translateX(-50%)}.gauge.is-unscored:after{display:none}.gauge-scale{display:flex;justify-content:space-between;margin-top:1mm;color:#657980;font-size:6.4pt;font-weight:800}",
       ".metrics{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #d6e0e3}.metric{padding:2.4mm 3mm;border-right:1px solid #d6e0e3}.metric:last-child{border-right:0}.metric strong{display:block;margin-top:1mm;color:#173f47;font-size:10pt}",
       ".pdf-main{display:grid;grid-template-columns:.9fr 1.1fr;gap:4mm}.pdf-card h3{margin:0 0 2.2mm;color:#183e47;font-size:9.5pt}.chart-summary{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:2mm}.chart-summary strong{color:#d45b38;font-size:12pt}.chart-summary span{color:#60747c;font-size:6.8pt}.distribution-chart{display:block;width:100%;height:27mm;border-bottom:1px solid #9fb0b6}.distribution-grid{stroke:#e3eaec;stroke-width:.45}.distribution-area{fill:#dceff0}.distribution-line{fill:none;stroke:#148589;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}.distribution-guide{stroke:#d45b38;stroke-width:1;stroke-dasharray:2 1.5}.distribution-marker{fill:#fff;stroke:#d45b38;stroke-width:1.6}.chart-axis{display:flex;justify-content:space-between;margin-top:1mm;color:#6a7d84;font-size:6pt}.layer-list{display:grid;gap:2mm}.layer{display:grid;grid-template-columns:24mm 12mm 1fr;gap:2mm;align-items:center;font-size:7pt}.layer strong{text-align:right}.layer-track{height:2mm;background:#e8edef}.layer-track i{display:block;height:100%;background:#148589}.layer:nth-child(2) .layer-track i{background:#dfa936}.layer:nth-child(3) .layer-track i{background:#3a78a0}",
-      "table{width:100%;border-collapse:collapse;font-size:7pt}th{padding:1.6mm;text-align:left;color:#587078;background:#eef4f5;border-bottom:1px solid #cbd8dc}td{padding:1.5mm;border-bottom:1px solid #e2e9eb}td small{display:block;margin-top:.5mm;color:#71848b;font-size:5.8pt}tbody tr:last-child td{border-bottom:0}",
-      ".pdf-content{display:grid;grid-template-columns:1fr 1fr;gap:4mm}.interpretation{border-left:2mm solid #d45b38}.interpretation h3,.guide h3{margin:0 0 1.5mm;color:#183e47;font-size:9.5pt}.interpretation strong{display:block;margin-bottom:1mm;font-size:8.2pt}.interpretation p{margin:0;color:#4f646c;font-size:7pt;line-height:1.45;white-space:pre-line}.guide ul{margin:0;padding-left:4mm}.guide li{margin:0 0 1mm;color:#4f646c;font-size:6.8pt;line-height:1.35}.guide li:last-child{margin-bottom:0}",
-      ".pdf-footer{margin-top:auto;padding-top:3mm;border-top:1px solid #cfdadd;display:grid;grid-template-columns:1fr auto;gap:5mm;align-items:end}.notice strong{display:block;margin-bottom:1mm;color:#173f47;font-size:7pt}.notice p{margin:0;color:#687b82;font-size:6.2pt;line-height:1.45}.footer-mark{text-align:right;color:#6c7f86;font-size:6pt;white-space:nowrap}.footer-mark strong{display:block;color:#173f47;font-size:7pt}",
-      "@media print{html,body{width:210mm;height:auto;background:#fff}body{padding:0}.pdf-controls{display:none}.pdf-sheet{margin:0;box-shadow:none;page-break-after:avoid}.pdf-summary,.pdf-main,.pdf-content,.pdf-footer{break-inside:avoid}}",
+      "table{width:100%;border-collapse:collapse;font-size:8pt}th{padding:1.6mm;text-align:left;color:#587078;background:#eef4f5;border-bottom:1px solid #cbd8dc}td{padding:1.5mm;border-bottom:1px solid #e2e9eb}td small{display:block;margin-top:.5mm;color:#526b73;font-size:7pt}tbody tr:last-child td{border-bottom:0}",
+      ".interpretation{border-left:2mm solid #d45b38}.interpretation h3,.guide h3{margin:0 0 2mm;color:#183e47;font-size:10pt}.interpretation strong{display:block;margin-bottom:1mm;font-size:9pt}.interpretation p{margin:0;color:#344b53;font-size:9pt;line-height:1.5;white-space:pre-line}.guide-intro{margin:0;color:#4f646c;font-size:9pt;line-height:1.5}.guide ul{margin:3mm 0 0;padding-left:5mm}.guide li{margin:0 0 3mm;color:#344b53;font-size:10pt;line-height:1.55;break-inside:avoid}.guide li:last-child{margin-bottom:0}.guide-sources,.guide-limitations{font-size:9pt;line-height:1.6}.guide-sources a{color:#126f72;overflow-wrap:anywhere}",
+      ".pdf-footer{margin-top:auto;padding-top:3mm;border-top:1px solid #cfdadd;display:grid;grid-template-columns:1fr auto;gap:5mm;align-items:end}.notice strong{display:block;margin-bottom:1mm;color:#173f47;font-size:8pt}.notice p{margin:0;color:#4f646c;font-size:7.5pt;line-height:1.5}.notice .urgent-note{margin-top:1mm;color:#a63428;font-weight:800}.footer-mark{text-align:right;color:#6c7f86;font-size:7pt;white-space:nowrap}.footer-mark strong{display:block;color:#173f47;font-size:8pt}",
+      "@media print{html,body{width:210mm;height:auto;background:#fff}body{padding:0}.pdf-controls{display:none}.pdf-sheet{margin:0;box-shadow:none;break-after:page;page-break-after:always}.pdf-guide-sheet{break-after:auto;page-break-after:auto}.pdf-summary,.pdf-main,.pdf-footer,.interpretation,.guide{break-inside:avoid}}",
       "</style></head><body>",
       "<div class=\"pdf-controls\"><button onclick=\"window.close()\">닫기</button><button class=\"primary\" onclick=\"window.print()\">PDF로 저장</button></div>",
       "<main class=\"pdf-sheet\" style=\"--score:", hasScore ? result.score : 0, "%\">",
       "<header class=\"pdf-header\"><div class=\"pdf-brand\"><img src=\"", escapeHtml(logoUrl), "\" alt=\"Caffeine Atlas\"><p>Evidence-based caffeine response interpretation</p></div><div class=\"pdf-title\"><h1>Caffeine Atlas Report</h1><p>", escapeHtml(data.generatedAt), "</p></div></header>",
       "<section class=\"pdf-meta\"><div><span>Sample ID</span><strong>", escapeHtml(info.sampleId), "</strong></div><div><span>Report date</span><strong>", escapeHtml(info.reportDate), "</strong></div><div><span>Collection</span><strong>", escapeHtml(info.collectionDate), "</strong></div><div><span>Specimen / Sex</span><strong>", escapeHtml(info.sampleType), " / ", escapeHtml(info.sex), "</strong></div><div><span>Institution</span><strong>", escapeHtml(info.institution), "</strong></div></section>",
-      "<section class=\"pdf-summary\"><div class=\"type-panel\"><div class=\"pdf-type-identity\">", artwork, "<div class=\"pdf-type-copy\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", escapeHtml(result.category), "</h2><p>", escapeHtml(result.typeDescription), "</p></div></div></div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div><div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>각성형</span><span>잠잠형</span><span>잠꾸러기형</span></div></div></section>",
+      "<section class=\"pdf-summary\"><div class=\"type-panel\"><div class=\"pdf-type-identity\">", artwork, "<div class=\"pdf-type-copy\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", escapeHtml(result.category), "</h2><p>", escapeHtml(result.typeDescription), "</p></div></div></div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">연구용 카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div><div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>각성형</span><span>잠잠형</span><span>잠꾸러기형</span></div></div></section>",
       "<section class=\"metrics\"><div class=\"metric\"><span>결과 유형</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>분해 방향(모형)</span><strong>", escapeHtml(result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>연구자료 내 위치</span><strong>", pdfRankText, "</strong></div><div class=\"metric\"><span>입력 완성도</span><strong>", result.confidence, "%</strong></div></section>",
       "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><div><h3>연구 참조분포</h3><span>검사결과 기반 · 7개 점수 구간</span></div><strong>", pdfPercentileText, "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">계산에 사용한 값</h3><div class=\"layer-list\"><div class=\"layer\"><span>분해 관련 점수</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취 관련 점수</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>입력 완성도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
       "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>반영 항목</th><th>모형 반영값</th></tr></thead><tbody>", genotypeRows, "</tbody></table></div></section>",
-      "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>쉽게 읽는 결과</h3><strong>", escapeHtml(result.metabolismSubtype.name), "</strong><p>", escapeHtml(result.metabolismSubtype.desc + "\n\n" + result.interpretation), "</p></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드</h3><ul>", recommendations, "</ul></div></section>",
-      "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.join(" ")), " 검사결과를 참고해 구성한 7구간 비교도표로, 전체 한국인 인구를 대표하는 임상 검증 순위를 의미하지 않습니다.</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
-      "</main><script>window.addEventListener('load',function(){if(location.protocol==='blob:')URL.revokeObjectURL(location.href);if(navigator.webdriver)return;var ready=document.fonts?document.fonts.ready:Promise.resolve();ready.then(function(){setTimeout(function(){window.print()},350)})});<\/script></body></html>"
+      "<section class=\"pdf-card interpretation\"><h3>쉽게 읽는 결과</h3><strong>", escapeHtml(result.metabolismSubtype.name), "</strong><p>", escapeHtml(result.metabolismSubtype.desc + "\n\n" + result.interpretation), "</p></section>",
+      "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>연구·교육용 모형이며 실제 분해 속도·수면 반응·개인별 안전 섭취량의 측정이나 진단 결과가 아닙니다. 참조 위치는 전체 인구를 대표하는 임상 검증 순위가 아니며, ‘모름’은 계산에서 제외합니다.</p><p class=\"urgent-note\">가슴 통증·실신·호흡곤란·경련이 있으면 즉시 119에 도움을 요청하세요.</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas · 1/2</strong>Research &amp; education use only</div></footer>",
+      "</main><section class=\"pdf-sheet pdf-guide-sheet\" aria-label=\"카페인 생활 참고 안내\"><header class=\"pdf-header\"><div class=\"pdf-brand\"><img src=\"", escapeHtml(logoUrl), "\" alt=\"Caffeine Atlas\"><p>Research &amp; education use only</p></div><div class=\"pdf-title\"><h1>생활 참고 안내</h1><p>Sample ID: ", escapeHtml(info.sampleId), " · ", escapeHtml(info.reportDate), "</p></div></header>",
+      "<section class=\"pdf-card guide\"><h3>카페인 섭취·운동 가이드</h3><p class=\"guide-intro\">모든 유형에 공통으로 적용되는 생활 참고 사항이며, 유전자형에 따른 개인별 처방은 아닙니다.</p><ul>", recommendations, "</ul></section>",
+      "<section class=\"pdf-card guide-limitations\"><h3>결과를 볼 때 알아둘 점</h3><p>", escapeHtml(data.limitations.join(" ")), " 검사결과를 참고해 구성한 7구간 비교도표로, 전체 한국인 인구를 대표하는 임상 검증 순위를 의미하지 않습니다.</p></section>",
+      "<section class=\"pdf-card guide-sources\"><h3>안내 근거</h3><p>미국 FDA의 일반 카페인 안내와 운동·CYP1A2 연구 검토를 참고했습니다.</p><p><a href=\"https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much\">FDA 카페인 안내</a> · <a href=\"https://pubmed.ncbi.nlm.nih.gov/37844569/\">카페인·유전자형·운동 연구 검토 (PMID 37844569)</a></p></section>",
+      "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>연구·교육용 안내</strong><p>이 리포트는 실제 카페인 분해 속도나 개인별 안전 섭취량을 확인하는 검사가 아닙니다.</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas · 2/2</strong>Research &amp; education use only</div></footer></section>",
+      "<script>window.addEventListener('load',function(){if(location.protocol==='blob:')URL.revokeObjectURL(location.href);if(navigator.webdriver)return;var ready=document.fonts?document.fonts.ready:Promise.resolve();ready.then(function(){setTimeout(function(){window.print()},350)})});<\/script></body></html>"
     ].join("");
   }
 

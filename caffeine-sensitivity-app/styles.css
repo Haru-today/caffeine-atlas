@@ -1529,9 +1529,40 @@ a {
 
 .recommend-card ul {
   margin: 0;
-  padding-left: 20px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
   color: #36465a;
   line-height: 1.65;
+}
+
+.recommend-card li {
+  padding: 12px 14px;
+  border: 1px solid #d9e8e6;
+  border-radius: 8px;
+  background: #f7fbfa;
+}
+
+.recommend-card li strong {
+  display: block;
+  margin-bottom: 3px;
+  color: #155d60;
+  font-size: 14px;
+}
+
+.recommend-card li span {
+  display: block;
+}
+
+.recommend-card > p {
+  line-height: 1.65;
+}
+
+.recommend-card a {
+  color: #126f72;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .save-scope-card ul {

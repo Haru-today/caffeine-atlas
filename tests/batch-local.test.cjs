@@ -120,6 +120,14 @@ test("each batch PDF uses its own ID, dates, genotypes and held result", async (
   assert.match(flow.popups[1], /<td>CC<\/td>/);
   assert.match(flow.popups[2], /gauge is-unscored/);
   assert.doesNotMatch(flow.popups[2], /<circle class="distribution-marker"/);
+  for (const pdf of flow.popups) {
+    for (const section of ["하루 총량:", "수면:", "몸의 반응:", "운동:", "별도 확인:"]) {
+      assert.ok(pdf.includes(section), "PDF must include guidance: " + section);
+    }
+    assert.match(pdf, /FDA/);
+    assert.doesNotMatch(pdf, /유전자형이 더 많은 섭취를 허용합니다/);
+  }
+  assert.match(flow.popups[2], /rs762551 유전자형을 확인/);
   assert.equal(flow.networkCalls(), 0);
 });
 
@@ -159,6 +167,8 @@ test("PDF and Excel carry the same plain explanation for every direction and hol
   const output = toRows(flow.downloads[0].book.Sheets["분석 결과"]);
   const directionColumn = output[0].indexOf("분해 방향(모형)");
   const interpretationColumn = output[0].indexOf("해석");
+  const guidanceColumn = output[0].indexOf("생활 참고 안내");
+  assert.notEqual(guidanceColumn, -1);
   const names = ["빠른 분해 쪽(모형)", "중간 구간(모형)", "느린 분해 쪽(모형)", "판정 보류"];
   names.forEach((name, index) => {
     flow.pdf(index + 2);
@@ -166,6 +176,9 @@ test("PDF and Excel carry the same plain explanation for every direction and hol
     assert.equal(output[index + 1][directionColumn], name);
     assert.ok(flow.popups[index].includes(flow.snapshot().records[index].result.metabolismSubtype.desc));
     assert.ok(output[index + 1][interpretationColumn].includes(flow.snapshot().records[index].result.metabolismSubtype.desc));
+    const guidance = flow.snapshot().records[index].result.category.recommendations;
+    assert.equal(output[index + 1][guidanceColumn], guidance.join("\n"));
+    for (const item of guidance) assert.ok(flow.popups[index].includes(item));
   });
   assert.doesNotMatch(flow.popups[3], /빠른 분해 쪽|느린 분해 쪽/);
   assert.equal(flow.networkCalls(), 0);

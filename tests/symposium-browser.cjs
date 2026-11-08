@@ -289,11 +289,29 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
           console.error("PDF image diagnostic", await pdf.locator("img").evaluateAll(images => images.map(img => ({ src: img.src, complete: img.complete, width: img.naturalWidth }))));
           throw error;
         });
-        if (viewport.width > 760) {
-          await pdf.emulateMedia({ media: "print" });
-          assert.ok(await pdf.locator(".pdf-sheet").evaluate(sheet => sheet.getBoundingClientRect().height) <= 1124, "PDF content must fit one A4 page");
-          await pdf.screenshot({ path: path.join(artifacts, name + "-pdf-" + key + ".png"), fullPage: true });
+      }
+      if (viewport.width > 760) {
+        await pdf.emulateMedia({ media: "print" });
+        const sheets = await pdf.locator(".pdf-sheet").evaluateAll(items => items.map(sheet => ({
+          height: sheet.getBoundingClientRect().height,
+          scrollHeight: sheet.scrollHeight,
+          clientHeight: sheet.clientHeight
+        })));
+        assert.equal(sheets.length, 2, "result and guidance each have their own page");
+        for (const sheet of sheets) {
+          assert.ok(sheet.height <= 1124 && sheet.scrollHeight <= sheet.clientHeight + 1,
+            "every report page must fit within A4 without clipping: " + JSON.stringify(sheets));
         }
+        const guide = await pdf.locator(".pdf-guide-sheet").innerText();
+        for (const word of ["하루 총량", "수면", "몸의 반응", "운동", "별도 확인", "119"]) {
+          assert.ok(guide.includes(word), "PDF guidance must include " + word);
+        }
+        assert.equal(await pdf.locator(".guide-sources a").count(), 2);
+        const renderedPdf = await pdf.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true });
+        const pages = (renderedPdf.toString("latin1").match(/\/Type\s*\/Page\b/g) || []).length;
+        assert.equal(pages, 2, "the actual printed PDF must contain exactly two A4 pages");
+        fs.writeFileSync(path.join(artifacts, name + "-" + sampleId + ".pdf"), renderedPdf);
+        await pdf.screenshot({ path: path.join(artifacts, name + "-pdf-" + sampleId + ".png"), fullPage: true });
       }
       await pdf.close();
     }
@@ -362,6 +380,35 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.equal(await page.locator("#batchModePanel").isVisible(), true);
     assert.equal(await page.locator("#batchResults").isVisible(), false);
 
+    if (viewport.width > 760) {
+      // The allowed 120-character identifier must stay complete and fit when printed.
+      const longId = "LONG-" + "X".repeat(115);
+      await page.goto(base + "/caffeine-sensitivity-app/analyzer.html");
+      await page.locator("#exampleDemoBtn").click();
+      await page.locator("#editBtn").click();
+      await page.locator("#sampleId").fill(longId);
+      await page.locator("#analyzeBtn").click();
+      const longPopupWait = page.waitForEvent("popup");
+      await page.locator("#pdfBtn").click();
+      const longPdf = await longPopupWait;
+      await longPdf.waitForLoadState("domcontentloaded");
+      assert.equal(await longPdf.locator(".pdf-meta strong").first().textContent(), longId);
+      assert.ok((await longPdf.locator(".pdf-guide-sheet .pdf-title p").textContent()).includes(longId));
+      await longPdf.emulateMedia({ media: "print" });
+      const dimensions = await longPdf.locator(".pdf-sheet").evaluateAll(items => items.map(sheet => ({
+        height: sheet.getBoundingClientRect().height, scrollWidth: sheet.scrollWidth, clientWidth: sheet.clientWidth
+      })));
+      assert.equal(dimensions.length, 2);
+      for (const sheet of dimensions) {
+        assert.ok(sheet.height <= 1124 && sheet.scrollWidth <= sheet.clientWidth + 1,
+          "long identifiers must wrap inside both A4 sheets: " + JSON.stringify(dimensions));
+      }
+      const longBytes = await longPdf.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true });
+      assert.equal((longBytes.toString("latin1").match(/\/Type\s*\/Page\b/g) || []).length, 2);
+      fs.writeFileSync(path.join(artifacts, name + "-long-id.pdf"), longBytes);
+      await longPdf.close();
+    }
+
     assert.deepEqual(outgoing, [], name + ": unapproved Sheets API call observed");
     assert.deepEqual(errors, [], name + ": runtime JavaScript error observed");
     console.log("PASS " + name + " — QR, demo, individual/batch PDF, batch import/export, invalid replacement, clear and no Sheets calls");
@@ -375,10 +422,12 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
 }
 
 (async () => {
-  await runCase("mobile-320-chromium", chromium, { width: 320, height: 720 },
-    { isMobile: true, hasTouch: true });
-  await runCase("mobile-iphone-webkit", webkit, { width: 375, height: 812 },
-    { isMobile: true, hasTouch: true });
+  if (process.env.CAFFEINE_TEST_DESKTOP_ONLY !== "1") {
+    await runCase("mobile-320-chromium", chromium, { width: 320, height: 720 },
+      { isMobile: true, hasTouch: true });
+    await runCase("mobile-iphone-webkit", webkit, { width: 375, height: 812 },
+      { isMobile: true, hasTouch: true });
+  }
   await runCase("desktop-chromium", chromium, { width: 1440, height: 900 });
 })().catch(error => {
   console.error(error.stack || error);
