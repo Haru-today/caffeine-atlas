@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>리포트 생성 | Caffeine Atlas</title>
-  <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=batch-20261108">
+  <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=batch-controls-20261108">
 </head>
 <body class="public-demo">
   <div class="app-shell">
@@ -151,7 +151,7 @@
         <div class="submit-panel">
           <div>
             <strong>리포트 준비 상태</strong>
-            <p id="validationText">Sample ID와 4개 항목을 선택해 주세요. 확인할 수 없는 유전자형은 ‘모름’으로 선택할 수 있습니다.</p>
+            <p id="validationText" role="status" aria-live="polite">Sample ID와 4개 항목을 선택해 주세요. 확인할 수 없는 유전자형은 ‘모름’으로 선택할 수 있습니다.</p>
           </div>
           <button class="tool-button primary analyze-button" id="analyzeBtn" type="button">
             리포트 생성
@@ -204,10 +204,13 @@
               <strong>일괄 처리 준비 상태</strong>
               <p id="batchStatus" role="status" aria-live="polite">양식을 작성한 뒤 파일을 선택하세요. 분석 후 정상 결과와 입력 오류를 함께 내려받을 수 있습니다. 새로고침하면 파일을 다시 선택해야 합니다.</p>
             </div>
-            <button class="tool-button primary analyze-button" id="batchAnalyzeBtn" type="button" disabled>일괄 분석</button>
-            <button class="tool-button primary analyze-button research-only" id="batchAnalyzeSaveBtn" type="button" disabled>
-              일괄 분석 및 시트 저장
-            </button>
+            <div class="batch-actions">
+              <button class="tool-button ghost" id="batchClearBtn" type="button" disabled>파일·결과 비우기</button>
+              <button class="tool-button primary analyze-button" id="batchAnalyzeBtn" type="button" disabled>일괄 분석</button>
+              <button class="tool-button primary analyze-button research-only" id="batchAnalyzeSaveBtn" type="button" disabled>
+                일괄 분석 및 시트 저장
+              </button>
+            </div>
           </div>
 
           <div class="batch-results" id="batchResults" hidden>
@@ -219,7 +222,7 @@
               <div class="batch-result-counts" id="batchResultCounts"></div>
               <button class="tool-button primary" id="batchDownloadBtn" type="button" disabled>결과 엑셀 다운로드</button>
             </div>
-            <div class="batch-table-wrap">
+            <div class="batch-table-wrap" tabindex="0" role="region" aria-label="일괄 처리 결과표">
               <table class="batch-table">
                 <thead>
                   <tr>
@@ -413,6 +416,6 @@
 
   <nav class="policy-links" aria-label="이용 정책" style="text-align:center;margin:12px auto 24px;font-size:.9rem;"><p class="policy-links"><a href="https://haru-today.github.io/caffeine-atlas/privacy.html">개인정보 처리 안내</a> · <a href="https://haru-today.github.io/caffeine-atlas/terms.html">서비스 이용 안내</a></p></nav>
   <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
-  <script src="./app.js?v=batch-clarity-20261108"></script>
+  <script src="./app.js?v=batch-controls-20261108"></script>
 </body>
 </html>

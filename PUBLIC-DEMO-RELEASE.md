@@ -51,6 +51,15 @@ LABDAM 공통 인증 PR #7은 공개 Caffeine Atlas와 **별도 보호된 호스
 - `node --check caffeine-sensitivity-app/app.js`
 - `node --test tests/*.test.cjs`: 기존 저장·개인정보·QR 흐름과 실제 XLSX 읽기/쓰기·256개 유전자형 조합·로컬 처리 흐름 검증
 - `tests/symposium-browser.cjs`: Chromium 320px/데스크톱 및 iPhone WebKit에서 양식·업로드·다운로드를 검증하는 시나리오 포함
-- 개발 환경에서 브라우저 미리보기의 로컬 HTTP 연결 및 파일 URL 접근이 제한되어 실제 브라우저 실행·반응형 화면·인쇄 배치는 이번 로컬 검증에 포함되지 않음. 브라우저 CI/현장 검증 항목으로 유지
+- 로컬 HTTP 연결이 제한된 환경에서는 `CAFFEINE_TEST_OFFLINE=1`로 저장소의 실제 HTML·JS·CSS를 브라우저 요청에 제공하는 방식으로 검증. 320px Chromium, 375px iPhone WebKit, 1440px Chromium에서 QR 경로·가상 예시·직접 입력·PDF 창·엑셀 분석/결과 다운로드·오류 재업로드·파일 비우기 통과. 이 모드에서는 엑셀 양식의 HTTP 다운로드 대신 실제 링크 경로와 원본 파일을 확인하므로 운영 서버의 다운로드·최종 인쇄 배치는 별도 확인 필요
 - 점수식과 기존 입력 양식 9열 유지. 과거 star allele 열 이름은 호환용이며 실제 haplotype 판정이 아님
-- 학회 브라우저 스크린샷의 신규 Actions 보관기간은 3일로 설정. 기존 저장소 사용량은 별도 정리 필요
+- 브라우저 스크린샷의 GitHub 업로드는 기본 비활성화. 저장소 변수 `CAFFEINE_UPLOAD_BROWSER_ARTIFACTS=true`일 때 실패 진단용으로만 업로드하고 1일 보관. 스크린샷 업로드 실패와 실제 테스트 결과는 구분
+
+## 로컬 우선 후속 개선
+
+- 엑셀 입력에 ‘파일·결과 비우기’ 추가: 선택 파일, 결과 목록, 다운로드 상태와 일괄 저장 동의를 비우고 파일 선택으로 포커스 복귀. 분석 중에는 비활성화
+- 잘못된 파일 재업로드 후 이전 결과 다운로드가 차단되는지 실제 브라우저에서 확인
+- 입력 탭 키보드 전환, 유전자형 선택의 `aria-pressed`, 입력 상태 알림 및 결과표 키보드 스크롤 지원
+- XLSX 라이브러리 출력은 `Buffer.from()`으로 변환해 브라우저 테스트의 파일 입력 오류 수정
+- `node --test tests/*.test.cjs`로 기본 검증. Playwright가 설치된 PC에서는 `CAFFEINE_TEST_OFFLINE=1`과 `CAFFEINE_TEST_ARTIFACTS_DIR` 환경변수로 서버 없이 검증하고 화면 자료를 원하는 로컬 폴더에 보관 가능
+- 배포 시 공개 주소의 `batchClearBtn`, `batch-controls-20261108` 리소스 버전과 파일 비우기 동작 확인. 기존 QR의 현장 접속과 최종 PDF 인쇄 배치는 별도 확인 대상

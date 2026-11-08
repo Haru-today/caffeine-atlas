@@ -157,6 +157,7 @@
     batchConsent: document.getElementById("batchConsent"),
     batchAnalyzeSaveBtn: document.getElementById("batchAnalyzeSaveBtn"),
     batchAnalyzeBtn: document.getElementById("batchAnalyzeBtn"),
+    batchClearBtn: document.getElementById("batchClearBtn"),
     batchDownloadBtn: document.getElementById("batchDownloadBtn"),
     batchStatus: document.getElementById("batchStatus"),
     batchResults: document.getElementById("batchResults"),
@@ -243,7 +244,7 @@
         var code = gt.code === "unknown" ? "모름" : gt.code;
         return [
           '<button class="gt-button" type="button" data-gene="', gene.id,
-          '" data-genotype="', gt.code, '">',
+          '" data-genotype="', gt.code, '" aria-pressed="false">',
           '<strong>', code, '</strong>',
           '<small>', gt.label, '</small>',
           '</button>'
@@ -292,7 +293,9 @@
     var card = document.getElementById("card-" + geneId);
     var buttons = card.querySelectorAll(".gt-button");
     for (var i = 0; i < buttons.length; i += 1) {
-      buttons[i].classList.toggle("active", buttons[i].getAttribute("data-genotype") === genotypeCode);
+      var selected = buttons[i].getAttribute("data-genotype") === genotypeCode;
+      buttons[i].classList.toggle("active", selected);
+      buttons[i].setAttribute("aria-pressed", String(selected));
     }
     markInputChanged();
   }
@@ -951,6 +954,7 @@
     var buttons = document.querySelectorAll(".gt-button");
     for (var i = 0; i < buttons.length; i += 1) {
       buttons[i].classList.remove("active");
+      buttons[i].setAttribute("aria-pressed", "false");
     }
     markInputChanged();
   }
@@ -1213,6 +1217,7 @@
   function handleBatchFileChange() {
     batchFile = elements.batchFile.files && elements.batchFile.files[0] ? elements.batchFile.files[0] : null;
     resetBatchOutput();
+    elements.batchClearBtn.disabled = !batchFile;
 
     if (!batchFile) {
       elements.batchFileSummary.innerHTML = "<span>선택된 파일 없음</span><strong>엑셀 파일을 선택해 주세요</strong>";
@@ -1252,6 +1257,15 @@
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
+  function clearBatchInput() {
+    if (batchBusy) return;
+    elements.batchFile.value = "";
+    elements.batchConsent.checked = false;
+    handleBatchFileChange();
+    setBatchStatus("선택한 파일과 일괄 분석 결과를 비웠습니다. 새 파일을 선택해 주세요.");
+    elements.batchFile.focus();
   }
 
   function padDatePart(value) {
@@ -1538,6 +1552,7 @@
   function setBatchBusy(busy) {
     batchBusy = busy;
     elements.batchFile.disabled = busy;
+    elements.batchClearBtn.disabled = busy || !batchFile;
     elements.batchAnalyzeBtn.disabled = busy || !batchFile;
     elements.batchAnalyzeSaveBtn.disabled = busy || !batchFile;
     elements.batchDownloadBtn.disabled = busy || !batchResults.length;
@@ -2023,6 +2038,7 @@
     elements.singleModeBtn.addEventListener("click", function () { setInputMode("single"); });
     elements.batchModeBtn.addEventListener("click", function () { setInputMode("batch"); });
     elements.batchFile.addEventListener("change", handleBatchFileChange);
+    elements.batchClearBtn.addEventListener("click", clearBatchInput);
     elements.batchAnalyzeSaveBtn.addEventListener("click", processBatchUpload);
     elements.batchAnalyzeBtn.addEventListener("click", processLocalBatchUpload);
     elements.batchDownloadBtn.addEventListener("click", downloadBatchResults);

@@ -690,6 +690,11 @@ a {
   border-radius: 8px;
 }
 
+.batch-table-wrap:focus-visible {
+  outline: 3px solid #245baa;
+  outline-offset: 3px;
+}
+
 .batch-table {
   width: 100%;
   min-width: 960px;
@@ -3024,6 +3029,8 @@ body { line-height: 1.6; }
 
 /* Local batch analysis and interpretation clarity (2026-11-08). */
 .batch-results, .batch-panel, .batch-intro > div { min-width: 0; }
+.batch-actions { display: grid; gap: 8px; min-width: 0; }
+.batch-actions .tool-button { min-height: 44px; }
 .batch-results-head, .batch-submit-panel { flex-wrap: wrap; }
 .batch-file-field small, .batch-file-summary strong { overflow-wrap: anywhere; }
 .batch-results .tool-button { min-height: 44px; }
