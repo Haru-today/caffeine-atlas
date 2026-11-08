@@ -102,7 +102,7 @@ test("four-SNP coverage is not misrepresented as predictive confidence", () => {
   assert.match(analyzer, /<span>입력 완성도<\/span>/);
   assert.match(analyzer, /예측 정확도·통계적 신뢰도를 의미하지 않습니다/);
   assert.doesNotMatch(analyzer, /<span>신뢰도<\/span>/);
-  assert.match(source, /<span>SNP coverage<\/span>/);
+  assert.match(source, /<span>분해 방향\(모형\)<\/span>/);
   assert.match(source, /<span>입력 완성도<\/span>/);
   assert.doesNotMatch(source, /<span>Confidence<\/span>|<span>신뢰도<\/span>/);
   // Keep historical JSON schema stable; only copy/labels change.
@@ -171,6 +171,6 @@ test("homepage sample card is exactly what the model returns for the analyzer's 
   const widths = [...card.matchAll(/<i style="width:(\d+)%"><\/i>/g)].map(match => Number(match[1]));
   const met = Math.round(result.metabolismNorm * 100);
   const beh = Math.round(result.behaviorNorm * 100);
-  assert.deepEqual(values, [met + "%", beh + "%", result.valid.length + "/" + genes.length]);
+  assert.deepEqual(values, [met + "/100", beh + "/100", result.valid.length + "/" + genes.length]);
   assert.deepEqual(widths, [met, beh, result.confidence]);
 });

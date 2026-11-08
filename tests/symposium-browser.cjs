@@ -120,6 +120,12 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     }
     assert.equal(await page.locator("#resultReport").isVisible(), true);
     assert.equal(await page.locator("#typeIllustration .type-art--awake").isVisible(), true);
+    assert.equal(await page.locator("#metabolismTypeName").textContent(), "빠른 분해 쪽(모형)");
+    assert.match(await page.locator("#metabolismTypeDesc").textContent(), /실제 분해 속도를 확인한 결과는 아니에요/);
+    await page.locator(".direction-guide summary").click();
+    assert.equal(await page.locator(".direction-guide dl").isVisible(), true);
+    assert.match(await page.locator(".direction-guide").textContent(), /낮은 점수가 ‘분해 능력이 낮다’는 뜻은 아니에요/);
+    await page.locator("#resultReport").screenshot({ path: path.join(artifacts, name + "-easy-report.png") });
     await page.waitForFunction(() => document.querySelector("#typeIllustration img")?.naturalWidth === 2172);
     assert.match(await page.locator("#referenceRankText").textContent(), /참조자료 대비 순서/);
     assert.equal(await page.locator(".chart-card .reference-scope-note").isVisible(), true);
@@ -173,14 +179,16 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.match(content, /rs6968865|AHR/);
     assert.match(content, /연구 참조분포/);
     assert.match(content, /전체 한국인 인구를 대표하는 임상 검증 순위/);
-    assert.match(content, /SNP coverage/);
+    assert.match(content, /입력 완성도/);
+    assert.match(content, /빠른 분해 쪽\(모형\)/);
+    assert.match(content, /실제 분해 속도를 확인한 결과는 아니에요/);
     await popup.close();
 
     // Exercise every single-person type and unknown-marker transitions in the UI.
-    for (const [label, values] of [
-      ["잠잠형", ["AC", "AG", "CT", "AT"]],
-      ["잠꾸러기형", ["CC", "AG", "TT", "TT"]],
-      ["정보 부족형", ["unknown", "GG", "CC", "AT"]]
+    for (const [label, direction, values] of [
+      ["잠잠형", "중간 구간(모형)", ["AC", "AG", "CT", "AT"]],
+      ["잠꾸러기형", "느린 분해 쪽(모형)", ["CC", "AG", "TT", "TT"]],
+      ["정보 부족형", "판정 보류", ["unknown", "GG", "CC", "AT"]]
     ]) {
       await page.locator("#editBtn").click();
       for (const [index, rsid] of ["rs762551", "rs2069514", "rs2472297", "rs6968865"].entries()) {
@@ -188,6 +196,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       }
       await page.locator("#analyzeBtn").click();
       assert.equal(await page.locator("#typeName").textContent(), label);
+      assert.equal(await page.locator("#metabolismTypeName").textContent(), direction);
       assert.equal(await page.locator("#typeIllustration").isVisible(), label !== "정보 부족형");
       if (label === "정보 부족형") assert.equal(await page.locator("#scoreValue").textContent(), "--");
     }
@@ -247,6 +256,9 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.match(await page.locator("#batchResultCounts").textContent(), /판정 보류 1명/);
     assert.match(await page.locator("#batchResultCounts").textContent(), /수정 필요 1명/);
     assert.equal(await page.locator("#batchResults").evaluate(element => element === document.activeElement), true);
+    const firstDirection = page.locator("#batchResultsBody tr").first().locator(".batch-direction-help");
+    await firstDirection.locator("summary").click();
+    assert.match(await firstDirection.locator("p").textContent(), /낮은 점수가 ‘분해 능력이 낮다’는 뜻은 아니에요/);
     for (const sampleId of ["0001", "PDF-SECOND", "PDF-HOLD", "PDF-CALM"]) {
       const button = page.getByRole("button", { name: sampleId + " PDF 저장 화면 열기", exact: true });
       assert.equal(await button.isEnabled(), true);
@@ -270,11 +282,16 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
         const label = { awake: "각성형", calm: "잠잠형", sleepy: "잠꾸러기형" }[key];
         assert.equal(await pdf.locator(".type-panel h2").textContent(), label);
         assert.equal(await pdf.locator(".type-art--" + key).count(), 1);
+        const direction = { awake: "빠른 분해 쪽(모형)", calm: "중간 구간(모형)", sleepy: "느린 분해 쪽(모형)" }[key];
+        assert.ok(body.includes(direction));
+        assert.match(body, /실제 분해 속도를 확인한 결과는 아니에요/);
         await pdf.waitForFunction(() => document.querySelector(".type-art img")?.naturalWidth === 2172, null, { timeout: 10000 }).catch(async error => {
           console.error("PDF image diagnostic", await pdf.locator("img").evaluateAll(images => images.map(img => ({ src: img.src, complete: img.complete, width: img.naturalWidth }))));
           throw error;
         });
         if (viewport.width > 760) {
+          await pdf.emulateMedia({ media: "print" });
+          assert.ok(await pdf.locator(".pdf-sheet").evaluate(sheet => sheet.getBoundingClientRect().height) <= 1124, "PDF content must fit one A4 page");
           await pdf.screenshot({ path: path.join(artifacts, name + "-pdf-" + key + ".png"), fullPage: true });
         }
       }
