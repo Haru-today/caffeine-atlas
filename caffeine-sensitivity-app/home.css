@@ -3,18 +3,6 @@
    pages keep using styles.css unchanged. Fonts stay local: no web-font
    requests, which the privacy notice does not cover. */
 
-body.landing .home-type .type-art {
-  width: 156px;
-  height: 156px;
-  margin: 4px auto 18px;
-}
-
-body.landing .home-sample-art {
-  width: 124px;
-  height: 124px;
-  margin: 0 auto 12px;
-}
-
 body.landing {
   /* Only the existing Caffeine Atlas palette from styles.css :root. */
   --home-bg: var(--bg);
