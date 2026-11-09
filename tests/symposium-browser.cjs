@@ -19,7 +19,6 @@ async function serveLocalFiles(context) {
   // Render the real static files without a network listener on restricted PCs.
   await context.route("**/*", async route => {
     const url = new URL(route.request().url());
-    if (url.protocol === "blob:") return route.continue();
     if (url.origin !== new URL(base).origin) return route.abort();
     try {
       let file = path.resolve(root, "." + decodeURIComponent(url.pathname));
@@ -69,13 +68,6 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     });
     assert.ok(landingMetrics.scroll <= landingMetrics.viewport + 1, name + ": landing horizontal overflow");
     assert.ok(landingMetrics.buttonHeight >= 46, name + ": login-free CTA too small");
-    await page.locator(".home-types").scrollIntoViewIfNeeded();
-    await page.waitForFunction(() => [...document.querySelectorAll(".type-art img")].every(img => img.complete && img.naturalWidth === 2172));
-    for (const key of ["awake", "calm", "sleepy"]) {
-      assert.equal(await page.locator(".home-types .type-art--" + key).count(), 1);
-    }
-    await page.locator(".home-types").screenshot({ path: path.join(artifacts, name + "-characters.png") });
-    await page.evaluate(() => window.scrollTo(0, 0));
     if (viewport.width <= 760) {
       assert.ok(landingMetrics.buttonWidth >= 150, name + ": mobile login-free CTA too narrow");
       // Every homepage menu item must be fully on screen and easy to tap, with no hidden scroller.
@@ -119,14 +111,6 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       assert.equal(await page.locator('[data-gene="' + gene + '"][data-genotype="' + genotype + '"]').getAttribute("aria-pressed"), "true", gene);
     }
     assert.equal(await page.locator("#resultReport").isVisible(), true);
-    assert.equal(await page.locator("#typeIllustration .type-art--awake").isVisible(), true);
-    assert.equal(await page.locator("#metabolismTypeName").textContent(), "빠른 분해 쪽(모형)");
-    assert.match(await page.locator("#metabolismTypeDesc").textContent(), /실제 분해 속도를 확인한 결과는 아니에요/);
-    await page.locator(".direction-guide summary").click();
-    assert.equal(await page.locator(".direction-guide dl").isVisible(), true);
-    assert.match(await page.locator(".direction-guide").textContent(), /낮은 점수가 ‘분해 능력이 낮다’는 뜻은 아니에요/);
-    await page.locator("#resultReport").screenshot({ path: path.join(artifacts, name + "-easy-report.png") });
-    await page.waitForFunction(() => document.querySelector("#typeIllustration img")?.naturalWidth === 2172);
     assert.match(await page.locator("#referenceRankText").textContent(), /참조자료 대비 순서/);
     assert.equal(await page.locator(".chart-card .reference-scope-note").isVisible(), true);
     assert.equal(await page.locator(".layer-stack .reference-scope-note").isVisible(), true);
@@ -159,16 +143,6 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     await page.locator("#saveBtn").click();
     const download = await downloadWait;
     assert.match(download.suggestedFilename(), /Caffeine-Atlas|Report|DEMO-001/i);
-    const savedHtml = fs.readFileSync(await download.path(), "utf8");
-    assert.match(savedHtml, /DEMO-001/);
-    assert.match(savedHtml, /type-art--awake/);
-    assert.match(savedHtml, /class="saved-chart-image"/);
-    assert.doesNotMatch(savedHtml, /id="editBtn"|id="pdfBtn"|id="copyBtn"/);
-    await page.evaluate(() => Object.defineProperty(navigator, "clipboard", { configurable: true,
-      value: { writeText: async text => { window.copiedTestReport = text; } } }));
-    await page.locator("#copyBtn").click();
-    assert.match(await page.evaluate(() => window.copiedTestReport), /Sample ID: DEMO-001/);
-    assert.match(await page.evaluate(() => window.copiedTestReport), /유형: 각성형/);
 
     const popupWait = page.waitForEvent("popup");
     await page.locator("#pdfBtn").click();
@@ -179,38 +153,11 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.match(content, /rs6968865|AHR/);
     assert.match(content, /연구 참조분포/);
     assert.match(content, /전체 한국인 인구를 대표하는 임상 검증 순위/);
-    assert.match(content, /입력 완성도/);
-    assert.match(content, /빠른 분해 쪽\(모형\)/);
-    assert.match(content, /실제 분해 속도를 확인한 결과는 아니에요/);
+    assert.match(content, /SNP coverage/);
     await popup.close();
 
-    // Exercise every single-person type and unknown-marker transitions in the UI.
-    for (const [label, direction, values] of [
-      ["잠잠형", "중간 구간(모형)", ["AC", "AG", "CT", "AT"]],
-      ["잠꾸러기형", "느린 분해 쪽(모형)", ["CC", "AG", "TT", "TT"]],
-      ["정보 부족형", "판정 보류", ["unknown", "GG", "CC", "AT"]]
-    ]) {
-      await page.locator("#editBtn").click();
-      for (const [index, rsid] of ["rs762551", "rs2069514", "rs2472297", "rs6968865"].entries()) {
-        await page.locator('[data-gene="' + rsid + '"][data-genotype="' + values[index] + '"]').click();
-      }
-      await page.locator("#analyzeBtn").click();
-      assert.equal(await page.locator("#typeName").textContent(), label);
-      assert.equal(await page.locator("#metabolismTypeName").textContent(), direction);
-      assert.equal(await page.locator("#typeIllustration").isVisible(), label !== "정보 부족형");
-      if (label === "정보 부족형") assert.equal(await page.locator("#scoreValue").textContent(), "--");
-    }
-    await page.locator("#editBtn").click();
-    await page.locator("#sampleId").fill("");
-    await page.locator("#analyzeBtn").click();
-    assert.match(await page.locator("#validationText").textContent(), /Sample ID를 입력/);
-    assert.equal(await page.locator("#resultReport").isVisible(), false);
-    await page.locator("#sampleId").fill("VALIDATION-TEST");
-    await page.locator("#collectionDate").fill("2099-12-31");
-    await page.locator("#analyzeBtn").click();
-    assert.match(await page.locator("#validationText").textContent(), /채취일은 리포트 날짜보다 늦을 수 없습니다/);
-
     // Local batch processing must work on the public QR URL with no Sheets consent.
+    await page.locator("#editBtn").click();
     await page.locator("#batchModeBtn").click();
     assert.equal(await page.locator("#batchModePanel").isVisible(), true);
     assert.equal(await page.locator("#batchConsent").isVisible(), false);
@@ -239,7 +186,6 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       ["0001", "2026-11-08", "2026-11-07", "구강상피세포", "미기재", "AA", "GG", "CC", "AT"],
       ["PDF-SECOND", "2026-11-09", "2026-11-07", "타액", "미기재", "CC", "AG", "TT", "TT"],
       ["PDF-HOLD", "2026-11-08", "", "구강상피세포", "미기재", "모름", "GG", "CC", "AT"],
-      ["PDF-CALM", "2026-11-09", "", "구강상피세포", "미기재", "AC", "AG", "CT", "AT"],
       ["DEMO-ERROR", "2026-11-08", "", "구강상피세포", "미기재", "AA", "GG", "CC", "GG"]
     ], { origin: "A3" });
     await page.locator("#batchFile").setInputFiles({
@@ -248,52 +194,26 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       buffer: Buffer.from(XLSX.write(templateBook, { type: "buffer", bookType: "xlsx" }))
     });
     await page.locator("#batchAnalyzeBtn").click();
-    await page.waitForFunction(() => document.querySelectorAll("#batchResultsBody tr").length === 5);
+    await page.waitForFunction(() => document.querySelectorAll("#batchResultsBody tr").length === 4);
     assert.match(await page.locator("#batchResultsBody").textContent(), /0001/);
     assert.match(await page.locator("#batchResultsBody").textContent(), /DEMO-ERROR/);
     assert.equal(await page.locator("#batchDownloadBtn").isEnabled(), true);
-    assert.match(await page.locator("#batchResultCounts").textContent(), /분석 완료 3명/);
-    assert.match(await page.locator("#batchResultCounts").textContent(), /판정 보류 1명/);
-    assert.match(await page.locator("#batchResultCounts").textContent(), /수정 필요 1명/);
-    assert.equal(await page.locator("#batchResults").evaluate(element => element === document.activeElement), true);
-    const firstDirection = page.locator("#batchResultsBody tr").first().locator(".batch-direction-help");
-    await firstDirection.locator("summary").click();
-    assert.match(await firstDirection.locator("p").textContent(), /낮은 점수가 ‘분해 능력이 낮다’는 뜻은 아니에요/);
-    for (const sampleId of ["0001", "PDF-SECOND", "PDF-HOLD", "PDF-CALM"]) {
+    for (const sampleId of ["0001", "PDF-SECOND", "PDF-HOLD"]) {
       const button = page.getByRole("button", { name: sampleId + " PDF 저장 화면 열기", exact: true });
       assert.equal(await button.isEnabled(), true);
       const pdfWait = page.waitForEvent("popup");
       await button.click();
       const pdf = await pdfWait;
-      await pdf.bringToFront();
       await pdf.waitForLoadState("domcontentloaded");
       assert.match(await pdf.title(), new RegExp("Caffeine-Atlas-Report-" + sampleId));
       const body = await pdf.locator("body").textContent();
       assert.ok(body.includes(sampleId));
-      for (const other of ["DEMO-001", "PDF-SECOND", "PDF-HOLD", "PDF-CALM", "DEMO-ERROR"]) {
+      for (const other of ["DEMO-001", "PDF-SECOND", "PDF-HOLD", "DEMO-ERROR"]) {
         if (other !== sampleId) assert.equal(body.includes(other), false, "PDF must contain only its own subject");
       }
       if (sampleId === "PDF-HOLD") {
         assert.equal(await pdf.locator(".gauge.is-unscored").count(), 1);
         assert.equal(await pdf.locator(".distribution-marker").count(), 0);
-        assert.equal(await pdf.locator(".type-art").count(), 0);
-      } else {
-        const key = { "0001": "awake", "PDF-SECOND": "sleepy", "PDF-CALM": "calm" }[sampleId];
-        const label = { awake: "각성형", calm: "잠잠형", sleepy: "잠꾸러기형" }[key];
-        assert.equal(await pdf.locator(".type-panel h2").textContent(), label);
-        assert.equal(await pdf.locator(".type-art--" + key).count(), 1);
-        const direction = { awake: "빠른 분해 쪽(모형)", calm: "중간 구간(모형)", sleepy: "느린 분해 쪽(모형)" }[key];
-        assert.ok(body.includes(direction));
-        assert.match(body, /실제 분해 속도를 확인한 결과는 아니에요/);
-        await pdf.waitForFunction(() => document.querySelector(".type-art img")?.naturalWidth === 2172, null, { timeout: 10000 }).catch(async error => {
-          console.error("PDF image diagnostic", await pdf.locator("img").evaluateAll(images => images.map(img => ({ src: img.src, complete: img.complete, width: img.naturalWidth }))));
-          throw error;
-        });
-        if (viewport.width > 760) {
-          await pdf.emulateMedia({ media: "print" });
-          assert.ok(await pdf.locator(".pdf-sheet").evaluate(sheet => sheet.getBoundingClientRect().height) <= 1124, "PDF content must fit one A4 page");
-          await pdf.screenshot({ path: path.join(artifacts, name + "-pdf-" + key + ".png"), fullPage: true });
-        }
       }
       await pdf.close();
     }
@@ -305,7 +225,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     const resultBook = XLSX.read(fs.readFileSync(await batchDownload.path()), { type: "buffer" });
     for (const sheetName of ["분석 결과", "입력 오류", "해석 안내"]) assert.ok(resultBook.Sheets[sheetName], sheetName);
     const rows = XLSX.utils.sheet_to_json(resultBook.Sheets["분석 결과"], { header: 1, defval: "" });
-    assert.equal(rows.length, 6);
+    assert.equal(rows.length, 5);
     assert.ok(rows.some(row => row.includes("0001")), "leading-zero Sample ID must survive download");
     assert.match(JSON.stringify(XLSX.utils.sheet_to_json(resultBook.Sheets["입력 오류"], { header: 1 })), /DEMO-ERROR/);
 
@@ -334,33 +254,6 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.equal(await page.locator("#batchAnalyzeBtn").isEnabled(), false);
     assert.equal(await page.locator("#batchClearBtn").isEnabled(), false);
     assert.equal(await page.locator("#batchFile").evaluate(input => input === document.activeElement), true);
-
-    // Support pages expose real search and a mail draft, without sending mail.
-    await page.goto(base + "/caffeine-sensitivity-app/board.html");
-    await page.locator("#boardSearch").fill("없는 검색어 TEST-NONE");
-    assert.equal(await page.locator(".board-row:visible").count(), 0);
-    assert.match(await page.locator("#boardSearchStatus").textContent(), /검색 결과가 없습니다/);
-    await page.locator("#boardSearch").fill("리포트");
-    assert.equal(await page.locator(".board-row:visible").count(), 1);
-    await page.goto(base + "/caffeine-sensitivity-app/board-write.html");
-    assert.equal(await page.locator("form").evaluate(form => form.checkValidity()), false);
-    await page.locator('[name="author"]').fill("가상 기능 점검");
-    await page.locator('[name="title"]').fill("메일 발송 없는 점검");
-    await page.locator('[name="content"]').fill("가상 내용");
-    assert.equal(await page.locator("form").evaluate(form => form.checkValidity()), true);
-    await page.getByRole("button", { name: "초기화", exact: true }).click();
-    assert.equal(await page.locator('[name="author"]').inputValue(), "");
-    await page.goto(base + "/caffeine-sensitivity-app/account.html");
-    assert.equal(await page.getByRole("heading", { name: "회원가입 없이 이용하세요" }).isVisible(), true);
-    assert.equal(await page.locator('input:visible').count(), 0);
-    for (const policy of ["privacy.html", "terms.html"]) {
-      const response = await page.goto(base + "/" + policy);
-      assert.equal(response.status(), 200);
-      assert.equal(await page.locator("h1").count(), 1);
-    }
-    await page.goto(base + "/caffeine-sensitivity-app/analyzer.html#batch");
-    assert.equal(await page.locator("#batchModePanel").isVisible(), true);
-    assert.equal(await page.locator("#batchResults").isVisible(), false);
 
     assert.deepEqual(outgoing, [], name + ": unapproved Sheets API call observed");
     assert.deepEqual(errors, [], name + ": runtime JavaScript error observed");

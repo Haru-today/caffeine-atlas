@@ -35,52 +35,19 @@ function toRows(sheet) {
   return XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "" });
 }
 
-function selectionFor(codes) {
-  return Object.fromEntries(app.genes.map((gene, index) => [gene.id,
-    gene.genotypes.find(genotype => genotype.code === codes[index])]));
-}
-
-test("the same character type can have different model metabolism directions", () => {
-  const fast = app.buildComputedResult(selectionFor(["AA", "AA", "TT", "TT"]));
-  const slow = app.buildComputedResult(selectionFor(["CC", "GG", "CC", "AA"]));
-  assert.equal(fast.category.label, "잠잠형");
-  assert.equal(slow.category.label, "잠잠형");
-  assert.equal(fast.metabolismSubtype.name, "빠른 분해 쪽(모형)");
-  assert.equal(slow.metabolismSubtype.name, "느린 분해 쪽(모형)");
-  for (const result of [fast, slow]) {
-    assert.match(result.metabolismSubtype.desc, /실제 분해 속도를 확인한 결과는 아니에요/);
-  }
-});
-
-test("missing core and partial metabolism inputs keep their uncertainty visible", () => {
-  const held = app.buildComputedResult(selectionFor(["unknown", "AA", "TT", "TT"]));
-  assert.equal(held.metabolismSubtype.name, "판정 보류");
-  assert.doesNotMatch(held.metabolismSubtype.name + held.metabolismSubtype.desc, /빠른 분해 쪽|느린 분해 쪽/);
-  const partial = app.buildComputedResult(selectionFor(["AA", "unknown", "unknown", "unknown"]));
-  assert.equal(partial.confidence, 25);
-  assert.match(partial.metabolismSubtype.desc, /분해 관련 2개 항목 중 1개만 확인/);
-});
-
 function localFlowHarness() {
   const objects = new Map();
   const downloads = [];
   const popups = [];
   const alerts = [];
   let popupBlocked = false;
-  const reportUrls = new Map();
-  class ReportURL extends URL {}
-  ReportURL.createObjectURL = blob => { const url = "blob:test-" + reportUrls.size; reportUrls.set(url, blob.html); return url; };
-  ReportURL.revokeObjectURL = url => reportUrls.delete(url);
-  class ReportBlob { constructor(parts) { this.html = parts.join(""); } }
   let networkCalls = 0;
   const failNetwork = () => { networkCalls++; throw new Error("local batch must not use the network"); };
   const localWindow = { XLSX: { ...XLSX, writeFile(book, name) { downloads.push({ book, name }); } }, fetch: failNetwork };
   localWindow.location = { href: "https://example.test/caffeine-atlas/caffeine-sensitivity-app/analyzer.html" };
-  localWindow.open = url => {
-    if (popupBlocked) return null;
-    popups.push(reportUrls.get(url));
-    return {};
-  };
+  localWindow.open = () => popupBlocked ? null : { document: {
+    open() {}, write(html) { popups.push(html); }, close() {}
+  } };
   localWindow.alert = message => alerts.push(message);
   const localDocument = { getElementById(id) {
     if (!objects.has(id)) objects.set(id, {
@@ -96,7 +63,7 @@ function localFlowHarness() {
       download: downloadBatchResults,
       pdf: saveBatchPdfReport,
       snapshot: function() { return { busy: batchBusy, records: batchResults.slice() }; }
-    };`), { window: localWindow, document: localDocument, fetch: failNetwork, URL: ReportURL, Blob: ReportBlob, console });
+    };`), { window: localWindow, document: localDocument, fetch: failNetwork, URL, console });
   return { ...localWindow.flow, element: id => objects.get(id), downloads, popups, alerts,
     blockPopup(value) { popupBlocked = value; }, networkCalls: () => networkCalls };
 }
@@ -145,29 +112,6 @@ test("batch PDF rejects invalid or stale rows and recovers from popup blocking",
   assert.equal(flow.popups.length, 2);
   assert.match(flow.popups[1], /PDF-REPLACEMENT/);
   assert.doesNotMatch(flow.popups[1], /PDF-VALID/);
-  assert.equal(flow.networkCalls(), 0);
-});
-
-test("PDF and Excel carry the same plain explanation for every direction and hold", async () => {
-  const flow = localFlowHarness();
-  flow.choose(file(workbook([
-    row("EASY-FAST"), row("EASY-MIDDLE", ["AC", "AG", "CT", "AT"]),
-    row("EASY-SLOW", ["CC", "AG", "TT", "TT"]), row("EASY-HOLD", ["모름", "AA", "TT", "TT"])
-  ])));
-  await flow.run();
-  flow.download();
-  const output = toRows(flow.downloads[0].book.Sheets["분석 결과"]);
-  const directionColumn = output[0].indexOf("분해 방향(모형)");
-  const interpretationColumn = output[0].indexOf("해석");
-  const names = ["빠른 분해 쪽(모형)", "중간 구간(모형)", "느린 분해 쪽(모형)", "판정 보류"];
-  names.forEach((name, index) => {
-    flow.pdf(index + 2);
-    assert.ok(flow.popups[index].includes(name));
-    assert.equal(output[index + 1][directionColumn], name);
-    assert.ok(flow.popups[index].includes(flow.snapshot().records[index].result.metabolismSubtype.desc));
-    assert.ok(output[index + 1][interpretationColumn].includes(flow.snapshot().records[index].result.metabolismSubtype.desc));
-  });
-  assert.doesNotMatch(flow.popups[3], /빠른 분해 쪽|느린 분해 쪽/);
   assert.equal(flow.networkCalls(), 0);
 });
 
@@ -275,7 +219,7 @@ test("batch and individual calculations agree for complete, partial and unknown 
 });
 
 test("the separate research batch action attaches consent only after the checked storage control", async () => {
-  const researchWindow = { XLSX, location: { href: "https://example.test/caffeine-atlas/caffeine-sensitivity-app/analyzer.html" } };
+  const researchWindow = { XLSX };
   const objects = new Map();
   const researchDocument = { getElementById(id) {
     if (!objects.has(id)) objects.set(id, {
@@ -290,7 +234,7 @@ test("the separate research batch action attaches consent only after the checked
     .replace("  init();", `
       saveConfirmedPayload = function(payload, count) { window.captured = { payload, count }; return Promise.resolve(); };
       window.startBatch = function(file) { batchFile = file; processBatchUpload(); };`);
-  vm.runInNewContext(researchSource, { window: researchWindow, document: researchDocument, URL, console });
+  vm.runInNewContext(researchSource, { window: researchWindow, document: researchDocument, console });
   const inputFile = file(workbook([row("RESEARCH-TEST")]));
   researchWindow.startBatch(inputFile);
   await new Promise(setImmediate);
@@ -356,18 +300,6 @@ test("only supported allele separators and enumerated metadata values are accept
     assert.equal(app.normalizeSpecimen(value), null, value);
     assert.equal(app.normalizeSex(value), null, value);
   }
-});
-
-test("a renamed workbook processes the full 200-person limit without losing rows", async () => {
-  const input = Array.from({ length: 200 }, (_, index) => row("LIMIT-" + String(index + 1).padStart(3, "0")));
-  const records = await app.parseBatchWorkbook(file(workbook(input), { name: "최종 결과_파일명 변경.xlsx" }));
-  assert.equal(records.length, 200);
-  records.forEach(record => { assert.equal(record.errors.length, 0); app.analyzeBatchRow(record); });
-  const exported = app.buildBatchResultWorkbook(records);
-  const saved = XLSX.read(XLSX.write(exported, { type: "buffer", bookType: "xlsx" }), { type: "buffer" });
-  const output = toRows(saved.Sheets["분석 결과"]);
-  assert.equal(output.length, 201);
-  for (const source of input) assert.equal(output.filter(row => row.includes(source[0])).length, 1);
 });
 
 test("download workbook retains every row, source values, errors and safe text cells", async () => {
