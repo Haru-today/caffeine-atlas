@@ -19,6 +19,7 @@ test("landing page clearly launches an unrestricted public trial", () => {
   assert.match(landing, /로그인 없이 체험 시작/);
   assert.match(landing, /href="\.\/analyzer\.html"/);
   assert.match(landing, /연구·교육용/);
+  assert.doesNotMatch(landing, /href="\.\/assets\/caffeine-atlas-batch-template\.xlsx/);
 });
 
 test("public analyzer preserves genetic interpretation and user-side PDF and report downloads", () => {
@@ -34,20 +35,14 @@ test("public analyzer preserves genetic interpretation and user-side PDF and rep
   assert.match(analyzer, /개인식별정보/);
 });
 
-test("local batch analysis is public while cloud storage requires research mode", () => {
-  assert.match(analyzer, /<div class="input-mode-switch"/);
+test("cloud storage and batch upload controls remain in DOM but hidden only in public mode", () => {
+  assert.match(analyzer, /<div class="input-mode-switch research-only"/);
   assert.match(analyzer, /<label class="consent-card research-only"/);
-  assert.match(analyzer, /<section class="batch-panel" id="batchModePanel"/);
+  assert.match(analyzer, /<section class="batch-panel research-only" id="batchModePanel"/);
   assert.match(analyzer, /<button class="tool-button primary research-only" id="sheetSaveBtn"/);
   assert.match(css, /body\.public-demo \.research-only\s*,\s*body\.research-mode \.public-only\s*\{\s*display:\s*none\s*!important/);
   assert.match(analyzer, /id="sheetConsent"/);
   assert.match(analyzer, /id="batchAnalyzeSaveBtn"/);
-  assert.match(analyzer, /id="batchAnalyzeBtn"/);
-  assert.match(analyzer, /id="batchDownloadBtn"/);
-  assert.match(analyzer, /href="\.\/assets\/caffeine-atlas-batch-template\.xlsx/);
-  assert.match(source, /function processLocalBatchUpload\(\)/);
-  assert.match(source, /function buildBatchResultWorkbook\(records\)/);
-  assert.match(source, /function downloadBatchResults\(\)/);
 });
 
 test("public Caffeine Atlas bundle has no working Google Apps Script endpoint", () => {
@@ -102,7 +97,7 @@ test("four-SNP coverage is not misrepresented as predictive confidence", () => {
   assert.match(analyzer, /<span>입력 완성도<\/span>/);
   assert.match(analyzer, /예측 정확도·통계적 신뢰도를 의미하지 않습니다/);
   assert.doesNotMatch(analyzer, /<span>신뢰도<\/span>/);
-  assert.match(source, /<span>분해 방향\(모형\)<\/span>/);
+  assert.match(source, /<span>SNP coverage<\/span>/);
   assert.match(source, /<span>입력 완성도<\/span>/);
   assert.doesNotMatch(source, /<span>Confidence<\/span>|<span>신뢰도<\/span>/);
   // Keep historical JSON schema stable; only copy/labels change.
@@ -171,6 +166,6 @@ test("homepage sample card is exactly what the model returns for the analyzer's 
   const widths = [...card.matchAll(/<i style="width:(\d+)%"><\/i>/g)].map(match => Number(match[1]));
   const met = Math.round(result.metabolismNorm * 100);
   const beh = Math.round(result.behaviorNorm * 100);
-  assert.deepEqual(values, [met + "/100", beh + "/100", result.valid.length + "/" + genes.length]);
+  assert.deepEqual(values, [met + "%", beh + "%", result.valid.length + "/" + genes.length]);
   assert.deepEqual(widths, [met, beh, result.confidence]);
 });

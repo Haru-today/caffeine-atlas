@@ -690,11 +690,6 @@ a {
   border-radius: 8px;
 }
 
-.batch-table-wrap:focus-visible {
-  outline: 3px solid #245baa;
-  outline-offset: 3px;
-}
-
 .batch-table {
   width: 100%;
   min-width: 960px;
@@ -1208,23 +1203,11 @@ a {
 
 .type-summary {
   display: grid;
-  grid-template-columns: 140px minmax(0, 1fr);
+  grid-template-columns: 86px minmax(0, 1fr);
   gap: 16px;
   align-items: center;
 }
 
-.type-art {
-  display: block;
-  position: relative;
-  width: 140px;
-  height: 140px;
-  overflow: hidden;
-}
-.type-art img { position: absolute; top: 0; left: 0; width: 300%; height: 100%; max-width: none; }
-.type-art--calm img { left: -100%; }
-.type-art--sleepy img { left: -200%; }
-.type-illustration[hidden], .type-code[hidden] { display: none !important; }
-.batch-type-cell .type-art { width: 68px; height: 68px; margin: 0 auto 8px; }
 .type-code {
   display: inline-flex;
   width: 86px;
@@ -1305,22 +1288,6 @@ a {
   color: #47576c;
   line-height: 1.6;
 }
-
-.metabolism-type-card h3 { margin: 0; font-size: 17px; color: #173f47; }
-.metabolism-type-card { padding: 20px; border-left: 5px solid var(--teal); background: #f1f9f8; }
-.direction-guide { margin-top: 8px; border-top: 1px solid #c8dfdd; padding-top: 12px; }
-.direction-guide summary { color: #165c61; font-weight: 800; cursor: pointer; min-height: 32px; }
-.direction-guide summary:focus-visible { outline: 3px solid #245baa; outline-offset: 4px; }
-.direction-guide dl { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 12px 0; }
-.direction-guide dl div { min-width: 0; padding: 12px; background: #fff; border: 1px solid #d3e4e2; border-radius: 8px; }
-.direction-guide dt { color: #173f47; font-weight: 800; font-size: 13px; }
-.direction-guide dd { margin: 6px 0 0; font-size: 13px; line-height: 1.6; color: #47576c; }
-.direction-guide > p { font-size: 13px; }
-.batch-direction-cell { min-width: 180px; }
-.batch-direction-help summary { padding: 10px 0; min-height: 44px; color: #165c61; font-size: 12px; font-weight: 800; cursor: pointer; }
-.batch-direction-help summary:focus-visible { outline: 3px solid #245baa; outline-offset: 3px; }
-.batch-direction-help p { margin: 4px 0; max-width: 260px; line-height: 1.7; font-size: 12px; }
-@media (max-width: 760px) { .direction-guide dl { grid-template-columns: 1fr; } .metabolism-type-card { padding: 16px; } }
 
 .result-detail-grid div {
   min-height: 74px;
@@ -3053,32 +3020,4 @@ body { line-height: 1.6; }
 }
 @media (prefers-reduced-motion: reduce) {
   .nav-links { scroll-behavior: auto; }
-}
-
-/* Local batch analysis and interpretation clarity (2026-11-08). */
-.batch-results, .batch-panel, .batch-intro > div { min-width: 0; }
-.batch-actions { display: grid; gap: 8px; min-width: 0; }
-.batch-actions .tool-button { min-height: 44px; }
-.batch-results-head, .batch-submit-panel { flex-wrap: wrap; }
-.batch-file-field small, .batch-file-summary strong { overflow-wrap: anywhere; }
-.batch-results .tool-button { min-height: 44px; }
-.batch-table td { overflow-wrap: anywhere; max-width: 300px; }
-.batch-table .batch-pdf-button { display: flex; margin-top: 8px; min-width: 88px; white-space: nowrap; font-size: 12px; }
-.batch-pdf-button:focus-visible { outline: 3px solid #245baa; outline-offset: 3px; }
-.batch-pdf-help { color: #495d70; font-size: .86rem; line-height: 1.7; margin: 12px 0; }
-.response-explainer {
-  padding: 18px 20px;
-  margin: 16px 0;
-  border: 1px solid #c9dde0;
-  border-radius: 10px;
-  background: #f0f7f7;
-  line-height: 1.75;
-}
-.response-explainer p { margin: 8px 0 0; }
-.gauge-scale { gap: 8px; }
-@media (max-width: 760px) {
-  .batch-submit-panel > .tool-button, #batchDownloadBtn { width: 100%; }
-  .batch-results { padding: 12px; }
-  .batch-upload-card { min-width: 0; }
-  .response-explainer { padding: 15px; }
 }
