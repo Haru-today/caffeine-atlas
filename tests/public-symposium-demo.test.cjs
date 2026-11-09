@@ -174,3 +174,16 @@ test("homepage sample card is exactly what the model returns for the analyzer's 
   assert.deepEqual(values, [met + "%", beh + "%", result.valid.length + "/" + genes.length]);
   assert.deepEqual(widths, [met, beh, result.confidence]);
 });
+
+test("type badges describe the composite score and never claim a metabolizer type", () => {
+  // The 'metabolism' card is decided by CYP1A2 only; a composite-score badge
+  // saying 빠른/평균/느린 대사형 contradicted it (e.g. 평균 대사형 + 저속 대사형).
+  const window = {};
+  const document = { getElementById: () => ({ value: "", options: [], classList: { toggle() {} } }) };
+  require("node:vm").runInNewContext(source.replace("  init();",
+    "  window.__model = { classify: classify };"), { window, document, console });
+  const badges = [0, 50, 100].map(score => window.__model.classify(score).badge);
+  assert.deepEqual(badges, ["민감도 지수 낮음", "민감도 지수 중간", "민감도 지수 높음"]);
+  assert.doesNotMatch(landing, /(빠른|평균|느린) 대사형/);
+  assert.doesNotMatch(source, /badge: "[^"]*대사형"/);
+});
