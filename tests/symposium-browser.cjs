@@ -127,7 +127,10 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.match(await page.locator(".direction-guide").textContent(), /낮은 점수가 ‘분해 능력이 낮다’는 뜻은 아니에요/);
     await page.locator("#resultReport").screenshot({ path: path.join(artifacts, name + "-easy-report.png") });
     await page.waitForFunction(() => document.querySelector("#typeIllustration img")?.naturalWidth === 2172);
-    assert.match(await page.locator("#referenceRankText").textContent(), /참조자료 대비 순서/);
+    assert.equal(await page.locator("#referenceRankText").textContent(), "7개 구간 중 낮은 쪽에서 2번째");
+    assert.equal(await page.locator("#detailPercentile").textContent(), "7개 구간 중 낮은 쪽에서 2번째");
+    assert.equal(await page.locator(".score-kicker").textContent(), "종합 점수(연구용 모형)");
+    assert.equal(await page.locator("#scorePartialNote").isVisible(), false, "full input has no reference-only badge");
     assert.equal(await page.locator(".chart-card .reference-scope-note").isVisible(), true);
     assert.equal(await page.locator(".layer-stack .reference-scope-note").isVisible(), true);
     assert.match(await page.locator(".layer-stack").textContent(), /입력 완성도/);
@@ -188,7 +191,8 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     for (const [label, direction, values] of [
       ["잠잠형", "중간 구간(모형)", ["AC", "AG", "CT", "AT"]],
       ["잠꾸러기형", "느린 분해 쪽(모형)", ["CC", "AG", "TT", "TT"]],
-      ["정보 부족형", "판정 보류", ["unknown", "GG", "CC", "AT"]]
+      ["정보 부족형", "판정 보류", ["unknown", "GG", "CC", "AT"]],
+      ["잠꾸러기형", "느린 분해 쪽(모형)", ["CC", "unknown", "unknown", "unknown"]]
     ]) {
       await page.locator("#editBtn").click();
       for (const [index, rsid] of ["rs762551", "rs2069514", "rs2472297", "rs6968865"].entries()) {
@@ -199,6 +203,9 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       assert.equal(await page.locator("#metabolismTypeName").textContent(), direction);
       assert.equal(await page.locator("#typeIllustration").isVisible(), label !== "정보 부족형");
       if (label === "정보 부족형") assert.equal(await page.locator("#scoreValue").textContent(), "--");
+      const partial = values.includes("unknown") && label !== "정보 부족형";
+      assert.equal(await page.locator("#scorePartialNote").isVisible(), partial, values.join("/"));
+      if (partial) assert.equal(await page.locator("#scorePartialNote").textContent(), "참고용 · 입력 1/4 (모름 3개 제외)");
     }
     await page.locator("#editBtn").click();
     await page.locator("#sampleId").fill("");

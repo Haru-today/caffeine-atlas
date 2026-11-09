@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>리포트 생성 | Caffeine Atlas</title>
-  <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=report-guidance-20261109">
+  <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=report-final-20261109">
 </head>
 <body class="public-demo">
   <div class="app-shell">
@@ -229,7 +229,7 @@
                     <th>행</th>
                     <th>Sample ID / 개별 PDF</th>
                     <th>처리 상태</th>
-                    <th>민감도 점수</th>
+                    <th>종합 점수</th>
                     <th>결과 유형</th>
                     <th>분해 방향(모형)</th>
                     <th>입력 완성도</th>
@@ -280,12 +280,13 @@
             </div>
           </div>
           <div class="score-stage">
-            <div class="score-kicker">연구용 카페인 민감도 점수</div>
+            <div class="score-kicker">종합 점수(연구용 모형)</div>
             <div class="score-number">
               <span id="scoreValue">--</span>
               <small>점</small>
             </div>
             <div class="score-label" id="scoreLabel">대기 중</div>
+            <p class="score-partial" id="scorePartialNote" role="note" hidden></p>
             <div class="gauge" aria-hidden="true">
               <div class="gauge-track">
                 <div class="gauge-fill" id="gaugeFill"></div>
@@ -396,7 +397,7 @@
           <ul>
             <li>리포트 정보, 검체 정보, 보고일</li>
             <li>4개 유전자형 항목별 결과와 반영 점수</li>
-            <li>최종 민감도 점수 또는 판정 보류 상태, 비교 위치, 그래프 이미지</li>
+            <li>종합 점수 또는 판정 보류 상태, 비교 위치, 그래프 이미지</li>
             <li>결과 해석, 섭취 가이드, 한계 및 주의 문구</li>
           </ul>
           <p id="sheetSyncStatus" class="sync-status">Google Sheets 저장은 동의 후 결과 화면에서 실행할 수 있습니다.</p>
@@ -430,6 +431,6 @@
 
   <nav class="policy-links" aria-label="이용 정책" style="text-align:center;margin:12px auto 24px;font-size:.9rem;"><p class="policy-links"><a href="https://haru-today.github.io/caffeine-atlas/privacy.html">개인정보 처리 안내</a> · <a href="https://haru-today.github.io/caffeine-atlas/terms.html">서비스 이용 안내</a></p></nav>
   <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
-  <script src="./app.js?v=report-guidance-20261109"></script>
+  <script src="./app.js?v=report-final-20261109"></script>
 </body>
 </html>

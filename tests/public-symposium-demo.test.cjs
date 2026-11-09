@@ -92,8 +92,8 @@ test("research reference distribution is not falsely labeled arbitrary or nation
   assert.doesNotMatch(analyzer, /KPGP PRS distribution|비슷한 사람들 중 위치|임의 구간/);
   assert.doesNotMatch(source, /대한민국 평균 100명 중|7개의 임의 예시 구간|임의 7구간|예시 분포/);
   assert.match(source, /ctx\.fillText\("연구 참조분포", 0, 0\)/);
-  assert.match(source, /참조자료 대비 순서/);
-  assert.match(source, /전체 인구를 대표하거나 임상적으로 검증된 민감도 순위는 아닙니다/);
+  assert.match(source, /개 구간 중 낮은 쪽에서 /);
+  assert.match(source, /전체 인구를 대표하거나 임상적으로 검증된 순위는 아닙니다/);
   assert.match(landing, /실제 인구집단의 백분위나 개인별 안전 섭취량은 아닙니다/);
 });
 
@@ -173,4 +173,59 @@ test("homepage sample card is exactly what the model returns for the analyzer's 
   const beh = Math.round(result.behaviorNorm * 100);
   assert.deepEqual(values, [met + "/100", beh + "/100", result.valid.length + "/" + genes.length]);
   assert.deepEqual(widths, [met, beh, result.confidence]);
+});
+
+function loadModel() {
+  const window = {};
+  const document = { getElementById: () => ({ value: "", options: [], classList: { toggle() {} } }) };
+  require("node:vm").runInNewContext(source.replace("  init();",
+    "  window.__model = { genes: genes, getGenotype: getGenotype, buildComputedResult: buildComputedResult," +
+    " calculateReferencePosition: calculateReferencePosition, referencePositionText: referencePositionText," +
+    " partialInputNote: partialInputNote };"),
+    { window, document, console });
+  return window.__model;
+}
+
+function resultFor(model, codes) {
+  const selection = {};
+  model.genes.forEach((gene, index) => { selection[gene.id] = model.getGenotype(gene, codes[index]); });
+  return model.buildComputedResult(selection);
+}
+
+test("score is named a research composite score, not a sensitivity score, on every report surface", () => {
+  assert.match(analyzer, /<div class="score-kicker">종합 점수\(연구용 모형\)<\/div>/);
+  assert.match(analyzer, /<th>종합 점수<\/th>/);
+  assert.match(source, /종합 점수\(연구용 모형\)<\/span><strong class=\\"score-value/);
+  assert.match(source, /"종합 점수 \(0-100\)"/);
+  for (const [name, text] of [["analyzer", analyzer], ["landing", landing], ["app.js", source]]) {
+    assert.doesNotMatch(text, /민감도 (지수|점수)|종합 지수/, name);
+  }
+});
+
+test("reference position is one coarse 7-section value from the low end, without the N/100 rank", () => {
+  const model = loadModel();
+  for (const [score, position] of [[0, 1], [6.9, 2], [16.6, 2], [16.7, 3], [50, 4], [50.6, 5], [57.4, 5], [99.9, 7], [100, 7]]) {
+    assert.equal(model.calculateReferencePosition(score), position, String(score));
+  }
+  assert.equal(model.referencePositionText(2), "7개 구간 중 낮은 쪽에서 2번째");
+  assert.equal(model.referencePositionText(null), "산출 없음");
+  const demo = resultFor(model, ["AA", "GG", "CC", "AT"]);
+  assert.equal(demo.referencePosition, 2);
+  assert.equal(resultFor(model, ["unknown", "GG", "CC", "AA"]).referencePosition, null);
+  assert.doesNotMatch(source, /참조자료 대비 순서|100단위 환산|% 지점|"참조자료 " \+ result\.sensitivityRank/);
+  // Stored research schema keeps its historical fields.
+  assert.match(source, /rankOutOf100: data\.result\.sensitivityRank/);
+  assert.match(source, /percentile: data\.result\.percentile/);
+});
+
+test("a score computed with unknown genotypes is flagged as reference-only next to the score", () => {
+  const model = loadModel();
+  const onlyCore = resultFor(model, ["CC", "unknown", "unknown", "unknown"]);
+  assert.equal(onlyCore.score, 100);
+  assert.equal(model.partialInputNote(onlyCore), "참고용 · 입력 1/4 (모름 3개 제외)");
+  assert.equal(model.partialInputNote(resultFor(model, ["CC", "GG", "CC", "AA"])), "");
+  assert.equal(model.partialInputNote(resultFor(model, ["unknown", "GG", "CC", "AA"])), "", "no score, no badge");
+  assert.match(analyzer, /<p class="score-partial" id="scorePartialNote" role="note" hidden><\/p>/);
+  assert.match(source, /result\.partialInputNote \? "<p class=\\"score-partial\\">"/);
+  assert.match(css, /\.score-partial\[hidden\] \{ display: none; \}/);
 });

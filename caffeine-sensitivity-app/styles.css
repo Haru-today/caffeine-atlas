@@ -3113,3 +3113,21 @@ body { line-height: 1.6; }
   .batch-upload-card { min-width: 0; }
   .response-explainer { padding: 15px; }
 }
+
+/* 2026-11-09 final report: results computed with '모름' items are flagged at the score itself. */
+.score-partial {
+  margin: -8px auto 16px;
+  padding: 6px 12px;
+  width: fit-content;
+  max-width: 100%;
+  border: 1px solid #b07a12;
+  border-radius: 999px;
+  background: #fff7e0;
+  color: #5c3d00;
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1.4;
+  text-align: center;
+  word-break: keep-all;
+}
+.score-partial[hidden] { display: none; }
