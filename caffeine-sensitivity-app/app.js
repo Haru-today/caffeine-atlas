@@ -9,7 +9,7 @@
       layer: "metabolism",
       layerLabel: "대사",
       allele: "C",
-      description: "CYP1A2 유도성과 관련된 핵심 변이입니다. C allele은 CYP1A2*1F carrier로 느린 대사형, AA는 빠른 대사형 방향으로 해석합니다.",
+      description: "CYP1A2 유도성과 관련된 rs762551 변이입니다. 본 모델은 C 대립유전자 수를 연구용 점수에 반영하며, 실제 대사 속도를 확정하지 않습니다.",
       evidence: "C allele 느린 대사",
       source: "기능 연구",
       evidenceGrade: "High",
