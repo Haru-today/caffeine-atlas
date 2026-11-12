@@ -35,6 +35,24 @@ function toRows(sheet) {
   return XLSX.utils.sheet_to_json(sheet, { header: 1, raw: true, defval: "" });
 }
 
+test("the same composite type can have different model directions without claiming a measured speed", () => {
+  const compute = codes => app.buildComputedResult(Object.fromEntries(app.genes.map((gene, i) =>
+    [gene.id, gene.genotypes.find(genotype => genotype.code === codes[i])])));
+  const fast = compute(["AA", "AA", "TT", "TT"]);
+  const slow = compute(["CC", "GG", "CC", "AA"]);
+  assert.equal(fast.category.label, "잠잠형");
+  assert.equal(slow.category.label, "잠잠형");
+  assert.equal(fast.metabolismSubtype.name, "빠른 분해 쪽(모형)");
+  assert.equal(slow.metabolismSubtype.name, "느린 분해 쪽(모형)");
+  for (const result of [fast, slow]) assert.match(result.metabolismSubtype.desc, /측정한 결과는 아닙니다/);
+  const partial = compute(["AA", "unknown", "CC", "AT"]);
+  assert.match(partial.metabolismSubtype.desc, /2개 항목 중 1개만/);
+  const held = compute(["unknown", "AA", "TT", "TT"]);
+  assert.equal(held.score, null);
+  assert.equal(held.metabolismSubtype.name, "판정 보류");
+  assert.doesNotMatch(held.metabolismSubtype.desc, /빠른 분해|느린 분해/);
+});
+
 function localFlowHarness() {
   const objects = new Map();
   const downloads = [];
@@ -87,6 +105,14 @@ test("each batch PDF uses its own ID, dates, genotypes and held result", async (
   assert.match(flow.popups[1], /<td>CC<\/td>/);
   assert.match(flow.popups[2], /gauge is-unscored/);
   assert.doesNotMatch(flow.popups[2], /<circle class="distribution-marker"/);
+  const records = flow.snapshot().records;
+  records.forEach((record, index) => {
+    for (const recommendation of record.reportData.recommendations) {
+      assert.ok(flow.popups[index].includes(recommendation), "PDF must retain every guidance item: " + recommendation);
+    }
+    assert.ok(flow.popups[index].replace(/&#039;/g, "'").includes(record.result.metabolismSubtype.desc), "PDF must retain model and missing-input explanations");
+  });
+  assert.ok(records[1].reportData.recommendations.length > 4, "fixture must exercise guidance beyond the former four-item cutoff");
   assert.equal(flow.networkCalls(), 0);
 });
 
@@ -313,6 +339,11 @@ test("download workbook retains every row, source values, errors and safe text c
   const resultRows = toRows(exported.Sheets["분석 결과"]);
   assert.equal(resultRows.length, records.length + 1, "each uploaded row must be represented");
   const flattened = JSON.stringify(resultRows);
+  assert.ok(resultRows[0].includes("분해 방향(모형)"));
+  for (const record of records.filter(record => !record.errors.length)) {
+    assert.ok(resultRows.some(values => values.some(value => typeof value === "string" && value.includes(record.result.metabolismSubtype.desc))),
+      "workbook must retain each valid or held row's model explanation");
+  }
   for (const id of records.map(record => record.sampleId)) assert.ok(resultRows.some(row => row.includes(id)), id);
   assert.match(flattened, /GG/);
   assert.match(JSON.stringify(toRows(exported.Sheets["입력 오류"])), /INVALID-ALLELE/);
