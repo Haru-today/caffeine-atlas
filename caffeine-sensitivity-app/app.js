@@ -161,6 +161,7 @@
     batchAnalyzeBtn: document.getElementById("batchAnalyzeBtn"),
     batchClearBtn: document.getElementById("batchClearBtn"),
     batchDownloadBtn: document.getElementById("batchDownloadBtn"),
+    batchPdfZipBtn: document.getElementById("batchPdfZipBtn"),
     batchStatus: document.getElementById("batchStatus"),
     batchResults: document.getElementById("batchResults"),
     batchResultCounts: document.getElementById("batchResultCounts"),
@@ -1225,6 +1226,7 @@
     batchRows = [];
     batchResults = [];
     elements.batchDownloadBtn.disabled = true;
+    elements.batchPdfZipBtn.disabled = true;
     elements.batchResults.hidden = true;
     elements.batchResultCounts.innerHTML = "";
     elements.batchResultsBody.innerHTML = "";
@@ -1558,7 +1560,7 @@
         '<button class="tool-button ghost batch-pdf-button" type="button" data-batch-pdf-row="', record.rowNumber,
         '" aria-label="', escapeHtml(record.sampleId + " PDF 저장 화면 열기"), '"',
         hasError ? ' disabled title="입력 오류를 수정한 뒤 PDF를 저장할 수 있습니다."' : ' title="개별 PDF 저장 화면 열기"',
-        '>PDF 저장</button></td>',
+        '>개별 PDF 저장</button></td>',
         '<td><span class="status-pill ', hasError ? "error" : "", '">', hasError ? "입력 오류" : (result.score === null ? "판정 보류" : "분석 완료"), "</span></td>",
         "<td>", !hasError && typeof result.score === "number" ? result.score.toFixed(1) + "점" : (!hasError ? "산출 없음" : "--"),
         !hasError && result.coverageLabel ? '<small class="score-coverage-note">' + escapeHtml(result.coverageLabel) + '</small>' : "",
@@ -1579,6 +1581,7 @@
     elements.batchAnalyzeBtn.disabled = busy || !batchFile;
     elements.batchAnalyzeSaveBtn.disabled = busy || !batchFile;
     elements.batchDownloadBtn.disabled = busy || !batchResults.length;
+    elements.batchPdfZipBtn.disabled = busy || !batchResults.some(function (record) { return record.reportData; });
   }
 
   function processLocalBatchUpload() {
@@ -1593,7 +1596,7 @@
       renderBatchResults(batchResults);
       var errors = batchResults.filter(function (record) { return record.errors.length; }).length;
       setBatchStatus("전체 " + records.length + "명 중 " + (records.length - errors) + "명의 리포트를 생성했습니다. " +
-        (errors ? "입력 오류 " + errors + "명은 결과를 산출하지 않았습니다. 결과 엑셀의 ‘입력 오류’ 시트를 확인해 주세요." : "결과 엑셀을 내려받으세요."), errors ? "error" : "success");
+        (errors ? "입력 오류 " + errors + "명은 결과를 산출하지 않았습니다. 결과 엑셀의 ‘입력 오류’ 시트를 확인해 주세요." : "결과 화면에서 PDF 또는 엑셀을 내려받으세요."), errors ? "error" : "success");
       setBatchSheetStatus("로컬 분석 완료 · 서버 전송 없음 · 원본 파일은 수정하지 않았습니다.");
     }).catch(function (error) {
       setBatchStatus(error.message || "엑셀 파일을 읽지 못했습니다. 양식을 확인해 주세요.", "error");
@@ -1857,7 +1860,10 @@
   }
 
   function downloadTextFile(filename, content, type) {
-    var blob = new Blob([content], { type: type });
+    downloadBlob(filename, new Blob([content], { type: type }));
+  }
+
+  function downloadBlob(filename, blob) {
     var url = URL.createObjectURL(blob);
     var link = document.createElement("a");
     link.href = url;
@@ -1865,7 +1871,7 @@
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
   }
 
   function collectCurrentStyles() {
@@ -1935,7 +1941,7 @@
     return value === null || typeof value !== "number" ? "--" : value.toFixed(1);
   }
 
-  function buildPdfReportHtml(data) {
+  function buildPdfReportHtml(data, forArchive) {
     var info = data.reportInfo;
     var result = data.result;
     var logoUrl = new URL("./assets/caffeine-atlas-logo-wordmark.png", window.location.href).href;
@@ -1971,16 +1977,16 @@
       var pdfMarkerX = clamp(result.score, 0, 100);
       var pdfMarkerY = 54 - (getReferenceLevelAtScore(pdfMarkerX) / maxReferenceLevel) * 44;
       pdfMarker = [
-        '<line class="distribution-guide" x1="', pdfMarkerX, '" y1="', pdfMarkerY.toFixed(1), '" x2="', pdfMarkerX, '" y2="54"></line>',
-        '<circle class="distribution-marker" cx="', pdfMarkerX, '" cy="', pdfMarkerY.toFixed(1), '" r="3.2"></circle>'
+        '<line class="distribution-guide" x1="', pdfMarkerX, '" y1="', pdfMarkerY.toFixed(1), '" x2="', pdfMarkerX, '" y2="54" stroke="#d45b38" stroke-width="1" stroke-dasharray="2 1.5"></line>',
+        '<circle class="distribution-marker" cx="', pdfMarkerX, '" cy="', pdfMarkerY.toFixed(1), '" r="3.2" fill="#fff" stroke="#d45b38" stroke-width="1.6"></circle>'
       ].join("");
     }
     var pdfDistributionChart = [
       '<svg class="distribution-chart" viewBox="0 0 100 60" role="img" aria-label="연구 참조분포 7개 점수 구간에서의 위치">',
-      '<line class="distribution-grid" x1="0" y1="21" x2="100" y2="21"></line>',
-      '<line class="distribution-grid" x1="0" y1="38" x2="100" y2="38"></line>',
-      '<polygon class="distribution-area" points="0,54 ', pdfChartPoints, ' 100,54"></polygon>',
-      '<polyline class="distribution-line" points="', pdfChartPoints, '"></polyline>',
+      '<line class="distribution-grid" x1="0" y1="21" x2="100" y2="21" stroke="#e3eaec" stroke-width=".45"></line>',
+      '<line class="distribution-grid" x1="0" y1="38" x2="100" y2="38" stroke="#e3eaec" stroke-width=".45"></line>',
+      '<polygon class="distribution-area" points="0,54 ', pdfChartPoints, ' 100,54" fill="#dceff0"></polygon>',
+      '<polyline class="distribution-line" points="', pdfChartPoints, '" fill="none" stroke="#148589" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></polyline>',
       pdfMarker,
       '</svg>'
     ].join("");
@@ -1997,13 +2003,14 @@
       ".pdf-meta{display:grid;grid-template-columns:1.05fr .85fr .85fr .8fr 1.45fr;border:1px solid #d6e0e3}.pdf-meta div{min-width:0;padding:2.4mm 2.7mm;border-right:1px solid #d6e0e3}.pdf-meta div:last-child{border-right:0}.pdf-meta span,.metric span{display:block;color:#647981;font-size:6.8pt;font-weight:800;text-transform:uppercase}.pdf-meta strong{display:block;margin-top:1mm;font-size:8.2pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
       ".pdf-summary{display:grid;grid-template-columns:1.1fr .9fr;gap:4mm}.type-panel,.score-panel,.pdf-card{border:1px solid #d6e0e3;background:#fff;padding:3.5mm}.type-panel{border-left:3mm solid #148589}.type-panel .badge{color:#0d696c;font-size:7.5pt;font-weight:900}.type-panel h2{margin:1.2mm 0 1mm;font-size:16pt}.type-panel p{margin:0;color:#52676f;font-size:8pt;line-height:1.5}.score-row{display:flex;justify-content:space-between;align-items:flex-end}.score-label{color:#60767d;font-size:7.5pt;font-weight:800}.score-value{color:#d45b38;font-size:24pt;font-weight:950;line-height:1}.score-value small{font-size:9pt}.score-coverage-note{margin:1.3mm 0 0;color:#795300;font-size:7.5pt;font-weight:800}.gauge{position:relative;height:4mm;margin-top:2.5mm;background:linear-gradient(90deg,#188b91 0 33.33%,#e5ad3c 33.33% 66.67%,#d85d39 66.67%);border-radius:2mm}.gauge:after{content:'';position:absolute;left:var(--score);top:-1.4mm;width:1.4mm;height:6.8mm;background:#172f38;transform:translateX(-50%)}.gauge.is-unscored:after{display:none}.gauge-scale{display:flex;justify-content:space-between;margin-top:1mm;color:#657980;font-size:6.4pt;font-weight:800}",
       ".metrics{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #d6e0e3}.metric{padding:2.4mm 3mm;border-right:1px solid #d6e0e3}.metric:last-child{border-right:0}.metric strong{display:block;margin-top:1mm;color:#173f47;font-size:10pt}",
-      ".pdf-main{display:grid;grid-template-columns:.9fr 1.1fr;gap:4mm}.pdf-card h3{margin:0 0 2.2mm;color:#183e47;font-size:9.5pt}.chart-summary{margin-bottom:2mm}.chart-summary strong{color:#97422c;font-size:8.3pt}.distribution-chart{display:block;width:100%;height:27mm;border-bottom:1px solid #9fb0b6}.distribution-grid{stroke:#e3eaec;stroke-width:.45}.distribution-area{fill:#dceff0}.distribution-line{fill:none;stroke:#148589;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}.distribution-guide{stroke:#d45b38;stroke-width:1;stroke-dasharray:2 1.5}.distribution-marker{fill:#fff;stroke:#d45b38;stroke-width:1.6}.chart-axis{display:flex;justify-content:space-between;margin-top:1mm;color:#6a7d84;font-size:6pt}.layer-list{display:grid;gap:2mm}.layer{display:grid;grid-template-columns:24mm 12mm 1fr;gap:2mm;align-items:center;font-size:7pt}.layer strong{text-align:right}.layer-track{height:2mm;background:#e8edef}.layer-track i{display:block;height:100%;background:#148589}.layer:nth-child(2) .layer-track i{background:#dfa936}.layer:nth-child(3) .layer-track i{background:#3a78a0}",
+      ".pdf-main{display:grid;grid-template-columns:.9fr 1.1fr;gap:4mm}.pdf-card h3{margin:0 0 2.2mm;color:#183e47;font-size:9.5pt}.chart-summary{margin-bottom:2mm}.chart-summary strong{color:#97422c;font-size:8.3pt}.distribution-chart{display:block;width:100%;height:27mm;border-bottom:1px solid #9fb0b6}.chart-axis{display:flex;justify-content:space-between;margin-top:1mm;color:#6a7d84;font-size:6pt}.layer-list{display:grid;gap:2mm}.layer{display:grid;grid-template-columns:24mm 12mm 1fr;gap:2mm;align-items:center;font-size:7pt}.layer strong{text-align:right}.layer-track{height:2mm;background:#e8edef}.layer-track i{display:block;height:100%;background:#148589}.layer:nth-child(2) .layer-track i{background:#dfa936}.layer:nth-child(3) .layer-track i{background:#3a78a0}",
       "table{width:100%;border-collapse:collapse;font-size:7pt}th{padding:1.6mm;text-align:left;color:#587078;background:#eef4f5;border-bottom:1px solid #cbd8dc}td{padding:1.5mm;border-bottom:1px solid #e2e9eb}td small{display:block;margin-top:.5mm;color:#71848b;font-size:5.8pt}tbody tr:last-child td{border-bottom:0}",
       ".pdf-content{display:grid;grid-template-columns:1fr 1fr;gap:4mm}.interpretation{border-left:2mm solid #d45b38}.interpretation h3,.guide h3{margin:0 0 1.5mm;color:#183e47;font-size:9.5pt}.interpretation strong{display:block;margin-bottom:1mm;font-size:8.2pt}.interpretation p{margin:0;color:#4f646c;font-size:7pt;line-height:1.45;white-space:pre-line}.guide ul{margin:0;padding-left:4mm}.guide li{margin:0 0 1mm;color:#4f646c;font-size:6.8pt;line-height:1.35}.guide li:last-child{margin-bottom:0}",
       ".pdf-footer{margin-top:auto;padding-top:3mm;border-top:1px solid #cfdadd;display:grid;grid-template-columns:1fr auto;gap:5mm;align-items:end}.notice strong{display:block;margin-bottom:1mm;color:#173f47;font-size:7pt}.notice p{margin:0;color:#687b82;font-size:6.2pt;line-height:1.45}.footer-mark{text-align:right;color:#6c7f86;font-size:6pt;white-space:nowrap}.footer-mark strong{display:block;color:#173f47;font-size:7pt}",
       "@media print{html,body{width:210mm;height:auto;background:#fff}body{padding:0}.pdf-controls{display:none}.pdf-sheet{margin:0;box-shadow:none;page-break-after:avoid}.pdf-summary,.pdf-main,.pdf-content,.pdf-footer{break-inside:avoid}}",
+      forArchive ? "body{padding:0}.pdf-sheet{margin:0;box-shadow:none}.pdf-meta strong{white-space:normal;word-break:keep-all;overflow-wrap:anywhere}" : "",
       "</style></head><body>",
-      "<div class=\"pdf-controls\"><button onclick=\"window.close()\">닫기</button><button class=\"primary\" onclick=\"window.print()\">PDF로 저장</button></div>",
+      forArchive ? "" : "<div class=\"pdf-controls\"><button onclick=\"window.close()\">닫기</button><button class=\"primary\" onclick=\"window.print()\">PDF로 저장</button></div>",
       "<main class=\"pdf-sheet\" style=\"--score:", hasScore ? result.score : 0, "%\">",
       "<header class=\"pdf-header\"><div class=\"pdf-brand\"><img src=\"", escapeHtml(logoUrl), "\" alt=\"Caffeine Atlas\"><p>Evidence-based caffeine response interpretation</p></div><div class=\"pdf-title\"><h1>Caffeine Atlas Report</h1><p>", escapeHtml(data.generatedAt), "</p></div></header>",
       "<section class=\"pdf-meta\"><div><span>Sample ID</span><strong>", escapeHtml(info.sampleId), "</strong></div><div><span>Report date</span><strong>", escapeHtml(info.reportDate), "</strong></div><div><span>Collection</span><strong>", escapeHtml(formatCollectionDate(info.collectionDate)), "</strong></div><div><span>Specimen / Sex</span><strong>", escapeHtml(info.sampleType), " / ", escapeHtml(info.sex), "</strong></div><div><span>Institution</span><strong>", escapeHtml(info.institution), "</strong></div></section>",
@@ -2013,7 +2020,9 @@
       "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>Score</th></tr></thead><tbody>", genotypeRows, "</tbody></table></div></section>",
       "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3><strong>", escapeHtml(result.title), "</strong><p>", escapeHtml(result.interpretation), "</p></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드</h3><ul>", recommendations, "</ul></div></section>",
       "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.concat(REFERENCE_SOURCE_NOTE).join(" ")), "</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
-      "</main><script>window.addEventListener('load',function(){if(navigator.webdriver)return;var ready=document.fonts?document.fonts.ready:Promise.resolve();ready.then(function(){setTimeout(function(){window.print()},350)})});<\/script></body></html>"
+      "</main>",
+      forArchive ? "" : "<script>window.addEventListener('load',function(){if(navigator.webdriver)return;var ready=document.fonts?document.fonts.ready:Promise.resolve();ready.then(function(){setTimeout(function(){window.print()},350)})});<\/script>",
+      "</body></html>"
     ].join("");
   }
 
@@ -2046,6 +2055,48 @@
     }
     // Use this row's immutable report data, never the single-person form state.
     openPdfReport(record.reportData);
+  }
+
+  async function downloadBatchPdfZip() {
+    if (batchBusy) return;
+    var records = batchResults.filter(function (record) { return record.reportData; });
+    if (!records.length) return;
+
+    var button = elements.batchPdfZipBtn;
+    var label = button.textContent;
+    setBatchBusy(true);
+    button.textContent = "PDF 준비 중…";
+    setBatchStatus("대상자 " + records.length + "명의 PDF를 준비하고 있습니다.");
+
+    try {
+      var files = records.map(function (record) {
+        var info = record.reportData.reportInfo;
+        var row = String(record.rowNumber).padStart(3, "0");
+        var sample = safeFilePart(info.sampleId).slice(0, 60);
+        return {
+          filename: row + "-Caffeine-Atlas-Report-" + sample + "-" + safeFilePart(info.reportDate) + ".pdf",
+          title: "Caffeine Atlas Report - " + info.sampleId,
+          report: record.reportData
+        };
+      });
+      var zip = await window.buildBatchPdfZip(files, function (report) {
+        return buildPdfReportHtml(report, true);
+      }, function (completed) {
+        var progress = completed === files.length ? "ZIP 파일 만드는 중…" : "PDF 생성 중 " + completed + "/" + files.length;
+        button.textContent = progress;
+        setBatchStatus(progress);
+      });
+      var timestamp = getKoreaDateTimeString().replace(/[^0-9]/g, "").slice(0, 14);
+      downloadBlob("Caffeine-Atlas-Batch-PDF-" + timestamp + ".zip", zip);
+      var excluded = batchResults.length - files.length;
+      setBatchStatus("PDF " + files.length + "개가 담긴 ZIP 다운로드를 요청했습니다." +
+        (excluded ? " 입력 오류 " + excluded + "행은 제외했습니다." : ""), "success");
+    } catch {
+      setBatchStatus("PDF ZIP을 만들지 못했습니다. 잠시 후 ‘PDF 일괄 다운로드 (ZIP)’을 다시 선택해 주세요.", "error");
+    } finally {
+      button.textContent = label;
+      setBatchBusy(false);
+    }
   }
 
   function bindEvents() {
@@ -2082,6 +2133,7 @@
     elements.batchAnalyzeSaveBtn.addEventListener("click", processBatchUpload);
     elements.batchAnalyzeBtn.addEventListener("click", processLocalBatchUpload);
     elements.batchDownloadBtn.addEventListener("click", downloadBatchResults);
+    elements.batchPdfZipBtn.addEventListener("click", downloadBatchPdfZip);
     elements.batchResultsBody.addEventListener("click", function (event) {
       var button = event.target.closest("[data-batch-pdf-row]");
       if (!button || button.disabled) return;

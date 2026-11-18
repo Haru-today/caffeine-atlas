@@ -3041,6 +3041,8 @@ body { line-height: 1.6; }
 .batch-actions { display: grid; gap: 8px; min-width: 0; }
 .batch-actions .tool-button { min-height: 44px; }
 .batch-results-head, .batch-submit-panel { flex-wrap: wrap; }
+.batch-download-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.batch-download-actions .tool-button { flex: 1 1 auto; }
 .batch-file-field small, .batch-file-summary strong { overflow-wrap: anywhere; }
 .batch-results .tool-button { min-height: 44px; }
 .batch-table td { overflow-wrap: anywhere; max-width: 300px; }

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>리포트 생성 | Caffeine Atlas</title>
-  <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=report-review-20261118">
+  <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=report-review-20261118-batch-pdf-zip">
 </head>
 <body class="public-demo">
   <div class="app-shell">
@@ -202,7 +202,7 @@
           <div class="submit-panel batch-submit-panel">
             <div>
               <strong>일괄 처리 준비 상태</strong>
-              <p id="batchStatus" role="status" aria-live="polite">양식을 작성한 뒤 파일을 선택하세요. 분석 후 정상 결과와 입력 오류를 함께 내려받을 수 있습니다. 새로고침하면 파일을 다시 선택해야 합니다.</p>
+              <p id="batchStatus" role="status" aria-live="polite">파일을 선택해 일괄 분석한 뒤 PDF 또는 결과 엑셀을 저장하세요. 새로고침하면 파일을 다시 선택해야 합니다.</p>
             </div>
             <div class="batch-actions">
               <button class="tool-button ghost" id="batchClearBtn" type="button" disabled>파일·결과 비우기</button>
@@ -220,7 +220,10 @@
                 <h3>일괄 처리 결과</h3>
               </div>
               <div class="batch-result-counts" id="batchResultCounts"></div>
-              <button class="tool-button primary" id="batchDownloadBtn" type="button" disabled>결과 엑셀 다운로드</button>
+              <div class="batch-download-actions">
+                <button class="tool-button primary" id="batchPdfZipBtn" type="button" disabled>PDF 일괄 다운로드 (ZIP)</button>
+                <button class="tool-button ghost" id="batchDownloadBtn" type="button" disabled>결과 엑셀 다운로드</button>
+              </div>
             </div>
             <div class="batch-table-wrap" tabindex="0" role="region" aria-label="일괄 처리 결과표">
               <table class="batch-table">
@@ -239,7 +242,7 @@
                 <tbody id="batchResultsBody"></tbody>
               </table>
             </div>
-            <p class="batch-pdf-help">각 Sample ID 아래의 ‘PDF 저장’을 누른 뒤 인쇄 화면에서 ‘PDF로 저장’을 선택하세요. 입력 오류가 있는 행은 먼저 수정해야 하며, ‘판정 보류’ 리포트에는 점수를 표시하지 않습니다.</p>
+            <p class="batch-pdf-help">ZIP에는 대상자별 PDF가 한 파일씩 들어갑니다. 판정 보류 리포트는 포함되며 입력 오류 행은 제외됩니다. 한 명씩 받으려면 Sample ID 아래의 ‘개별 PDF 저장’을 선택하세요.</p>
             <p class="sync-status" id="batchSheetStatus">분석 결과는 이 브라우저에서만 처리됩니다. 결과 엑셀은 직접 내려받아 보관하세요.</p>
           </div>
         </section>
@@ -409,6 +412,7 @@
 
   <nav class="policy-links" aria-label="이용 정책" style="text-align:center;margin:12px auto 24px;font-size:.9rem;"><p class="policy-links"><a href="https://haru-today.github.io/caffeine-atlas/privacy.html">개인정보 처리 안내</a> · <a href="https://haru-today.github.io/caffeine-atlas/terms.html">서비스 이용 안내</a></p></nav>
   <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
-  <script src="./app.js?v=report-review-20261118"></script>
+  <script src="./batch-pdf.js?v=20261118"></script>
+  <script src="./app.js?v=report-review-20261118-batch-pdf-zip"></script>
 </body>
 </html>

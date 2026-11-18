@@ -4,6 +4,8 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const XLSX = require("../caffeine-sensitivity-app/vendor/xlsx.full.min.js");
+const JSZip = require("../caffeine-sensitivity-app/vendor/jszip.min.js");
+const { PDFDocument, PageSizes } = require("../caffeine-sensitivity-app/vendor/pdf-lib.min.js");
 
 const base = process.env.CAFFEINE_TEST_BASE_URL || "http://127.0.0.1:8765";
 const artifacts = process.env.CAFFEINE_TEST_ARTIFACTS_DIR || path.join(process.cwd(), "test-artifacts");
@@ -202,19 +204,27 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     }
     const templateBook = XLSX.read(templateBytes, { type: "buffer" });
     assert.ok(templateBook.Sheets["일괄 입력"]);
-    XLSX.utils.sheet_add_aoa(templateBook.Sheets["일괄 입력"], [
+    const subjects = [
       ["0001", "2026-11-08", "2026-11-07", "구강상피세포", "미기재", "AA", "GG", "CC", "AT"],
       ["PDF-SECOND", "2026-11-09", "2026-11-07", "타액", "미기재", "CC", "AG", "TT", "TT"],
-      ["PDF-HOLD", "2026-11-08", "", "구강상피세포", "미기재", "모름", "GG", "CC", "AT"],
+      ["PDF-HOLD", "2026-11-08", "", "구강상피세포", "미기재", "모름", "GG", "CC", "AT"]
+    ];
+    if (viewport.width > 760) {
+      for (let index = 0; index < 47; index++) {
+        const sampleId = ["검체/A", "검체?A"][index] || "ZIP-SAMPLE-" + (index + 1);
+        subjects.push([sampleId, "2026-11-09", "", "타액", "미기재", "AC", "AG", "CT", "AT"]);
+      }
+    }
+    XLSX.utils.sheet_add_aoa(templateBook.Sheets["일괄 입력"], subjects.concat([
       ["DEMO-ERROR", "2026-11-08", "", "구강상피세포", "미기재", "AA", "GG", "CC", "GG"]
-    ], { origin: "A3" });
+    ]), { origin: "A3" });
     await page.locator("#batchFile").setInputFiles({
       name: "fictional-batch.xlsx",
       mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       buffer: Buffer.from(XLSX.write(templateBook, { type: "buffer", bookType: "xlsx" }))
     });
     await page.locator("#batchAnalyzeBtn").click();
-    await page.waitForFunction(() => document.querySelectorAll("#batchResultsBody tr").length === 4);
+    await page.waitForFunction(count => document.querySelectorAll("#batchResultsBody tr").length === count, subjects.length + 1);
     assert.match(await page.locator("#batchResultsBody").textContent(), /0001/);
     assert.match(await page.locator("#batchResultsBody").textContent(), /DEMO-ERROR/);
     assert.equal(await page.locator("#batchDownloadBtn").isEnabled(), true);
@@ -238,6 +248,29 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       await pdf.close();
     }
     assert.equal(await page.getByRole("button", { name: "DEMO-ERROR PDF 저장 화면 열기", exact: true }).isEnabled(), false);
+    const zipButton = page.locator("#batchPdfZipBtn");
+    assert.equal(await zipButton.isEnabled(), true);
+    const tabCount = context.pages().length;
+    const zipWait = page.waitForEvent("download", { timeout: 120000 });
+    await zipButton.click();
+    const zipDownload = await zipWait;
+    assert.match(zipDownload.suggestedFilename(), /^Caffeine-Atlas-Batch-PDF-\d+\.zip$/);
+    assert.equal(context.pages().length, tabCount, "ZIP export must not open tabs");
+    const zip = await JSZip.loadAsync(fs.readFileSync(await zipDownload.path()), { checkCRC32: true });
+    assert.equal(Object.keys(zip.files).length, subjects.length);
+    const titles = [];
+    for (const entry of Object.values(zip.files)) {
+      assert.match(entry.name, /\.pdf$/);
+      assert.doesNotMatch(entry.name, /DEMO-ERROR/);
+      const doc = await PDFDocument.load(await entry.async("uint8array"));
+      assert.equal(doc.getPageCount(), 1);
+      assert.deepEqual([doc.getPage(0).getWidth(), doc.getPage(0).getHeight()], PageSizes.A4);
+      titles.push(doc.getTitle());
+    }
+    assert.deepEqual(titles, subjects.map(([sampleId]) => "Caffeine Atlas Report - " + sampleId));
+    assert.equal(await zipButton.isEnabled(), true);
+    assert.equal(await page.locator('iframe[aria-hidden="true"]').count(), 0);
+
     const batchDownloadWait = page.waitForEvent("download");
     await page.locator("#batchDownloadBtn").click();
     const batchDownload = await batchDownloadWait;
@@ -245,7 +278,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     const resultBook = XLSX.read(fs.readFileSync(await batchDownload.path()), { type: "buffer" });
     for (const sheetName of ["분석 결과", "입력 오류", "해석 안내"]) assert.ok(resultBook.Sheets[sheetName], sheetName);
     const rows = XLSX.utils.sheet_to_json(resultBook.Sheets["분석 결과"], { header: 1, defval: "" });
-    assert.equal(rows.length, 5);
+    assert.equal(rows.length, subjects.length + 2);
     assert.ok(rows.some(row => row.includes("0001")), "leading-zero Sample ID must survive download");
     assert.match(JSON.stringify(XLSX.utils.sheet_to_json(resultBook.Sheets["입력 오류"], { header: 1 })), /DEMO-ERROR/);
 
@@ -263,10 +296,12 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       buffer: Buffer.from(XLSX.write(invalidBook, { type: "buffer", bookType: "xlsx" }))
     });
     assert.equal(await page.locator("#batchDownloadBtn").isEnabled(), false);
+    assert.equal(await zipButton.isEnabled(), false);
     await page.locator("#batchAnalyzeBtn").click();
     await page.waitForFunction(() => document.getElementById("batchStatus").classList.contains("error"));
     assert.equal(await page.locator("#batchResults").isVisible(), false);
     assert.equal(await page.locator("#batchDownloadBtn").isEnabled(), false);
+    assert.equal(await zipButton.isEnabled(), false);
     await page.locator("#batchClearBtn").click();
     assert.equal(await page.locator("#batchFile").evaluate(input => input.files.length), 0);
     assert.equal(await page.locator("#batchResultsBody").textContent(), "");
