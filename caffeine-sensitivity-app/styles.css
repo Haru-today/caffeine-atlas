@@ -1261,7 +1261,7 @@ a {
 
 .result-detail-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-top: 12px;
 }
@@ -1352,6 +1352,21 @@ a {
   color: #263347;
   font-size: 18px;
   font-weight: 900;
+}
+
+.score-coverage-note {
+  margin: -8px 0 12px;
+  color: #795300;
+  font-size: .84rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.batch-table .score-coverage-note {
+  display: block;
+  margin: 4px 0 0;
+  text-align: left;
 }
 
 .gauge-track {
@@ -1484,12 +1499,6 @@ a {
   color: var(--teal-dark);
   font-size: 15px;
   font-weight: 950;
-}
-
-.chart-position span {
-  color: var(--teal-dark);
-  font-size: 12px;
-  font-weight: 900;
 }
 
 .chart-card canvas {

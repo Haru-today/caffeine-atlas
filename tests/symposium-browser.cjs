@@ -91,6 +91,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     await cta.click();
     await page.waitForURL(/\/caffeine-sensitivity-app\/analyzer\.html$/);
     assert.equal(await page.locator("body.public-demo").count(), 1);
+    assert.equal(await page.locator("#collectionDate").inputValue(), "");
 
     assert.equal(await page.locator(".public-demo-notice").isVisible(), true);
     assert.equal(await page.locator("#sheetSaveBtn").isVisible(), false);
@@ -111,14 +112,18 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       assert.equal(await page.locator('[data-gene="' + gene + '"][data-genotype="' + genotype + '"]').getAttribute("aria-pressed"), "true", gene);
     }
     assert.equal(await page.locator("#resultReport").isVisible(), true);
-    assert.match(await page.locator("#referenceRankText").textContent(), /참조자료 대비 순서/);
+    assert.equal(await page.locator("#referencePositionText").textContent(), "낮은 점수부터 누적 4.8%");
+    assert.match(await page.locator("#reportMeta").textContent(), /Collection date: 미기재/);
+    assert.equal(await page.locator("#scoreCoverageNote").isVisible(), false);
     assert.equal(await page.locator(".chart-card .reference-scope-note").isVisible(), true);
     assert.equal(await page.locator(".layer-stack .reference-scope-note").isVisible(), true);
     assert.match(await page.locator(".layer-stack").textContent(), /입력 완성도/);
 
     // Shared-event-device hygiene: previous demo inputs must be removable.
     await page.locator("#editBtn").click();
+    await page.locator("#collectionDate").fill("2026-11-07");
     await page.locator("#resetBtn").click();
+    assert.equal(await page.locator("#collectionDate").inputValue(), "");
     assert.equal(await page.locator("#sampleId").inputValue(), "");
     assert.equal(await page.locator(".gt-button.active").count(), 0);
     assert.equal(await page.locator('.gt-button[aria-pressed="true"]').count(), 0);
@@ -152,9 +157,24 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.match(content, /DEMO-001/);
     assert.match(content, /rs6968865|AHR/);
     assert.match(content, /연구 참조분포/);
-    assert.match(content, /전체 한국인 인구를 대표하는 임상 검증 순위/);
+    assert.match(content, /낮은 점수부터 누적 4\.8%/);
+    assert.match(content, /내부 참조표준 SNP 유전형 자료/);
+    assert.doesNotMatch(content, /95\/100/);
     assert.match(content, /SNP coverage/);
     await popup.close();
+
+    await page.locator("#editBtn").click();
+    await page.locator('[data-gene="rs6968865"][data-genotype="unknown"]').click();
+    await page.locator("#analyzeBtn").click();
+    assert.equal(await page.locator("#scoreCoverageNote").textContent(), "제한적 결과 · 3/4 SNP 확인");
+
+    await page.locator("#editBtn").click();
+    await page.locator('[data-gene="rs6968865"][data-genotype="AT"]').click();
+    await page.locator('[data-gene="rs762551"][data-genotype="unknown"]').click();
+    await page.locator("#analyzeBtn").click();
+    assert.equal(await page.locator("#referencePositionText").textContent(), "핵심 SNP 미확인으로 참조 위치 산출 보류");
+    assert.match(await page.locator("#detailInputQuality").textContent(), /확인 3개/);
+    assert.equal(await page.locator("#scoreCoverageNote").isVisible(), false);
 
     // Local batch processing must work on the public QR URL with no Sheets consent.
     await page.locator("#editBtn").click();

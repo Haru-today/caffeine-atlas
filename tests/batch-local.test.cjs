@@ -73,19 +73,26 @@ test("each batch PDF uses its own ID, dates, genotypes and held result", async (
   const second = row("PDF-SECOND", ["CC", "AG", "TT", "TT"]);
   second[1] = "2026-11-09";
   flow.choose(file(workbook([
-    row("PDF-FIRST"), second, row("PDF-HOLD", ["모름", "GG", "CC", "AT"])
+    row("PDF-FIRST"), second, row("PDF-HOLD", ["모름", "GG", "CC", "AT"]),
+    row("PDF-PARTIAL", ["AC", "GG", "CC", "모름"])
   ])));
   await flow.run();
   flow.pdf(2);
   flow.pdf(3);
   flow.pdf(4);
-  assert.equal(flow.popups.length, 3);
+  flow.pdf(5);
+  assert.equal(flow.popups.length, 4);
   assert.match(flow.popups[0], /<title>Caffeine-Atlas-Report-PDF-FIRST-2026-11-08<\/title>/);
   assert.doesNotMatch(flow.popups[0], /PDF-SECOND|PDF-HOLD/);
   assert.match(flow.popups[1], /<title>Caffeine-Atlas-Report-PDF-SECOND-2026-11-09<\/title>/);
   assert.doesNotMatch(flow.popups[1], /PDF-FIRST|PDF-HOLD/);
   assert.match(flow.popups[1], /<td>CC<\/td>/);
+  assert.match(flow.popups[0], /낮은 점수부터 누적 4\.8%/);
+  assert.doesNotMatch(flow.popups[0], /95\/100/);
   assert.match(flow.popups[2], /gauge is-unscored/);
+  assert.match(flow.popups[2], /핵심 SNP 미확인으로 참조 위치 산출 보류/);
+  assert.match(flow.popups[3], /28\.7.*제한적 결과 · 3\/4 SNP 확인/);
+  assert.match(flow.element("batchResultsBody").innerHTML, /28\.7점<small class="score-coverage-note">제한적 결과 · 3\/4 SNP 확인/);
   assert.doesNotMatch(flow.popups[2], /<circle class="distribution-marker"/);
   assert.equal(flow.networkCalls(), 0);
 });
@@ -304,14 +311,21 @@ test("only supported allele separators and enumerated metadata values are accept
 
 test("download workbook retains every row, source values, errors and safe text cells", async () => {
   const bad = row("INVALID-ALLELE", ["GG", "GG", "CC", "AT"]);
+  const partial = row("PARTIAL", ["AC", "GG", "CC", "모름"]);
+  partial[2] = "";
   const records = (await app.parseBatchWorkbook(file(workbook([
     row("=HYPERLINK(\"https://example.invalid\")"), bad,
-    row("NO-CORE", ["모름", "GG", "CC", "AT"])
+    row("NO-CORE", ["모름", "GG", "CC", "AT"]), partial
   ])))).map(app.analyzeBatchRow);
   const exported = app.buildBatchResultWorkbook(records);
   for (const sheetName of ["분석 결과", "입력 오류", "해석 안내"]) assert.ok(exported.Sheets[sheetName], sheetName);
   const resultRows = toRows(exported.Sheets["분석 결과"]);
   assert.equal(resultRows.length, records.length + 1, "each uploaded row must be represented");
+  const partialOutput = resultRows.find(row => row[1] === "PARTIAL");
+  assert.equal(partialOutput[4], "미기재");
+  assert.equal(partialOutput[11], 28.7);
+  assert.equal(partialOutput[21], "제한적 결과 · 3/4 SNP 확인");
+  assert.match(JSON.stringify(toRows(exported.Sheets["해석 안내"])), /내부 참조표준 SNP 유전형 자료/);
   const flattened = JSON.stringify(resultRows);
   for (const id of records.map(record => record.sampleId)) assert.ok(resultRows.some(row => row.includes(id)), id);
   assert.match(flattened, /GG/);

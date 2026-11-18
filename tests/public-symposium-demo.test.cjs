@@ -84,16 +84,14 @@ test("one-tap example is explicitly fictional and does not enable research uploa
   assert.match(source, /if \(!RESEARCH_STORAGE_MODE\)\s*\{\s*\/\/ Important for a shared symposium demo device/);
 });
 
-test("research reference distribution is not falsely labeled arbitrary or nationwide validated", () => {
-  assert.match(analyzer, /Research reference data/);
+test("reference position uses one cumulative direction and names the internal source", () => {
   assert.match(analyzer, /연구 참조분포에서의 위치/);
-  assert.match(analyzer, /연구에서 확보한 검사결과를 참고해 구성한 7개 점수 구간/);
-  assert.match(analyzer, /전체 인구의 대표 순위나 임상적 카페인 민감도 진단을 뜻하지 않습니다/);
-  assert.doesNotMatch(analyzer, /KPGP PRS distribution|비슷한 사람들 중 위치|임의 구간/);
-  assert.doesNotMatch(source, /대한민국 평균 100명 중|7개의 임의 예시 구간|임의 7구간|예시 분포/);
-  assert.match(source, /ctx\.fillText\("연구 참조분포", 0, 0\)/);
-  assert.match(source, /참조자료 대비 순서/);
-  assert.match(source, /전체 인구를 대표하거나 임상적으로 검증된 민감도 순위는 아닙니다/);
+  assert.match(analyzer, /caffeine_model_evidence_pack\.md/);
+  assert.match(source, /내부 참조표준 SNP 유전형 자료/);
+  assert.match(source, /참조 표본 수와 구간 가중치의 원자료 대조는 확인이 필요합니다/);
+  assert.match(source, /낮은 점수부터 누적/);
+  assert.match(source, /핵심 SNP 미확인으로 참조 위치 산출 보류/);
+  assert.doesNotMatch(source, /참조자료 대비 순서|확인된 유전자형 없음/);
   assert.match(landing, /실제 인구집단의 백분위나 개인별 안전 섭취량은 아닙니다/);
 });
 
