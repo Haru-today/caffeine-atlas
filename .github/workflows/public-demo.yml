@@ -16,6 +16,7 @@ on:
       - 'index.html'
       - 'tests/**'
       - '.github/workflows/public-demo.yml'
+      - '.github/workflows/public-demo.yml'
 
 permissions:
   contents: read
@@ -44,7 +45,8 @@ jobs:
 
   browser-qr-demo:
     needs: public-qr-demo
-    runs-on: ubuntu-latest
+    # Playwright 1.56 provides Chromium and WebKit builds for Ubuntu 24.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
