@@ -325,6 +325,7 @@ test("download workbook retains every row, source values, errors and safe text c
   assert.equal(partialOutput[4], "미기재");
   assert.equal(partialOutput[11], 28.7);
   assert.equal(partialOutput[21], "제한적 결과 · 3/4 SNP 확인");
+  assert.deepEqual(partialOutput.slice(24), [28.7, 42.5, "각성형 / 잠잠형", 3]);
   assert.match(JSON.stringify(toRows(exported.Sheets["해석 안내"])), /내부 참조표준 SNP 유전형 자료/);
   const flattened = JSON.stringify(resultRows);
   for (const id of records.map(record => record.sampleId)) assert.ok(resultRows.some(row => row.includes(id)), id);
@@ -347,6 +348,27 @@ test("all 256 combinations produce finite bounded scores or an explicit core-mar
       if (selections.rs762551.code === "unknown") assert.equal(result.score, null);
       else assert.ok(Number.isFinite(result.score) && result.score >= 0 && result.score <= 100);
       assert.equal(result.valid.length * 25, result.confidence);
+      const missing = app.genes.length - result.valid.length;
+      if (missing === 0 || missing === 4) {
+        assert.equal(result.sensitivity, null);
+      } else {
+        const scenario = result.sensitivity;
+        assert.equal(scenario.cases.length, 3 ** missing);
+        assert.equal(scenario.minimum, scenario.cases[0].score);
+        assert.equal(scenario.maximum, scenario.cases.at(-1).score);
+        for (const entry of scenario.cases) {
+          const completed = { ...selections };
+          for (const pair of entry.genotypes.split(" · ")) {
+            const [rsid, code] = pair.split(" ");
+            assert.equal(selections[rsid].code, "unknown");
+            completed[rsid] = app.genes.find(gene => gene.id === rsid)
+              .genotypes.find(genotype => genotype.code === code);
+          }
+          const completedResult = app.buildComputedResult(completed);
+          assert.ok(Math.abs(entry.score - completedResult.score) < 1e-9);
+          assert.equal(entry.category, completedResult.category.label);
+        }
+      }
       count++;
       return;
     }

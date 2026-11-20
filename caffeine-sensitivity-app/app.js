@@ -87,6 +87,8 @@
     rs6968865: 0.46
   };
 
+  var TYPE_THRESHOLDS = [33.34, 66.67];
+
   var referenceBins = [
     { raw: -0.5, level: 1 },
     { raw: -0.25, level: 3 },
@@ -174,6 +176,10 @@
     scoreLabel: document.getElementById("scoreLabel"),
     scoreCoverageNote: document.getElementById("scoreCoverageNote"),
     coverageText: document.getElementById("coverageText"),
+    scorePosition: document.getElementById("scorePosition"),
+    scenarioDetails: document.getElementById("scenarioDetails"),
+    scenarioSummary: document.getElementById("scenarioSummary"),
+    scenarioRows: document.getElementById("scenarioRows"),
     gaugeFill: document.getElementById("gaugeFill"),
     gaugeMarker: document.getElementById("gaugeMarker"),
     metabolismScore: document.getElementById("metabolismScore"),
@@ -365,6 +371,50 @@
     }).length;
   }
 
+  function simulateMissingGenotypes(valid) {
+    var observed = new Set(valid.map(function (item) { return item.gene.id; }));
+    var missing = genes.filter(function (gene) { return !observed.has(gene.id); });
+    if (!valid.length || !missing.length) return null;
+
+    var cases = missing.reduce(function (partials, gene) {
+      var possible = gene.genotypes.filter(function (genotype) { return genotype.evidenceScore !== null; });
+      return partials.flatMap(function (partial) {
+        return possible.map(function (genotype) {
+          return partial.concat({ gene: gene, genotype: genotype });
+        });
+      });
+    }, [[]]).map(function (assumed) {
+      var model = computeEvidenceModel(valid.concat(assumed));
+      var score = clamp(model.finalNorm * 100, 0, 100);
+      return {
+        genotypes: assumed.map(function (item) { return item.gene.rsid + " " + item.genotype.code; }).join(" · "),
+        score: score,
+        category: classify(score).label
+      };
+    }).sort(function (a, b) { return a.score - b.score; });
+
+    return {
+      cases: cases,
+      minimum: cases[0].score,
+      maximum: cases[cases.length - 1].score,
+      categories: Array.from(new Set(cases.map(function (item) { return item.category; })))
+    };
+  }
+
+  function formatScenarioSummary(sensitivity) {
+    return sensitivity.minimum.toFixed(1) + "–" + sensitivity.maximum.toFixed(1) +
+      "점 · " + sensitivity.cases.length + "개 조합 · " + sensitivity.categories.join(" / ");
+  }
+
+  function describeTypePosition(score) {
+    var lower = TYPE_THRESHOLDS[0];
+    var upper = TYPE_THRESHOLDS[1];
+    if (score < lower) return "잠잠형 경계까지 " + (lower - score).toFixed(2) + "점";
+    if (score >= upper) return "잠잠형과의 경계보다 " + (score - upper).toFixed(2) + "점 높음";
+    return "각성형과의 경계보다 " + (score - lower).toFixed(2) + "점 높음 · 잠꾸러기형 경계까지 " +
+      (upper - score).toFixed(2) + "점";
+  }
+
   function buildComputedResult(selectionMap) {
     var valid = getValidSelectionsFor(selectionMap);
     var unknownCount = getUnknownCountFor(selectionMap);
@@ -397,6 +447,8 @@
       percentile: percentile.percentile,
       sensitivityRank: sensitivityRank,
       confidence: confidence,
+      sensitivity: simulateMissingGenotypes(valid),
+      typePosition: hasScore ? describeTypePosition(score) : "",
       coverageLabel: coverageLabel,
       category: category,
       typeDescription: coverageNote ? category.desc + " " + coverageNote : category.desc,
@@ -428,7 +480,7 @@
   }
 
   function classify(score) {
-    if (score < 33.34) {
+    if (score < TYPE_THRESHOLDS[0]) {
       return {
         label: "각성형",
         badge: "민감도 지수 낮음",
@@ -444,7 +496,7 @@
         ]
       };
     }
-    if (score < 66.67) {
+    if (score < TYPE_THRESHOLDS[1]) {
       return {
         label: "잠잠형",
         badge: "민감도 지수 중간",
@@ -689,6 +741,7 @@
     elements.scoreLabel.textContent = hasScore ? category.label : "산출 없음";
     elements.scoreCoverageNote.textContent = coverageLabel;
     elements.scoreCoverageNote.hidden = !coverageLabel;
+    renderScoreDetails(lastResult);
     elements.typeEmoji.textContent = category.emoji;
     elements.typeBadge.textContent = category.badge;
     elements.typeName.textContent = category.label;
@@ -731,11 +784,25 @@
     barElement.style.width = value.toFixed(2) + "%";
   }
 
+  function renderScoreDetails(result) {
+    var sensitivity = result && result.sensitivity;
+    elements.scorePosition.textContent = result ? result.typePosition : "";
+    elements.scorePosition.hidden = !elements.scorePosition.textContent;
+    elements.scenarioDetails.hidden = !sensitivity;
+    elements.scenarioDetails.open = Boolean(sensitivity);
+    elements.scenarioSummary.textContent = sensitivity ? formatScenarioSummary(sensitivity) : "";
+    elements.scenarioRows.innerHTML = sensitivity ? sensitivity.cases.map(function (item) {
+      return "<tr><td>" + escapeHtml(item.genotypes) + "</td><td>" + item.score.toFixed(1) +
+        "</td><td>" + escapeHtml(item.category) + "</td></tr>";
+    }).join("") : "";
+  }
+
   function renderEmpty() {
     elements.scoreValue.textContent = "--";
     elements.scoreLabel.textContent = "대기 중";
     elements.scoreCoverageNote.textContent = "";
     elements.scoreCoverageNote.hidden = true;
+    renderScoreDetails(null);
     elements.coverageText.textContent = "선택한 유전자형이 결과에 반영됩니다.";
     elements.gaugeFill.style.width = "0%";
     elements.gaugeMarker.style.left = "0%";
@@ -986,6 +1053,8 @@
       "섭취/조절 레이어: " + formatLayer(lastResult.behaviorNorm),
       "분석 완성도: " + lastResult.confidence + "%"
     ];
+    if (lastResult.typePosition) layerText.push("유형 경계: " + lastResult.typePosition);
+    if (lastResult.sensitivity) layerText.push("미확인 SNP 대입 시나리오: " + formatScenarioSummary(lastResult.sensitivity));
     var genotypeText = getGenotypeRecords().map(function (item) {
       return [
         item.name,
@@ -1095,6 +1164,8 @@
         sensitivityRank: result.sensitivityRank,
         confidence: result.confidence,
         coverageLabel: result.coverageLabel,
+        typePosition: result.typePosition,
+        sensitivitySummary: result.sensitivity ? formatScenarioSummary(result.sensitivity) : "",
         metabolismScore: result.metabolismNorm === null ? null : Number((result.metabolismNorm * 100).toFixed(1)),
         regulationScore: result.behaviorNorm === null ? null : Number((result.behaviorNorm * 100).toFixed(1)),
         metabolismSubtype: result.metabolismSubtype
@@ -1564,6 +1635,7 @@
         '<td><span class="status-pill ', hasError ? "error" : "", '">', hasError ? "입력 오류" : (result.score === null ? "판정 보류" : "분석 완료"), "</span></td>",
         "<td>", !hasError && typeof result.score === "number" ? result.score.toFixed(1) + "점" : (!hasError ? "산출 없음" : "--"),
         !hasError && result.coverageLabel ? '<small class="score-coverage-note">' + escapeHtml(result.coverageLabel) + '</small>' : "",
+        !hasError && result.sensitivity ? '<small class="score-position">대입 시 ' + escapeHtml(formatScenarioSummary(result.sensitivity)) + '</small>' : "",
         "</td>",
         "<td>", !hasError ? escapeHtml(result.category.label) : "--", "</td>",
         "<td>", !hasError ? escapeHtml(result.metabolismSubtype.name) : "--", "</td>",
@@ -1612,7 +1684,8 @@
     var headers = ["원본 행", "Sample ID", "처리 상태", "리포트 날짜", "채취일", "검체 종류", "성별",
       "rs762551", "rs2069514", "rs2472297", "rs6968865", "민감도 지수 (0-100)", "결과 유형",
       "대사 유형", "대사 레이어 (%)", "조절 레이어 (%)", "입력 완성도 (%)", "확인된 SNP 수",
-      "모름 SNP 수", "해석", "생활 참고 안내", "오류·확인 사항", "생성 시각 (KST)", "모델 버전"];
+      "모름 SNP 수", "해석", "생활 참고 안내", "오류·확인 사항", "생성 시각 (KST)", "모델 버전",
+      "대입 시 최저점", "대입 시 최고점", "대입 시 가능 유형", "대입 조합 수"];
     var generatedAt = getKoreaDateTimeString();
     var output = [headers];
     var errors = [["원본 행"].concat(BATCH_HEADERS, ["오류 내용"])];
@@ -1621,6 +1694,7 @@
       var data = record.reportData;
       var info = record.reportInfo;
       var hasError = record.errors.length > 0;
+      var sensitivity = hasError ? null : result.sensitivity;
       var raw = record.inputValues || [];
       var genotypes = genes.map(function (gene, index) {
         return hasError ? String(raw[index + 5] === undefined ? "" : raw[index + 5]) : getGenotypeValueFor(record.selectionMap, gene.id);
@@ -1634,7 +1708,11 @@
         hasError ? null : result.unknownCount, hasError ? "" : result.interpretation,
         hasError ? "" : result.category.recommendations.join("\n"),
         hasError ? record.errors.join(" · ") : (result.score === null ? "핵심 유전자형 확인 필요" : result.coverageLabel),
-        generatedAt, "0.4 / scoring 0.3"]));
+        generatedAt, "0.4 / scoring 0.3",
+        sensitivity ? Number(sensitivity.minimum.toFixed(1)) : null,
+        sensitivity ? Number(sensitivity.maximum.toFixed(1)) : null,
+        sensitivity ? sensitivity.categories.join(" / ") : "",
+        sensitivity ? sensitivity.cases.length : null]));
       if (hasError) errors.push([record.rowNumber].concat(raw, [record.errors.join(" · ")]));
     });
     var guide = [
@@ -1643,6 +1721,7 @@
       ["처리 상태", "분석 완료: 핵심 SNP 확인 / 판정 보류: rs762551 모름 / 입력 오류: 점수 미산출"],
       ["유형", "각성형: 33.34 미만 / 잠잠형: 33.34 이상 66.67 미만 / 잠꾸러기형: 66.67 이상. 반올림 전 점수로 구분합니다."],
       ["모름", "누락과 다릅니다. 명시적으로 ‘모름’을 입력한 SNP는 제외하고 확인된 항목의 가중치를 다시 계산합니다. 서로 다른 입력 완성도의 점수를 직접 비교하지 마세요."],
+      ["대입 시나리오", "미확인 SNP의 가능한 유전자형을 대입해 계산한 범위입니다. 현재 결과는 민감도 지수와 결과 유형 열에서 확인할 수 있습니다."],
       ["참조 위치", REFERENCE_SOURCE_NOTE],
       ["입력 완성도", "확인된 SNP 수 ÷ 4 × 100 (%). 예측 정확도나 통계적 신뢰도가 아닙니다."],
       ["점수", "대사 70% + 조절 30%의 연구·교육용 모형 지수. 기존 점수식은 유지했으며 임상 검증된 PRS가 아닙니다."],
@@ -1972,6 +2051,9 @@
     var coverageMarkup = result.coverageLabel
       ? '<p class="score-coverage-note">' + escapeHtml(result.coverageLabel) + '</p>'
       : "";
+    if (result.typePosition) coverageMarkup += '<p class="score-coverage-note">' + escapeHtml(result.typePosition) + '</p>';
+    if (result.sensitivitySummary) coverageMarkup += '<p class="score-coverage-note">미확인 SNP 대입 시 ' +
+      escapeHtml(result.sensitivitySummary) + '</p>';
     var pdfMarker = "";
     if (hasScore) {
       var pdfMarkerX = clamp(result.score, 0, 100);
