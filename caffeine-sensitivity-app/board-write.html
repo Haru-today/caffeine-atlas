@@ -3,40 +3,34 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>글쓰기 | Caffeine Atlas</title>
-  <link rel="stylesheet" href="./styles.css?v=privacy-notice-20261013">
+  <link rel="icon" type="image/svg+xml" href="./assets/caffeine-atlas-favicon.svg">
+  <title>문의 보내기 | Caffeine Atlas</title>
+  <link rel="stylesheet" href="./styles.css?v=privacy-notice-20261013&amp;rev=type-characters-20261109">
+  <link rel="stylesheet" href="./home.css?v=atlas-design-5">
 </head>
-<body>
-  <div class="app-shell">
-    <nav class="site-nav portal-nav" aria-label="주요 메뉴">
-      <a class="brand-mark" href="./index.html">
-        <img src="./assets/caffeine-atlas-logo-wordmark.png" alt="Caffeine Atlas" width="1900" height="330">
+<body class="landing atlas-support">
+  <header class="home-top">
+    <div class="home-wrap home-top-bar">
+      <a class="home-logo" href="./index.html">
+        <img src="./assets/caffeine-atlas-wordmark.svg" alt="Caffeine Atlas 홈" width="1139" height="142">
       </a>
-      <div class="nav-links">
-        <a href="./index.html">홈</a>
-        <a href="./board.html">자료실</a>
-        <a href="./account.html" hidden data-disabled-feature="account">회원 안내</a>
-      </div>
-      <a class="nav-cta" href="./analyzer.html" target="_blank" rel="noopener">리포트 생성</a>
-    </nav>
-
-    <header class="page-hero slim">
+      <a class="home-top-link" href="./analyzer.html">리포트 생성 <span aria-hidden="true">↗</span></a>
+    </div>
+  </header>
+  <div class="home-wrap atlas-support-content">
+    <header class="atlas-support-heading">
       <div>
-        <p class="eyebrow">Board write</p>
-        <h1>게시글 작성</h1>
-        <p class="top-summary">리포트 운영 문의와 사용자 피드백을 메일로 보내는 화면입니다.</p>
+        <h1>문의 보내기</h1>
+        <p>리포트 이용 문의와 피드백을 메일로 보내실 수 있습니다.</p>
       </div>
-      <div class="page-hero-actions">
-        <a class="hero-button primary" href="./board.html">자료실 목록</a>
-      </div>
+      <a class="home-banner-link" href="./board.html">자료실 목록</a>
     </header>
 
     <main class="write-layout">
       <section class="write-panel">
         <div class="section-head compact">
           <div>
-            <p class="eyebrow">Input</p>
-            <h2>글 내용 입력</h2>
+              <h2>문의 내용 입력</h2>
           </div>
         </div>
         <form class="write-form" data-board-form>
@@ -73,7 +67,7 @@
             <textarea name="content" rows="10" placeholder="문의 내용이나 피드백을 적어주세요." required></textarea>
           </label>
           <div class="form-notice">
-            보내기 버튼을 누르면 메일 앱이 열립니다. 첨부파일이 필요한 경우 메일 앱에서 직접 추가해주세요.
+            보내기 버튼을 누르면 메일 앱이 열립니다. 사이트에 게시되거나 자동 발송되지 않으며, 메일 앱에서 내용을 확인한 뒤 발송해 주세요. 첨부파일은 메일 앱에서 직접 추가할 수 있습니다.
           </div>
           <div class="post-actions">
             <button class="tool-button primary" type="submit">메일로 보내기</button>
@@ -86,17 +80,16 @@
       <aside class="write-panel">
         <div class="section-head compact">
           <div>
-            <p class="eyebrow">Mail</p>
-            <h2>문의 메일</h2>
+              <h2>문의 메일</h2>
           </div>
         </div>
         <p class="form-notice">작성한 내용은 <strong>20221600@office.deu.ac.kr</strong>로 전송됩니다. 메일 앱이 열리면 내용을 확인한 뒤 발송해주세요.</p>
       </aside>
     </main>
 
-    <footer class="site-footer">
-      <span>Caffeine Atlas</span>
-      <p>Research-use caffeine response interpretation report prototype. Not for diagnosis or medical prescription.</p>
+    <footer class="home-footer">
+      <strong>Caffeine Atlas</strong>
+      <p>연구·교육용 카페인 반응 리포트</p>
       <p class="policy-links"><a href="https://haru-today.github.io/caffeine-atlas/privacy.html">개인정보 처리 안내</a> · <a href="https://haru-today.github.io/caffeine-atlas/terms.html">서비스 이용 안내</a></p>
     </footer>
   </div>

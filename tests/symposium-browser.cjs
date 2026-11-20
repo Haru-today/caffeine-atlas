@@ -15,7 +15,7 @@ async function serveLocalFiles(context) {
   const root = path.resolve(__dirname, "..");
   const mime = {
     ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8",
-    ".css": "text/css; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml",
+    ".css": "text/css; charset=utf-8", ".png": "image/png", ".webp": "image/webp", ".svg": "image/svg+xml",
     ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   };
   // Render the real static files without a network listener on restricted PCs.
@@ -55,11 +55,11 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
   try {
     await page.goto(base + "/", { waitUntil: "domcontentloaded" });
     await page.waitForURL(/\/caffeine-sensitivity-app\/index\.html$/, { timeout: 15000 });
-    const cta = page.getByRole("link", { name: /로그인 없이 체험 시작/ });
+    const cta = page.locator(".home-hero").getByRole("link", { name: "체험 시작", exact: true });
     assert.equal(await cta.count(), 1, name + ": missing public demo CTA");
     // Landing stays public and the mobile primary action must be easy to tap.
     const landingMetrics = await page.evaluate(() => {
-      const cta = [...document.querySelectorAll("a")].find(a => a.textContent.includes("로그인 없이 체험 시작"));
+      const cta = document.querySelector(".home-hero .home-button");
       const rect = cta?.getBoundingClientRect();
       return {
         scroll: document.documentElement.scrollWidth,
@@ -83,13 +83,18 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
           clickable: !!hit && (hit === a || a.contains(hit))
         };
       }));
-      assert.equal(menu.length, 4, name + ": homepage menu items");
+      assert.equal(menu.length, 5, name + ": homepage menu items");
       for (const item of menu) {
         assert.ok(item.visible && item.clickable, name + ": menu item hidden or covered: " + item.text);
         assert.ok(item.left >= 0 && item.right <= landingMetrics.viewport + 1, name + ": menu item off screen: " + item.text);
         assert.ok(item.height >= 44, name + ": menu item too small to tap: " + item.text);
       }
     }
+    await page.getByRole("button", { name: "다음 배너", exact: true }).click();
+    assert.equal(await page.locator("#home-types-banner-title").isVisible(), true, name + ": next home banner");
+    await page.getByRole("button", { name: "내 리포트 배너", exact: true }).click();
+    assert.equal(await page.locator("#home-reports-banner-title").isVisible(), true, name + ": selectable home banner");
+    await page.getByRole("button", { name: "유전자형 체험 배너", exact: true }).press("Enter");
     await cta.click();
     await page.waitForURL(/\/caffeine-sensitivity-app\/analyzer\.html$/);
     assert.equal(await page.locator("body.public-demo").count(), 1);
@@ -103,7 +108,38 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     // The poster audience generally has no personal genotyping data.
     // Explicit, fictional one-tap example must produce a full report.
     assert.equal(await page.locator("#exampleDemoBtn").isVisible(), true);
+    const analyzerLayout = await page.evaluate(() => ({
+      scrollWidth: document.documentElement.scrollWidth,
+      viewportWidth: document.documentElement.clientWidth,
+      viewportHeight: window.innerHeight,
+      exampleBottom: document.querySelector("#exampleDemoBtn").getBoundingClientRect().bottom,
+      singleTop: document.querySelector("#singleModeBtn").getBoundingClientRect().top,
+      batchTop: document.querySelector("#batchModeBtn").getBoundingClientRect().top
+    }));
+    assert.ok(analyzerLayout.scrollWidth <= analyzerLayout.viewportWidth + 1, name + ": analyzer horizontal overflow");
+    assert.ok(analyzerLayout.exampleBottom <= analyzerLayout.viewportHeight, name + ": example CTA below the first screen");
+    assert.equal(analyzerLayout.singleTop, analyzerLayout.batchTop, name + ": input modes should appear together");
     await page.locator("#exampleDemoBtn").click();
+    const scoreRange = await page.locator("#atlas-method-score").evaluate(card => {
+      const { paddingLeft, paddingRight } = getComputedStyle(card);
+      const track = card.querySelector(".gauge-track").getBoundingClientRect();
+      const labels = [...card.querySelectorAll(".gauge-scale span")];
+      return {
+        width: track.width,
+        available: card.clientWidth - parseFloat(paddingLeft) - parseFloat(paddingRight),
+        alignedLabels: labels.length === 3 && labels.every(label => getComputedStyle(label).textAlign === "center" && label.scrollWidth <= label.clientWidth)
+      };
+    });
+    assert.ok(Math.abs(scoreRange.width - scoreRange.available) <= 1, name + ": score range should fill the card");
+    assert.ok(scoreRange.alignedLabels, name + ": score range labels should fit their segments");
+    assert.equal(await page.locator(".atlas-snp").count(), 4);
+    await page.locator('.atlas-report-nav a[href="#report-genotypes"]').click();
+    await page.waitForURL(/#report-genotypes$/);
+    const marker = page.locator("#report-metabolism-snps").locator("details").first();
+    assert.equal(await marker.getAttribute("open"), null);
+    await marker.locator("summary").click();
+    assert.match(await marker.locator(".atlas-snp-body").innerText(), /영역 내 가중치\s*82%/);
+
     assert.equal(await page.locator("#sampleId").inputValue(), "DEMO-001");
     for (const [gene, genotype] of [
       ["rs762551", "AA"], ["rs2069514", "GG"],
@@ -123,6 +159,9 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
 
     // Shared-event-device hygiene: previous demo inputs must be removable.
     await page.locator("#editBtn").click();
+    if (!(await page.locator("#specimenDetails").evaluate(details => details.open))) {
+      await page.locator("#specimenDetails summary").click();
+    }
     await page.locator("#collectionDate").fill("2026-11-07");
     await page.locator("#resetBtn").click();
     assert.equal(await page.locator("#collectionDate").inputValue(), "");
