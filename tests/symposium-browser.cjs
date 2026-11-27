@@ -152,7 +152,12 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     const marker = page.locator("#report-metabolism-snps").locator("details").first();
     assert.equal(await marker.getAttribute("open"), null);
     await marker.locator("summary").click();
-    assert.match(await marker.locator(".atlas-snp-body").innerText(), /영역 내 가중치\s*82%/);
+    assert.match(await marker.locator(".atlas-snp-body").innerText(), /결과에 반영되는 비중\s*카페인 분해 영역 중 82%/);
+    await page.locator("#atlas-snp-sort").selectOption("highest");
+    assert.deepEqual(await page.locator('[data-report-layer="behavior"] > details').evaluateAll(items => items.map(item => Number(item.dataset.points))), [50, 0]);
+    await page.locator("#atlas-snp-sort").selectOption("lowest");
+    assert.deepEqual(await page.locator('[data-report-layer="behavior"] > details').evaluateAll(items => items.map(item => Number(item.dataset.points))), [0, 50]);
+    await page.locator("#atlas-snp-sort").selectOption("default");
 
     assert.equal(await page.locator("#sampleId").inputValue(), "DEMO-001");
     for (const [gene, genotype] of [

@@ -184,19 +184,17 @@ test("type badges describe the composite score and never claim a metabolizer typ
   assert.doesNotMatch(source, /badge: "[^"]*대사형"/);
 });
 
-test("plain explanations preserve the scoring direction and handle missing data", () => {
+test("item explanations distinguish every score and missing values", () => {
   const window = {};
   const document = { getElementById: () => ({ value: "", options: [], classList: { toggle() {} } }) };
-  require("node:vm").runInNewContext(source.replace("  init();",
-    "  window.__explanations = { genotypeExplanation, layerComparison };"), { window, document, console });
-  const { genotypeExplanation, layerComparison } = window.__explanations;
-  assert.match(genotypeExplanation("metabolism", 100), /100점.*느린 분해/);
-  assert.match(genotypeExplanation("behavior", 100), /실제 섭취량은 알 수 없어요/);
-  assert.match(genotypeExplanation("metabolism", null), /확인하지 못해/);
-  assert.match(layerComparison(100, 50), /높아요/);
-  assert.match(layerComparison(50, 100), /낮아요/);
-  assert.match(layerComparison(50, 50), /같아요/);
-  assert.match(layerComparison(null, 50), /비교할 수 없어요/);
+  require("node:vm").runInNewContext(source.replace("  init();", "  window.explain = genotypeExplanation;"), { window, document, console });
+  assert.match(window.explain("metabolism", 0), /빨리 빠져나가는/);
+  assert.match(window.explain("metabolism", 50), /중간쯤/);
+  assert.match(window.explain("metabolism", 100), /오래 남는/);
+  assert.match(window.explain("behavior", 0), /적게 마시는/);
+  assert.match(window.explain("behavior", 50), /중간쯤/);
+  assert.match(window.explain("behavior", 100), /많이 마시는/);
+  assert.match(window.explain("metabolism", null), /확인하지 못해/);
 });
 
 test("classification thresholds use unrounded scores", () => {

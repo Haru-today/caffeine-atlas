@@ -285,7 +285,7 @@
         '<dl class="gene-meta">',
         '<div class="meta-item"><dt>반영 대립유전자</dt><dd>', gene.allele, '</dd></div>',
         '<div class="meta-item"><dt>근거 분류</dt><dd>', gene.source, '</dd></div>',
-        '<div class="meta-item"><dt>영역 내 가중치</dt><dd>', gene.weightText, '</dd></div>',
+        '<div class="meta-item"><dt>결과에 반영되는 비중</dt><dd>', gene.weightText, '</dd></div>',
         '</dl></details>',
         '</article>'
       ].join("");
@@ -503,19 +503,41 @@
   }
 
   var caffeineHabitPlans = {
-    sleepy: { amount: "평소 섭취량 확인", coffee: "커피를 마신 뒤 두근거리거나 잠이 잘 오지 않는지 살펴보세요. 점수가 낮아도 섭취량을 늘려도 된다는 뜻은 아니에요.", timing: "수면 반응 확인", alternative: "물 · 순수 보리차" },
-    calm: { amount: "섭취량 조절", coffee: "커피를 조금 마신 뒤 몸의 반응을 살펴보고, 하루에 마신 카페인 양을 기록해 보세요.", timing: "오전 위주", alternative: "디카페인 · 순수 루이보스차" },
-    awake: { amount: "섭취량 줄이기", coffee: "커피를 마신 뒤 두근거리거나 잠이 잘 오지 않으면 양을 줄이거나 피하세요.", timing: "늦은 섭취 피하기", alternative: "물 · 순수 보리차 · 루이보스차" },
-    pending: { amount: "평소 섭취량 확인", coffee: "유형 판정 없이 일반적인 성인 참고 안내를 제공합니다.", timing: "수면 반응 확인", alternative: "물 · 순수 보리차" }
+    sleepy: {
+      amount: "평소 마시는 양 그대로 살펴보기",
+      coffee: "카페인 영향을 덜 받는 편이지만, 더 마셔도 된다는 뜻은 아니에요. 커피를 마신 뒤 가슴이 두근거리거나 잠이 잘 안 오면 양을 줄여 보세요.",
+      timing: "잠들기 9시간 전까지",
+      alternative: "물 · 보리차",
+      alternativeText: "디카페인 커피에도 카페인이 조금 남아 있을 수 있어요. 컵이나 메뉴에 적힌 카페인 양을 확인해 주세요."
+    },
+    calm: {
+      amount: "조금씩 마시며 반응 살펴보기",
+      coffee: "한 번에 많이 마시기보다 나눠 마시고, 마신 뒤 몸의 반응을 살펴보세요. 두근거림이나 잠들기 어려움이 느껴지면 양을 줄여 보세요.",
+      timing: "오전 위주로 마시기",
+      alternative: "디카페인 · 루이보스차",
+      alternativeText: "오후에는 디카페인 커피나 루이보스차로 바꿔 보세요. 디카페인 커피에도 카페인이 조금 남아 있을 수 있으니 표시된 양을 확인해 주세요."
+    },
+    awake: {
+      amount: "양을 줄여 보기",
+      coffee: "커피를 마신 뒤 두근거리거나 잠이 잘 오지 않으면 양을 줄이거나 피하세요.",
+      timing: "점심 이후에는 피하기",
+      alternative: "물 · 보리차 · 루이보스차",
+      alternativeText: "커피가 생각날 때 카페인이 없는 차를 먼저 골라 보세요. 녹차와 홍차에도 카페인이 들어 있으니 늦은 시간에는 피하는 게 좋아요."
+    },
+    pending: {
+      amount: "평소 섭취량 확인", coffee: "유형 판정 없이 일반적인 성인 참고 안내를 제공합니다.",
+      timing: "수면 반응 확인", alternative: "물 · 보리차",
+      alternativeText: "디카페인도 카페인이 남을 수 있으므로 표시 함량을 확인하세요."
+    }
   };
 
   function buildCaffeineHabitGuide(illustration) {
     var plan = caffeineHabitPlans[illustration] || caffeineHabitPlans.pending;
     return [
-      { title: "섭취량 관리", value: plan.amount, text: plan.coffee },
-      { title: "섭취 시간", value: plan.timing, text: "연구에서 카페인 107 mg의 커피는 취침 약 8.8시간 전이 참고값입니다(Gardiner 등, 2023). 개인별 안전 시간은 아니며 수면 방해 시 더 일찍 줄이세요." },
-      { title: "대체 음료", value: plan.alternative, text: "디카페인도 카페인이 남을 수 있으므로 표시 함량을 확인하세요." },
-      { title: "성인 공통 참고", value: "하루 400 mg · 1회 200 mg", text: "FDA·EFSA의 일반 건강한 성인 참고 수준이며 권장 섭취량이나 개인별 안전량이 아닙니다. 임신·수유, 미성년자, 질환·약물 복용 시 별도 지침 또는 의료진 상담이 필요합니다." }
+      { title: "☕ 마시는 양", value: plan.amount, text: plan.coffee },
+      { title: "🕑 마시는 시간", value: plan.timing, text: "연구에서 카페인 107 mg의 커피는 취침 약 8.8시간 전이 참고값입니다(Gardiner 등, 2023). 개인별 안전 시간은 아니며 수면 방해 시 더 일찍 줄이세요." },
+      { title: "🍵 대신 마시기 좋은 음료", value: plan.alternative, text: plan.alternativeText },
+      { title: "📋 모든 성인이 알아 두면 좋은 기준", value: "하루 400 mg · 1회 200 mg", text: "FDA·EFSA의 일반 건강한 성인 참고 수준이며 권장 섭취량이나 개인별 안전량이 아닙니다. 임신·수유, 미성년자, 질환·약물 복용 시 별도 지침 또는 의료진 상담이 필요합니다." }
     ];
   }
 
@@ -812,10 +834,9 @@
     elements.interpretationText.innerHTML = lastResult.interpretationSections.map(function (section) {
       return '<section><h4>' + escapeHtml(section.title) + '</h4><p>' + escapeHtml(section.text) + '</p></section>';
     }).join("");
-    document.getElementById("atlas-layer-comparison").textContent = layerComparison(lastResult.metabolismNorm, lastResult.behaviorNorm);
     elements.interpretationMore.hidden = false;
     elements.interpretationMore.open = false;
-    elements.lifestyleFocus.textContent = (hasScore ? category.label : "일반") + " 생활 참고 안내";
+    elements.lifestyleFocus.textContent = "생활 안내 · " + (hasScore ? category.label : "일반");
     elements.recommendList.innerHTML = lastResult.habitGuide.map(function (item) {
       return '<div class="atlas-life-row"><dt>' + escapeHtml(item.title) +
         '</dt><dd class="atlas-life-value">' + escapeHtml(item.value) +
@@ -909,16 +930,16 @@
 
   function genotypeExplanation(layer, points) {
     if (points === null) return "유전자형을 확인하지 못해 점수에 반영하지 않았어요.";
-    if (layer === "metabolism") {
-      return "대사 민감도 점수에 " + points + "점을 반영해요. 높은 점수는 느린 분해 방향이에요.";
-    }
-    return "섭취·조절 민감도 점수에 " + points + "점을 반영해요. 실제 섭취량은 알 수 없어요.";
-  }
-
-  function layerComparison(metabolism, behavior) {
-    if (metabolism === null || behavior === null) return "확인되지 않은 영역이 있어 두 영역의 점수를 비교할 수 없어요.";
-    var relation = metabolism > behavior ? "높아요" : metabolism < behavior ? "낮아요" : "같아요";
-    return "대사 민감도 점수는 섭취·조절 민감도 점수와 비교하면 " + relation + ". 두 점수는 서로 다른 유전자 항목을 요약한 연구용 값이며, 실제 분해 속도나 섭취량을 비교한 결과는 아니에요.";
+    var messages = layer === "metabolism" ? {
+      0: "이 유전자는 카페인이 빨리 빠져나가는 쪽이에요.",
+      50: "이 유전자는 카페인이 빠져나가는 속도가 중간쯤이에요.",
+      100: "이 유전자는 카페인이 몸에 오래 남는 쪽이에요."
+    } : {
+      0: "이 유전자는 커피를 적게 마시는 경향과 관련 있어요.",
+      50: "이 유전자는 커피를 마시는 경향이 중간쯤이에요.",
+      100: "이 유전자는 커피를 많이 마시는 경향과 관련 있어요."
+    };
+    return messages[points] || "유전자형을 확인하지 못해 점수에 반영하지 않았어요.";
   }
 
   function renderSummary() {
@@ -941,10 +962,10 @@
             : '<span class="atlas-snp-points atlas-snp-missing">미확인</span>',
           '</span></summary>',
           '<div class="atlas-snp-body"><p>', escapeHtml(genotypeExplanation(layer, points)), '</p><dl>',
-          '<dt>반영 대립유전자</dt><dd>', escapeHtml(gene.allele), '</dd>',
+          '<dt class="atlas-snp-allele">반영 대립유전자</dt><dd class="atlas-snp-allele">', escapeHtml(gene.allele), '</dd>',
           '<dt>반영 수</dt><dd>', known ? genotype.alleleCount + "개" : "미확인", '</dd>',
           '<dt>항목 점수</dt><dd>', known ? points + " / 100" : "반영 없음", '</dd>',
-          '<dt>영역 내 가중치</dt><dd>', Math.round(evidenceWeights[gene.id] * 100), '%</dd>',
+          '<dt>결과에 반영되는 비중</dt><dd>', layer === 'metabolism' ? '카페인 분해 영역 중 ' : '커피 섭취 영역 중 ', Math.round(evidenceWeights[gene.id] * 100), '%</dd>',
           '<dt>근거 분류</dt><dd>', escapeHtml(gene.source), '</dd>',
           '</dl></div></details>'
         ].join("");
@@ -2197,7 +2218,7 @@
       ".metrics{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #d6e0e3}.metric{padding:2.4mm 3mm;border-right:1px solid #d6e0e3}.metric:last-child{border-right:0}.metric strong{display:block;margin-top:1mm;color:#173f47;font-size:10pt}",
       ".pdf-main{display:grid;grid-template-columns:.9fr 1.1fr;gap:4mm}.pdf-card h3{margin:0 0 2.2mm;color:#183e47;font-size:9.5pt}.chart-summary{margin-bottom:2mm}.chart-summary strong{color:#97422c;font-size:8.3pt}.distribution-chart{display:block;width:100%;height:27mm;border-bottom:1px solid #9fb0b6}.chart-axis{display:flex;justify-content:space-between;margin-top:1mm;color:#6a7d84;font-size:6pt}.layer-list{display:grid;gap:2mm}.layer{display:grid;grid-template-columns:24mm 12mm 1fr;gap:2mm;align-items:center;font-size:7pt}.layer strong{text-align:right}.layer-track{height:2mm;background:#e8edef}.layer-track i{display:block;height:100%;background:#148589}.layer:nth-child(2) .layer-track i{background:#dfa936}.layer:nth-child(3) .layer-track i{background:#3a78a0}",
       ".genotype-note{margin:2mm 0 0;color:#4f646c;font-size:7pt;line-height:1.4}table{width:100%;border-collapse:collapse;font-size:7pt}th{padding:1.6mm;text-align:left;color:#587078;background:#eef4f5;border-bottom:1px solid #cbd8dc}td{padding:1.5mm;border-bottom:1px solid #e2e9eb}td small{display:block;margin-top:.5mm;color:#71848b;font-size:7pt;line-height:1.3}tbody tr:last-child td{border-bottom:0}",
-      ".pdf-content{display:grid;grid-template-columns:1fr 1fr;gap:4mm}.interpretation{border-left:2mm solid #d45b38}.interpretation h3,.guide h3{margin:0 0 1.5mm;color:#183e47;font-size:9.5pt}.interpretation strong{display:block;margin:1.5mm 0 1mm;font-size:8.2pt}.interpretation p{margin:0;color:#4f646c;font-size:7pt;line-height:1.45;white-space:pre-line}.guide ul{margin:0;padding-left:4mm}.guide li{margin:0 0 1mm;color:#4f646c;font-size:6.8pt;line-height:1.35}.guide li:last-child{margin-bottom:0}",
+      ".pdf-content{display:grid;grid-template-columns:1fr 1fr;gap:4mm}.interpretation{border-left:2mm solid #d45b38}.interpretation h3,.guide h3{margin:0 0 1.5mm;color:#183e47;font-size:9.5pt}.interpretation strong{display:block;margin:1.5mm 0 1mm;font-size:8.2pt}.interpretation p{margin:0;color:#4f646c;font-size:7pt;line-height:1.45;white-space:pre-line}.guide>p{margin:0 0 1.5mm;color:#4f646c;font-size:7pt;line-height:1.4}.guide ul{margin:0;padding-left:4mm}.guide li{margin:0 0 1mm;color:#4f646c;font-size:6.8pt;line-height:1.35}.guide li:last-child{margin-bottom:0}",
       ".pdf-footer{margin-top:auto;padding-top:3mm;border-top:1px solid #cfdadd;display:grid;grid-template-columns:1fr auto;gap:5mm;align-items:end}.notice strong{display:block;margin-bottom:1mm;color:#173f47;font-size:7pt}.notice p{margin:0;color:#687b82;font-size:6.2pt;line-height:1.45}.footer-mark{text-align:right;color:#6c7f86;font-size:6pt;white-space:nowrap}.footer-mark strong{display:block;color:#173f47;font-size:7pt}",
       "@media print{html,body{width:210mm;height:auto;background:#fff}body{padding:0}.pdf-controls{display:none}.pdf-sheet{margin:0;box-shadow:none;page-break-after:avoid}.pdf-summary,.pdf-main,.pdf-content,.pdf-footer{break-inside:avoid}}",
       forArchive ? "body{padding:0}.pdf-sheet{margin:0;box-shadow:none}.pdf-meta strong{white-space:normal;word-break:keep-all;overflow-wrap:anywhere}" : `
@@ -2254,8 +2275,8 @@
       "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", hasScore ? "<small>제 카페인 유형은</small> " : "", escapeHtml(result.category + (hasScore ? "이에요!" : "")), "</h2>", hasScore ? "" : "<p>" + escapeHtml(result.typeDescription) + "</p>", "</div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div>", coverageMarkup, "<div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>저민감형 · 낮음</span><span>중민감형 · 중간</span><span>고민감형 · 높음</span></div></div></section>",
       "<section class=\"metrics\"><div class=\"metric\"><span>Result type</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>Metabolism</span><strong>", escapeHtml(result.metabolismSubtype.displayName || result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>SNP coverage</span><strong>", result.confidence, "%</strong></div></section>",
       "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><h3>연구 참조분포</h3><strong>", escapeHtml(referencePosition), "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>-0.50</span><span>기존 PRS 점수</span><span>1.00</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사 민감도 점수</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취·조절 민감도 점수</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>입력 완성도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
-      "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>민감도 반영 점수</th></tr></thead><tbody>", genotypeRows, "</tbody></table><p class=\"genotype-note\">점수는 카페인 분해를 늦추는 쪽의 유전자 개수를 반영합니다. 높을수록 느린 분해·높은 민감도 방향입니다. 모든 항목이 실제 분해 속도를 직접 나타내는 것은 아니며, 섭취·조절 항목은 섭취 관련 신호입니다.</p><p class=\"genotype-note\">", escapeHtml(layerComparison(result.metabolismScore, result.regulationScore)), "</p></div></section>",
-      "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3>", interpretationMarkup, "</div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드</h3><ul>", recommendations, "</ul></div></section>",
+      "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><p class=\"genotype-note\">유전자 4개를 하나씩 살펴본 결과예요. 항목을 누르면 자세한 내용을 볼 수 있어요.</p><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>민감도 반영 점수</th></tr></thead><tbody>", genotypeRows, "</tbody></table><p class=\"genotype-note\"><strong>점수 보는 법</strong><br>카페인 분해 유전자(rs762551, rs2069514): 점수가 높을수록 카페인이 몸에 오래 남는 쪽이에요.<br>커피 섭취 유전자(rs2472297, rs6968865): 점수가 높을수록 커피를 많이 마시는 경향과 관련 있어요.<br>점수는 유전자 정보로 알아본 참고값이에요. 실제 분해 속도나 마시는 양을 잰 것은 아니에요.</p></div></section>",
+      "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3>", interpretationMarkup, "</div><div class=\"pdf-card guide\"><h3>생활 안내 · ", escapeHtml(result.category), "</h3><p>건강한 성인을 기준으로 한 참고 안내예요.</p><ul>", recommendations, "</ul></div></section>",
       "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.concat(REFERENCE_SOURCE_NOTE, "섭취 가이드 근거: FDA 카페인 안내; EFSA 카페인 안전성; Gardiner 등(2023), doi:10.1016/j.smrv.2023.101764.").join(" ")), "</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
       "</main>",
       forArchive ? "" : "<script>window.addEventListener('load',function(){if(navigator.webdriver||matchMedia('(max-width: 820px), (pointer: coarse)').matches)return;var ready=document.fonts?document.fonts.ready:Promise.resolve();ready.then(function(){setTimeout(function(){window.print()},350)})});<\/script>",
