@@ -107,7 +107,7 @@ function validRow(sampleId, genotype = "AA") {
     rs6968865: "AA",
     requestId: "a".repeat(32),
     score: 0,
-    category: "각성형",
+    category: "고민감형",
     metabolismSubtype: "고속 대사형",
     percentile: 0,
     confidence: 100,
@@ -220,3 +220,16 @@ assert.equal(status("f".repeat(32)).state, "unconfirmed");
 assert.equal(status("bad").state, "unconfirmed");
 assert.equal(locked, false);
 console.log("Global duplicates, allele validation, and confirmed-write tests passed");
+
+for (const input of [null, undefined, "", "  "]) assert.equal(sandbox.rankFromPercentile_(input), "");
+assert.equal(sandbox.rankFromPercentile_(0), 100);
+assert.equal(sandbox.rankFromPercentile_(50), 50);
+const rankSheet = {
+  getLastRow: () => 5,
+  getRange(row, column) {
+    if (column === 15) return { getValues: () => [[null], [""], [0], [50]] };
+    assert.equal(column, 20);
+    return { setValues: values => assert.deepEqual(JSON.parse(JSON.stringify(values)), [[""], [""], [100], [50]]) };
+  }
+};
+sandbox.updateRankColumn_(rankSheet);

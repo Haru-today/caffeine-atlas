@@ -47,8 +47,8 @@ const DISPLAY_HEADERS = [
   "대사 판정",
   "백분위",
   "입력 완성도",
-  "대사 점수",
-  "조절 점수",
+  "대사 민감도 점수",
+  "섭취·조절 민감도 점수",
   "저장 동의",
   "100명 중 예상 등수",
   "전체 리포트 JSON",
@@ -280,7 +280,7 @@ function buildDashboard_(spreadsheet) {
 function buildSummary_(spreadsheet) {
   const sheet = getOrResetSheet_(spreadsheet, "Summary");
   sheet.getRange("A1").setValue("Result Summary");
-  sheet.getRange("A3").setFormula('=QUERY(Responses!A:T,"select M, count(M), avg(L), avg(O), avg(T), avg(P), avg(Q), avg(R) where A is not null group by M label M \'결과 유형\', count(M) \'건수\', avg(L) \'평균 점수\', avg(O) \'평균 백분위\', avg(T) \'평균 예상 등수\', avg(P) \'평균 완성도\', avg(Q) \'평균 대사 점수\', avg(R) \'평균 조절 점수\'",1)');
+  sheet.getRange("A3").setFormula('=QUERY(Responses!A:T,"select M, count(M), avg(L), avg(O), avg(T), avg(P), avg(Q), avg(R) where A is not null group by M label M \'결과 유형\', count(M) \'건수\', avg(L) \'평균 점수\', avg(O) \'평균 백분위\', avg(T) \'평균 예상 등수\', avg(P) \'평균 완성도\', avg(Q) \'평균 대사 민감도 점수\', avg(R) \'평균 섭취·조절 민감도 점수\'",1)');
   sheet.getRange("A15").setValue("Genotype Counts");
   sheet.getRange("A16:E16").setValues([["SNP", "Genotype 1", "Count 1", "Genotype 2", "Count 2"]]);
   sheet.getRange("A17:E20").setValues([
@@ -321,12 +321,12 @@ function buildDataDictionary_(spreadsheet) {
     ["CYP1A1-CYP1A2 rs2472297", "CYP1A1-CYP1A2 좌위 유전자형", "입력값"],
     ["AHR rs6968865", "AHR 유전자형", "입력값"],
     ["민감도 점수", "카페인 민감도 지수", "계산 결과"],
-    ["결과 유형", "각성형, 잠잠형, 잠꾸러기형 등", "계산 결과"],
+    ["결과 유형", "고민감형, 중민감형, 저민감형 등", "계산 결과"],
     ["대사 판정", "대사 레이어 판정", "계산 결과"],
     ["백분위", "참조분포 내 위치", "계산 결과"],
     ["입력 완성도", "입력 SNP 완성도", "계산 결과"],
-    ["대사 점수", "대사 레이어 점수", "계산 결과"],
-    ["조절 점수", "조절 레이어 점수", "계산 결과"],
+    ["대사 민감도 점수", "대사 관련 모형 점수", "계산 결과"],
+    ["섭취·조절 민감도 점수", "조절 레이어 점수", "계산 결과"],
     ["저장 동의", "리포트 데이터 저장 동의 여부", "동의 체크"],
     ["100명 중 예상 등수", "백분위를 100명 기준 순위로 환산한 값. 1등에 가까울수록 높은 카페인 민감도 위치입니다.", "계산 결과"],
     ["전체 리포트 JSON", "결과 해석, 섭취 가이드, 유전자형 상세를 포함한 전체 리포트 원본", "계산 결과"],
@@ -340,6 +340,7 @@ function formatKoreaDateTime_(date) {
 }
 
 function rankFromPercentile_(percentile) {
+  if (percentile === null || percentile === undefined || (typeof percentile === "string" && percentile.trim() === "")) return "";
   const value = Number(percentile);
   if (!Number.isFinite(value)) return "";
   return Math.max(1, Math.min(100, Math.round(100 - value)));

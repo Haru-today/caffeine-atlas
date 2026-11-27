@@ -281,12 +281,12 @@
 
         <div class="atlas-report-areas" aria-label="영역별 점수">
           <a href="#report-metabolism-snps">
-            <span>대사 관련</span><span class="atlas-area-arrow" aria-hidden="true">↗</span>
+            <span>대사 민감도 점수</span><span class="atlas-area-arrow" aria-hidden="true">↗</span>
             <strong id="atlas-metabolism-summary">--</strong>
             <span class="atlas-area-track" aria-hidden="true"></span>
           </a>
           <a href="#report-behavior-snps">
-            <span>섭취·조절 관련</span><span class="atlas-area-arrow" aria-hidden="true">↗</span>
+            <span>섭취·조절 민감도 점수</span><span class="atlas-area-arrow" aria-hidden="true">↗</span>
             <strong id="atlas-behavior-summary">--</strong>
             <span class="atlas-area-track" aria-hidden="true"></span>
           </a>
@@ -310,6 +310,8 @@
               </select>
             </label>
           </div>
+          <p>점수는 카페인 분해를 늦추는 쪽의 유전자 개수를 반영합니다. 높을수록 느린 분해·높은 민감도 방향입니다. 모든 항목이 실제 분해 속도를 직접 나타내는 것은 아니며, 섭취·조절 항목은 섭취 관련 신호입니다.</p>
+          <p id="atlas-layer-comparison"></p>
           <div class="summary-grid" id="summaryGrid">
             <section class="atlas-snp-group" id="report-metabolism-snps">
               <h4>대사 관련</h4>
@@ -387,9 +389,9 @@
               <div class="gauge-marker" id="gaugeMarker"></div>
             </div>
             <div class="gauge-scale">
-              <span>잠꾸러기형 · 낮음</span>
-              <span>잠잠형 · 중간</span>
-              <span>각성형 · 높음</span>
+              <span>저민감형 · 낮음</span>
+              <span>중민감형 · 중간</span>
+              <span>고민감형 · 높음</span>
             </div>
           </div>
           <p class="score-position" id="scorePosition" hidden></p>
@@ -398,12 +400,12 @@
         <div class="layer-stack">
           <h3>결과를 볼 때 참고한 항목</h3>
           <div class="layer-row">
-            <span>대사 레이어</span>
+            <span>대사 민감도 점수</span>
             <strong id="metabolismScore">--</strong>
             <div class="mini-bar"><i id="metabolismBar"></i></div>
           </div>
           <div class="layer-row">
-            <span>섭취/조절 레이어</span>
+            <span>섭취·조절 민감도 점수</span>
             <strong id="behaviorScore">--</strong>
             <div class="mini-bar"><i id="behaviorBar"></i></div>
           </div>
@@ -429,7 +431,7 @@
 
         <div class="chart-card">
           <div class="chart-head">
-            <h3>기존 연구 참조분포 (n=350)</h3>
+            <h3>연구 참조분포</h3>
             <div class="chart-position">
               <strong id="referencePositionText">--</strong>
             </div>
@@ -530,7 +532,7 @@
   </nav>
   <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
   <script src="./batch-pdf.js?v=20261118"></script>
-  <script src="./workspace.js?v=report-review-20261127"></script>
-  <script src="./app.js?v=report-review-20261127"></script>
+  <script src="./workspace.js?v=type-v3-20261127"></script>
+  <script src="./app.js?v=type-v3-20261127"></script>
 </body>
 </html>

@@ -53,6 +53,20 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
   });
 
   try {
+    const examples = [["1", "저민감형"], ["low", "저민감형"], ["calm", "중민감형"], ["mid", "중민감형"], ["awake", "고민감형"], ["high", "고민감형"], ["sleepy", "고민감형"]];
+    for (const [alias, type] of examples) {
+      await page.goto(base + "/caffeine-sensitivity-app/analyzer.html?example=" + alias, { waitUntil: "domcontentloaded" });
+      assert.equal(await page.locator("#typeName").textContent(), type, alias);
+      if (["low", "mid", "high"].includes(alias)) {
+        const previewWait = page.waitForEvent("popup");
+        await page.locator("#pdfBtn").click();
+        const preview = await previewWait;
+        await preview.waitForLoadState("domcontentloaded");
+        assert.match(await preview.locator(".type-panel").textContent(), new RegExp(type));
+        assert.match(await preview.locator("body").textContent(), /민감도 반영 점수/);
+        await preview.close();
+      }
+    }
     await page.goto(base + "/", { waitUntil: "domcontentloaded" });
     await page.waitForURL(/\/caffeine-sensitivity-app\/index\.html$/, { timeout: 15000 });
     const cta = page.locator(".home-hero").getByRole("link", { name: "체험 시작", exact: true });
@@ -246,7 +260,8 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     const subjects = [
       ["0001", "2026-11-08", "2026-11-07", "구강상피세포", "미기재", "AA", "GG", "CC", "AT"],
       ["PDF-SECOND", "2026-11-09", "2026-11-07", "타액", "미기재", "CC", "AG", "TT", "TT"],
-      ["PDF-HOLD", "2026-11-08", "", "구강상피세포", "미기재", "모름", "GG", "CC", "AT"]
+      ["PDF-HOLD", "2026-11-08", "", "구강상피세포", "미기재", "모름", "GG", "CC", "AT"],
+      ["PDF-MID", "2026-11-08", "", "구강상피세포", "미기재", "AC", "AG", "CT", "AT"]
     ];
     if (viewport.width > 760) {
       for (let index = 0; index < 47; index++) {
@@ -267,7 +282,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.match(await page.locator("#batchResultsBody").textContent(), /0001/);
     assert.match(await page.locator("#batchResultsBody").textContent(), /DEMO-ERROR/);
     assert.equal(await page.locator("#batchDownloadBtn").isEnabled(), true);
-    for (const sampleId of ["0001", "PDF-SECOND", "PDF-HOLD"]) {
+    for (const sampleId of ["0001", "PDF-SECOND", "PDF-HOLD", "PDF-MID"]) {
       const button = page.getByRole("button", { name: sampleId + " PDF 저장 화면 열기", exact: true });
       assert.equal(await button.isEnabled(), true);
       const pdfWait = page.waitForEvent("popup");
@@ -319,6 +334,10 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     const rows = XLSX.utils.sheet_to_json(resultBook.Sheets["분석 결과"], { header: 1, defval: "" });
     assert.equal(rows.length, subjects.length + 2);
     assert.ok(rows.some(row => row.includes("0001")), "leading-zero Sample ID must survive download");
+    for (const [sampleId, type] of [["0001", "저민감형"], ["PDF-MID", "중민감형"], ["PDF-SECOND", "고민감형"]]) {
+      const row = rows.find(values => values.includes(sampleId));
+      assert.ok(row && row.includes(type), sampleId + " spreadsheet type");
+    }
     assert.match(JSON.stringify(XLSX.utils.sheet_to_json(resultBook.Sheets["입력 오류"], { header: 1 })), /DEMO-ERROR/);
 
     const overflow = await page.evaluate(() =>
