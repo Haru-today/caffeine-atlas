@@ -154,9 +154,9 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     await marker.locator("summary").click();
     assert.match(await marker.locator(".atlas-snp-body").innerText(), /결과에 반영되는 비중\s*카페인 분해 영역 중 82%/);
     await page.locator("#atlas-snp-sort").selectOption("highest");
-    assert.deepEqual(await page.locator('[data-report-layer="behavior"] > details').evaluateAll(items => items.map(item => Number(item.dataset.points))), [50, 0]);
+    assert.deepEqual(await page.locator('[data-report-layer="behavior"] > details').evaluateAll(items => items.map(item => Number(item.dataset.points))), [100, 50]);
     await page.locator("#atlas-snp-sort").selectOption("lowest");
-    assert.deepEqual(await page.locator('[data-report-layer="behavior"] > details').evaluateAll(items => items.map(item => Number(item.dataset.points))), [0, 50]);
+    assert.deepEqual(await page.locator('[data-report-layer="behavior"] > details').evaluateAll(items => items.map(item => Number(item.dataset.points))), [50, 100]);
     await page.locator("#atlas-snp-sort").selectOption("default");
 
     assert.equal(await page.locator("#sampleId").inputValue(), "DEMO-001");
@@ -339,7 +339,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     const rows = XLSX.utils.sheet_to_json(resultBook.Sheets["분석 결과"], { header: 1, defval: "" });
     assert.equal(rows.length, subjects.length + 2);
     assert.ok(rows.some(row => row.includes("0001")), "leading-zero Sample ID must survive download");
-    for (const [sampleId, type] of [["0001", "저민감형"], ["PDF-MID", "중민감형"], ["PDF-SECOND", "고민감형"]]) {
+    for (const [sampleId, type] of [["0001", "저민감형"], ["PDF-MID", "중민감형"], ["PDF-SECOND", "중민감형"]]) {
       const row = rows.find(values => values.includes(sampleId));
       assert.ok(row && row.includes(type), sampleId + " spreadsheet type");
     }

@@ -187,9 +187,9 @@ test("item explanations distinguish every score and missing values", () => {
   assert.match(window.explain("metabolism", 0), /빨리 빠져나가는/);
   assert.match(window.explain("metabolism", 50), /중간쯤/);
   assert.match(window.explain("metabolism", 100), /오래 남는/);
-  assert.match(window.explain("behavior", 0), /적게 마시는/);
+  assert.match(window.explain("behavior", 0), /많이 마시는/);
   assert.match(window.explain("behavior", 50), /중간쯤/);
-  assert.match(window.explain("behavior", 100), /많이 마시는/);
+  assert.match(window.explain("behavior", 100), /적게 마시는/);
   assert.match(window.explain("metabolism", null), /확인하지 못해/);
 });
 

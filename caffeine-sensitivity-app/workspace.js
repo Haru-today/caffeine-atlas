@@ -72,6 +72,7 @@
     }
 
     function reportLabel(report) {
+      if (report.modelVersion !== 2) return "계산 방식 변경 · 다시 열어 확인";
       if (!Number.isFinite(report.score)) return "종합점수 보류";
       return (categoryNames.indexOf(report.category) >= 0 ? report.category + " · " : "") +
         report.score.toFixed(1) + "점";
@@ -191,6 +192,7 @@
         score: activeReport.score,
         category: activeReport.category,
         categoryVersion: 3,
+        modelVersion: 2,
         savedAt: Date.now()
       };
       try {
