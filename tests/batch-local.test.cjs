@@ -87,6 +87,10 @@ test("each batch PDF uses its own ID, dates, genotypes and held result", async (
   assert.match(flow.popups[1], /<title>Caffeine-Atlas-Report-PDF-SECOND-2026-11-09<\/title>/);
   assert.doesNotMatch(flow.popups[1], /PDF-FIRST|PDF-HOLD/);
   assert.match(flow.popups[1], /<td>CC<\/td>/);
+  assert.match(flow.popups[0], /점수 보는 법/);
+  assert.match(flow.popups[0], /이 유전자는 카페인이 빨리 빠져나가는 쪽이에요/);
+  assert.doesNotMatch(flow.popups[0], /대사 민감도 점수는 섭취·조절 민감도 점수와 비교하면/);
+  assert.match(flow.popups[0], /평소 마시는 양 그대로 살펴보기/);
   assert.match(flow.popups[0], /동일 모델 참조자료 미확보 · 개인 위치 산출 보류/);
   assert.doesNotMatch(flow.popups[0], /95\/100/);
   assert.match(flow.popups[2], /gauge is-unscored/);
@@ -377,4 +381,44 @@ test("all 256 combinations produce finite bounded scores or an explicit core-mar
   }
   visit(0, {});
   assert.equal(count, 256);
+});
+
+test("interpretation follows the metabolism layer even when the overall type differs", async () => {
+  const entries = [
+    ["FAST", ["AA", "GG", "CC", "AT"], "저민감형", "빠른 방향"],
+    ["MID", ["AC", "AG", "CT", "AT"], "중민감형", "중간 방향"],
+    ["SLOW", ["CC", "AA", "TT", "TT"], "고민감형", "느린 방향"],
+    ["MIXED-SLOW", ["CC", "GG", "CC", "AA"], "중민감형", "느린 방향"],
+    ["MIXED-FAST", ["AA", "AA", "TT", "TT"], "중민감형", "빠른 방향"]
+  ];
+  const records = (await app.parseBatchWorkbook(file(workbook(entries.map(([id, g]) => row(id, g)))))).map(app.analyzeBatchRow);
+  for (const [i, [id, , type, speed]] of entries.entries()) {
+    const result = records[i].result;
+    assert.equal(result.category.label, type, id);
+    assert.match(result.interpretationSections[1].title, new RegExp(speed), id);
+    assert.equal(result.interpretationSections[2].title, "알아 두세요", id);
+    assert.match(result.interpretation, /잰 것은 아니에요/, id);
+    assert.equal(records[i].reportData.result.interpretation, result.interpretation, id);
+  }
+  const unknown = (await app.parseBatchWorkbook(file(workbook([row("HOLD", ["모름", "GG", "CC", "AT"])])))).map(app.analyzeBatchRow)[0].result;
+  assert.equal(unknown.category.label, "정보 부족형");
+  assert.doesNotMatch(unknown.interpretation, /속도: (빠른|중간|느린)/);
+});
+
+test("all report outputs use score-specific explanations and selected guide wording", async () => {
+  const inputs = [row("LOW", ["AA", "GG", "CC", "AT"]), row("MID", ["AC", "AG", "CT", "AT"]), row("HIGH", ["CC", "AA", "TT", "TT"])];
+  const records = (await app.parseBatchWorkbook(file(workbook(inputs)))).map(app.analyzeBatchRow);
+  const [low, mid, high] = records.map(r => r.reportData);
+  assert.match(low.genotypes[0].plainExplanation, /빨리 빠져나가는/);
+  assert.match(mid.genotypes[0].plainExplanation, /중간쯤/);
+  assert.match(high.genotypes[0].plainExplanation, /오래 남는/);
+  assert.match(high.genotypes[2].plainExplanation, /많이 마시는/);
+  assert.match(low.recommendations.join(" "), /평소 마시는 양 그대로 살펴보기/);
+  assert.match(mid.recommendations.join(" "), /조금씩 마시며 반응 살펴보기/);
+  assert.match(high.recommendations.join(" "), /양을 줄여 보기/);
+  for (const report of [low, mid, high]) {
+    assert.match(report.recommendations.join(" "), /카페인 107 mg/);
+    assert.match(report.recommendations.join(" "), /권장 섭취량이나 개인별 안전량이 아닙니다/);
+  }
+  assert.match(high.recommendations.join(" "), /커피를 마신 뒤 두근거리거나 잠이 잘 오지 않으면/);
 });

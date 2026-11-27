@@ -7,7 +7,7 @@
   <title>리포트 생성 | Caffeine Atlas</title>
   <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=score-scenarios-20261120">
   <link rel="stylesheet" href="./analyzer.css?v=atlas-design-5">
-  <link rel="stylesheet" href="./experience.css?v=atlas-score-range-6">
+  <link rel="stylesheet" href="./experience.css?v=life-guide-20261127">
 </head>
 <body class="public-demo">
   <div class="app-shell analyzer-shell">
@@ -273,8 +273,8 @@
             <p id="atlas-interpretation-summary">유전자형을 선택해 주세요.</p>
             <details class="atlas-interpretation-more" id="atlas-interpretation-more" hidden>
               <summary>결과 해석 더 보기</summary>
-              <h4 id="interpretationTitle">유전자형을 선택해 주세요</h4>
-              <p id="interpretationText"></p>
+              <h4 id="interpretationTitle" hidden></h4>
+              <div id="interpretationText"></div>
             </details>
           </section>
         </div>
@@ -299,7 +299,7 @@
           <div class="atlas-snp-heading">
             <div>
               <h3>항목별 결과 <span>4개</span></h3>
-              <p>각 항목은 100점 만점입니다. 항목을 펼치면 반영 대립유전자와 가중치를 볼 수 있습니다.</p>
+              <p>유전자 4개를 하나씩 살펴본 결과예요. 항목을 누르면 자세한 내용을 볼 수 있어요.</p>
             </div>
             <label class="atlas-snp-order">
               <span>정렬</span>
@@ -310,8 +310,12 @@
               </select>
             </label>
           </div>
-          <p>점수는 카페인 분해를 늦추는 쪽의 유전자 개수를 반영합니다. 높을수록 느린 분해·높은 민감도 방향입니다. 모든 항목이 실제 분해 속도를 직접 나타내는 것은 아니며, 섭취·조절 항목은 섭취 관련 신호입니다.</p>
-          <p id="atlas-layer-comparison"></p>
+          <div class="atlas-score-guide">
+            <h4>점수 보는 법</h4>
+            <p>카페인 분해 유전자(rs762551, rs2069514): 점수가 높을수록 카페인이 몸에 오래 남는 쪽이에요.</p>
+            <p>커피 섭취 유전자(rs2472297, rs6968865): 점수가 높을수록 커피를 많이 마시는 경향과 관련 있어요.</p>
+            <p>점수는 유전자 정보로 알아본 참고값이에요. 실제 분해 속도나 마시는 양을 잰 것은 아니에요.</p>
+          </div>
           <div class="summary-grid" id="summaryGrid">
             <section class="atlas-snp-group" id="report-metabolism-snps">
               <h4>대사 관련</h4>
@@ -329,29 +333,35 @@
         <section id="report-guide" class="atlas-report-section" aria-labelledby="atlas-life-title">
           <div class="recommend-card atlas-life-guide">
             <header class="atlas-life-heading">
-              <h3 id="atlas-life-title">생활 안내</h3>
-              <p><strong id="atlas-life-focus"></strong> · 건강한 성인 참고 안내</p>
+              <h3 id="atlas-life-title"><span id="atlas-life-focus">생활 안내</span></h3>
+              <p>건강한 성인을 기준으로 한 참고 안내예요.</p>
             </header>
             <dl class="atlas-life-actions" id="recommendList"></dl>
-            <p class="atlas-life-note">개인별 안전 섭취량을 산출하지 않습니다. 제품별 카페인 함량과 모든 음료·식품의 하루 총량을 확인하세요.</p>
             <details class="atlas-life-log">
-              <summary>섭취·수면 기록 예시</summary>
+              <summary>📝 커피와 잠, 이렇게 기록해 보세요</summary>
               <div class="atlas-life-log-body">
+                <p>며칠만 적어 봐도 나에게 맞는 커피 양과 시간을 찾는 데 도움이 돼요.</p>
+                <h4>기록 예시</h4>
                 <dl>
-                  <div><dt>섭취</dt><dd>오전 10시 · 커피 반 잔</dd></div>
-                  <div><dt>수면</dt><dd>잠들기까지 30분 · 밤중에 1번 깸</dd></div>
-                  <div><dt>몸 반응</dt><dd>마신 뒤 두근거림 없음</dd></div>
+                  <div><dt>☕ 언제, 얼마나 마셨나요?</dt><dd>오전 10시 · 아메리카노 반 잔</dd></div>
+                  <div><dt>😴 잠은 어땠나요?</dt><dd>눕고 30분 뒤 잠듦 · 밤에 1번 깸</dd></div>
+                  <div><dt>💓 몸의 느낌은요?</dt><dd>마신 뒤 두근거림 없음</dd></div>
                 </dl>
-                <p>수면 기록을 참고해 섭취 시각을 앞당기거나 양을 줄여 보세요. 수면 문제나 두근거림이 반복되면 섭취 기록을 가지고 의료진과 상의하세요.</p>
+                <h4>이렇게 활용해 보세요</h4>
+                <ul>
+                  <li>잠들기 어려웠던 날에는 커피를 마신 시간을 조금 앞당기거나 양을 줄여 보세요.</li>
+                  <li>두근거림이나 잠 문제가 자주 반복되면, 이 기록을 가지고 병원에서 상담받아 보세요. 기록이 있으면 상담이 훨씬 쉬워져요.</li>
+                </ul>
+                <h4>더 알아보기</h4>
+                <ul class="atlas-life-references">
+                  <li><a href="https://www.mfds.go.kr/brd/m_629/view.do?seq=28" target="_blank" rel="noopener noreferrer">음료별 카페인 양 알아보기 (식품의약품안전처)</a></li>
+                  <li><a href="https://www.efsa.europa.eu/en/topics/topic/caffeine" target="_blank" rel="noopener noreferrer">하루 카페인 섭취 기준 (유럽식품안전청)</a></li>
+                  <li><a href="https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much" target="_blank" rel="noopener noreferrer">카페인, 얼마나 마셔야 많은 걸까요? (미국 FDA)</a></li>
+                  <li><a href="https://doi.org/10.1016/j.smrv.2023.101764" target="_blank" rel="noopener noreferrer">커피 마신 시간과 수면 연구 (Gardiner 등, 2023)</a></li>
+                  <li><a href="https://www.nhlbi.nih.gov/sites/default/files/publications/Sleep_Diary_508.pdf" target="_blank" rel="noopener noreferrer">수면 일지 양식 내려받기 (미국 국립보건원, 영문)</a></li>
+                </ul>
               </div>
             </details>
-            <p class="atlas-life-references">
-              <a href="https://www.mfds.go.kr/brd/m_629/view.do?seq=28" target="_blank" rel="noopener noreferrer">식약처 음료별 카페인</a>
-              <a href="https://www.efsa.europa.eu/en/topics/topic/caffeine" target="_blank" rel="noopener noreferrer">EFSA 카페인 안전성</a>
-              <a href="https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much" target="_blank" rel="noopener noreferrer">FDA 카페인 안내</a>
-              <a href="https://doi.org/10.1016/j.smrv.2023.101764" target="_blank" rel="noopener noreferrer">카페인과 수면 연구</a>
-              <a href="https://www.nhlbi.nih.gov/sites/default/files/publications/Sleep_Diary_508.pdf" target="_blank" rel="noopener noreferrer">NIH 수면 일지</a>
-            </p>
           </div>
         </section>
 
@@ -533,6 +543,6 @@
   <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
   <script src="./batch-pdf.js?v=20261118"></script>
   <script src="./workspace.js?v=type-v3-20261127"></script>
-  <script src="./app.js?v=type-v3-20261127"></script>
+  <script src="./app.js?v=life-guide-20261127"></script>
 </body>
 </html>

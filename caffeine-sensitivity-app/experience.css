@@ -1032,3 +1032,11 @@
   }
 
 }
+
+.atlas-score-guide { margin: 14px 0; }
+.atlas-score-guide h4 { margin: 0 0 6px; }
+.atlas-score-guide p { margin: 4px 0; line-height: 1.6; }
+.atlas-snp-body .atlas-snp-allele { font-size: 0.8rem; }
+.atlas-life-log-body h4 { margin: 14px 0 7px; }
+.atlas-life-log-body ul { padding-left: 1.4em; line-height: 1.6; }
+.atlas-life-log-body .atlas-life-references { display: block; }
