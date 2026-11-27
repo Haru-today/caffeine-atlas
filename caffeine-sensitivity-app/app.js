@@ -452,7 +452,7 @@
         displayName: "판정 보류",
         desc: "핵심 대사 표지자인 CYP1A2*1F(rs762551)가 미확인되어 대사 모형 분류를 보류했습니다."
       };
-    // Preserve the existing research-storage field; public reports use the cumulative position.
+    // Keep compatibility fields, but do not derive population ranks from historical PRS.
     var sensitivityRank = null;
     var coverageLabel = hasScore && unknownCount
       ? "제한적 결과 · " + valid.length + "/" + genes.length + " SNP 확인"
@@ -486,24 +486,6 @@
       metabolismNorm: result.metabolismNorm,
       behaviorNorm: result.behaviorNorm
     };
-  }
-
-  function calculatePercentile(score) {
-    var total = 0;
-    var below = 0;
-    referenceBins.forEach(function (bin) {
-      var binScore = normalizeReference(bin.raw);
-      total += bin.level;
-      if (binScore < score) below += bin.level;
-    });
-    return {
-      percentile: total > 0 ? (below / total) * 100 : 0,
-      total: total
-    };
-  }
-
-  function calculateRankFromPercentile(percentile) {
-    return clamp(Math.round(100 - percentile), 1, 100);
   }
 
   var caffeineHabitPlans = {
@@ -719,7 +701,7 @@
     setSheetStatus("Google Sheets 저장은 결과 생성 후 실행할 수 있습니다.");
     updateReportMeta();
     renderEmpty();
-    drawReferenceChart(null);
+    drawReferenceChart();
     setResultVisible(false);
     updateValidationMessage();
   }
@@ -730,7 +712,7 @@
       hasSubmitted = false;
       lastResult = null;
       renderEmpty();
-      drawReferenceChart(null);
+      drawReferenceChart();
       setResultVisible(false);
       updateValidationMessage(errors.join(" "), true);
       return;
@@ -752,7 +734,7 @@
     }
     window.requestAnimationFrame(function () {
       document.getElementById("result-title").focus({ preventScroll: true });
-      drawReferenceChart(null);
+      drawReferenceChart();
     });
     window.location.hash = "resultReport";
     elements.resultReport.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -764,7 +746,7 @@
     if (!hasSubmitted) {
       lastResult = null;
       renderEmpty();
-      drawReferenceChart(null);
+      drawReferenceChart();
       return;
     }
 
@@ -816,7 +798,7 @@
     elements.interpretationText.textContent = paragraphs.join("\n\n");
     elements.interpretationMore.hidden = false;
     elements.interpretationMore.open = false;
-    elements.lifestyleFocus.textContent = (hasScore ? category.label : "일반") + " 생활 계획 예시";
+    elements.lifestyleFocus.textContent = (hasScore ? category.label : "일반") + " 생활 참고 안내";
     elements.recommendList.innerHTML = lastResult.habitGuide.map(function (item) {
       return '<div class="atlas-life-row"><dt>' + escapeHtml(item.title) +
         '</dt><dd class="atlas-life-value">' + escapeHtml(item.value) +
@@ -824,7 +806,7 @@
     }).join("");
 
     renderSummary();
-    drawReferenceChart(null);
+    drawReferenceChart();
   }
 
   function setLayer(layer, norm) {
@@ -955,7 +937,7 @@
     });
   }
 
-  function drawReferenceChart(userScore) {
+  function drawReferenceChart() {
     var canvas = elements.chart;
     var ctx = canvas.getContext("2d");
     var measuredWidth = Math.round(canvas.getBoundingClientRect().width);
@@ -1050,60 +1032,6 @@
     ctx.fillText("표본 빈도", 0, 0);
     ctx.restore();
 
-    if (false && typeof userScore === "number") {
-      var safeScore = clamp(userScore, 0, 100);
-      var markerX = padLeft + safeScore / 100 * chartW;
-      var markerLevel = getReferenceLevelAtScore(safeScore);
-      var markerY = padTop + chartH - (markerLevel / maxLevel) * chartH;
-      ctx.strokeStyle = "#d95d39";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6, 5]);
-      ctx.beginPath();
-      ctx.moveTo(markerX, markerY);
-      ctx.lineTo(markerX, padTop + chartH);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      ctx.fillStyle = "#ffffff";
-      ctx.strokeStyle = "#d95d39";
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(markerX, markerY, 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-
-      var label = "내 위치 " + userScore.toFixed(1);
-      var labelFontSize = compact ? 10 : 13;
-      var labelHeight = compact ? 20 : 24;
-      ctx.font = "bold " + labelFontSize + "px sans-serif";
-      var labelW = ctx.measureText(label).width + (compact ? 12 : 18);
-      var labelX = clamp(markerX - labelW / 2, padLeft, width - padRight - labelW);
-      var labelY = Math.max(3, markerY - (compact ? 28 : 34));
-      ctx.fillStyle = "#d95d39";
-      ctx.fillRect(labelX, labelY, labelW, labelHeight);
-      ctx.fillStyle = "#fff";
-      ctx.textAlign = "center";
-      ctx.fillText(label, labelX + labelW / 2, labelY + labelHeight - (compact ? 6 : 7));
-    }
-  }
-
-  function getReferenceLevelAtScore(score) {
-    var safeScore = clamp(score, 0, 100);
-    var normalizedBins = referenceBins.map(function (bin) {
-      return { score: normalizeReference(bin.raw), level: bin.level };
-    });
-
-    for (var i = 0; i < normalizedBins.length - 1; i += 1) {
-      var current = normalizedBins[i];
-      var next = normalizedBins[i + 1];
-      if (safeScore <= next.score) {
-        var span = next.score - current.score;
-        var ratio = span ? (safeScore - current.score) / span : 0;
-        return current.level + (next.level - current.level) * ratio;
-      }
-    }
-
-    return normalizedBins[normalizedBins.length - 1].level;
   }
 
   // Fictional demonstration values ONLY. These do not represent a real
@@ -2141,7 +2069,7 @@
 
     if (clonedCanvas) {
       chartImage.src = elements.chart.toDataURL("image/png");
-      chartImage.alt = "모형 내부 참조분포의 7개 점수 구간 그래프";
+      chartImage.alt = "기존 연구 PRS 350개 표본의 점수별 빈도 그래프";
       chartImage.className = "saved-chart-image";
       clonedCanvas.replaceWith(chartImage);
     }
@@ -2209,23 +2137,12 @@
     if (result.typePosition) coverageMarkup += '<p class="score-coverage-note">' + escapeHtml(result.typePosition) + '</p>';
     if (result.sensitivitySummary) coverageMarkup += '<p class="score-coverage-note">미확인 SNP 대입 시 ' +
       escapeHtml(result.sensitivitySummary) + '</p>';
-    var pdfMarker = "";
-    if (false && hasScore) {
-      var pdfMarkerX = clamp(result.score, 0, 100);
-      var pdfMarkerY = 54 - (getReferenceLevelAtScore(pdfMarkerX) / maxReferenceLevel) * 44;
-      pdfMarker = [
-        '<line class="distribution-guide" x1="', pdfMarkerX, '" y1="', pdfMarkerY.toFixed(1), '" x2="', pdfMarkerX, '" y2="54" stroke="#d45b38" stroke-width="1" stroke-dasharray="2 1.5"></line>',
-        '<circle class="distribution-marker" cx="', pdfMarkerX, '" cy="', pdfMarkerY.toFixed(1), '" r="3.2" fill="#fff" stroke="#d45b38" stroke-width="1.6"></circle>'
-      ].join("");
-    }
     var pdfDistributionChart = [
       '<svg class="distribution-chart" viewBox="0 0 100 60" role="img" aria-label="기존 연구 PRS 350개 표본의 점수별 빈도">',
       '<line class="distribution-grid" x1="0" y1="21" x2="100" y2="21" stroke="#e3eaec" stroke-width=".45"></line>',
       '<line class="distribution-grid" x1="0" y1="38" x2="100" y2="38" stroke="#e3eaec" stroke-width=".45"></line>',
       '<polygon class="distribution-area" points="0,54 ', pdfChartPoints, ' 100,54" fill="#dceff0"></polygon>',
-      '<polyline class="distribution-line" points="', pdfChartPoints, '" fill="none" stroke="#148589" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></polyline>',
-      pdfMarker,
-      '</svg>'
+      '<polyline class="distribution-line" points="', pdfChartPoints, '" fill="none" stroke="#148589" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></polyline>',      '</svg>'
     ].join("");
 
     return [
@@ -2435,7 +2352,7 @@
     window.addEventListener("resize", function () {
       window.clearTimeout(chartResizeTimer);
       chartResizeTimer = window.setTimeout(function () {
-        drawReferenceChart(null);
+        drawReferenceChart();
       }, 120);
     });
   }
@@ -2450,7 +2367,7 @@
     setInputMode(window.location.hash === "#batch" ? "batch" : "single");
     updateReportMeta();
     renderEmpty();
-    drawReferenceChart(null);
+    drawReferenceChart();
     setResultVisible(false);
     updateValidationMessage();
     if (typeof window.createAtlasWorkspace === "function") {
