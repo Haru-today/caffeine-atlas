@@ -6,7 +6,7 @@
   <link rel="icon" type="image/svg+xml" href="./assets/caffeine-atlas-favicon.svg">
   <title>리포트 생성 | Caffeine Atlas</title>
   <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=score-scenarios-20261120">
-  <link rel="stylesheet" href="./analyzer.css?v=atlas-design-5">
+  <link rel="stylesheet" href="./analyzer.css?v=report-final-20261127">
   <link rel="stylesheet" href="./experience.css?v=reference-20261127">
 </head>
 <body class="public-demo">
@@ -241,13 +241,13 @@
         <nav class="atlas-report-nav" aria-label="결과 리포트 메뉴">
           <a href="#resultReport">종합</a>
           <a href="#report-genotypes">항목별</a>
-          <a href="#report-guide">생활 안내</a>
+          <a href="#report-guide">섭취 가이드</a>
           <a href="#report-method">산출 근거</a>
           <a href="#report-download">저장</a>
         </nav>
 
         <aside class="atlas-example-banner" id="atlas-example-banner" hidden>
-          <div><strong>가상 예시 결과</strong><p>예시 유전자형으로 만든 화면입니다.</p></div>
+          <div><strong>가상 예시 결과</strong><p>예시 유전자형으로 만든 화면이에요.</p></div>
           <button class="tool-button" type="button" id="atlas-start-personal">내 유전자형 입력</button>
         </aside>
         <section class="atlas-report-section" aria-label="종합 요약">
@@ -309,19 +309,13 @@
               </select>
             </label>
           </div>
-          <div class="atlas-score-guide">
-            <h4>점수 보는 법</h4>
-            <p>카페인 분해 유전자(rs762551, rs2069514): 점수가 높을수록 카페인이 몸에 오래 남는 쪽이에요.</p>
-            <p>커피 섭취 유전자(rs2472297, rs6968865): 점수가 높을수록 커피를 많이 마시는 경향과 관련 있어요.</p>
-            <p>점수는 유전자 정보로 알아본 참고값이에요. 실제 분해 속도나 마시는 양을 잰 것은 아니에요.</p>
-          </div>
           <div class="summary-grid" id="summaryGrid">
             <section class="atlas-snp-group" id="report-metabolism-snps">
-              <h4>대사 관련</h4>
+              <h4>카페인 분해 유전자</h4>
               <div class="atlas-snp-items" data-report-layer="metabolism"></div>
             </section>
             <section class="atlas-snp-group" id="report-behavior-snps">
-              <h4>섭취·조절 관련</h4>
+              <h4>커피 섭취 유전자</h4>
               <div class="atlas-snp-items" data-report-layer="behavior"></div>
             </section>
           </div>
@@ -332,8 +326,8 @@
         <section id="report-guide" class="atlas-report-section" aria-labelledby="atlas-life-title">
           <div class="recommend-card atlas-life-guide">
             <header class="atlas-life-heading">
-              <h3 id="atlas-life-title"><span id="atlas-life-focus">생활 안내</span></h3>
-              <p>건강한 성인을 기준으로 한 참고 안내예요.</p>
+              <h3 id="atlas-life-title"><span id="atlas-life-focus">카페인 섭취 가이드</span></h3>
+              <p id="atlas-life-intro"></p>
             </header>
             <dl class="atlas-life-actions" id="recommendList"></dl>
             <details class="atlas-life-log">
@@ -403,11 +397,10 @@
               <span>고민감형 67~100점</span>
             </div>
           </div>
-          <p class="score-position" id="scorePosition" hidden></p>
         </div>
 
         <div class="layer-stack">
-          <h3>분석 레이어</h3>
+          <h3>영역별 점수</h3>
           <div class="layer-row">
             <span>대사 민감도 점수</span>
             <strong id="metabolismScore">--</strong>
@@ -423,13 +416,12 @@
             <strong id="confidenceScore">--</strong>
             <div class="mini-bar"><i id="confidenceBar"></i></div>
           </div>
-          <p class="reference-scope-note">유전자 4개 중 결과가 확인된 개수를 보여 줘요. 결과가 얼마나 정확한지를 뜻하는 숫자는 아니에요.</p>
         </div>
 
         <details class="score-explanation" id="scenarioDetails" hidden>
           <summary>미확인 SNP에 따른 점수 변화</summary>
           <p class="scenario-summary" id="scenarioSummary"></p>
-          <p>확인된 유전자형은 고정하고 미확인 항목에 가능한 유전자형을 하나씩 대입했습니다. 아래 범위와 유형은 대입 시나리오입니다.</p>
+          <p>확인된 유전자는 그대로 두고, 모르는 유전자에 나올 수 있는 유전자형을 하나씩 넣어 계산했어요. 아래 점수 범위와 유형은 그렇게 계산한 경우예요.</p>
           <div class="scenario-table-wrap">
             <table class="scenario-table">
               <thead><tr><th scope="col">대입한 유전자형</th><th scope="col">종합점수</th><th scope="col">유형</th></tr></thead>
@@ -440,12 +432,12 @@
 
         <div class="chart-card">
           <div class="chart-head">
-            <h3>연구 참조분포</h3>
+            <h3>기존 연구 참여자 350명의 점수 분포</h3>
             <div class="chart-position">
               <strong id="referencePositionText">--</strong>
             </div>
           </div>
-          <canvas id="referenceChart" width="680" height="300" role="img" aria-label="같은 모델로 계산한 연구 참조자료의 민감도 점수 분포"></canvas>
+          <canvas id="referenceChart" width="680" height="300" role="img" aria-label="기존 연구 참여자 350명의 카페인 민감도 점수 분포 곡선과 내 점수"></canvas>
           <p class="reference-scope-note"><span id="referenceSourceNote"></span></p>
         </div>
         </section>
@@ -472,7 +464,7 @@
           <button type="button" class="tool-button" id="atlas-save-local">이 브라우저에 보관</button>
         </section>
 
-        <div class="public-download-note public-only" role="note">상세 리포트는 파일로 내려받을 수 있습니다. PDF는 별도 인쇄 화면에서 브라우저의 ‘PDF로 저장’ 기능을 이용하세요. 공개 체험 결과는 연구용 Google Sheets에 업로드되지 않습니다.</div>
+        <div class="public-download-note public-only" role="note">상세 리포트는 파일로 내려받을 수 있어요. PDF는 인쇄 화면에서 브라우저의 ‘PDF로 저장’ 기능을 이용해 주세요. 공개 체험 결과는 연구용 Google Sheets에 올라가지 않아요.</div>
         <div class="action-row detailed-actions">
           <button class="tool-button primary research-only" id="sheetSaveBtn" type="button" title="동의한 리포트 데이터를 Google Sheets에 저장">
             <span aria-hidden="true">↥</span>
@@ -494,24 +486,23 @@
 
         </div>
         <section class="atlas-report-notices atlas-report-section" id="report-notices" aria-labelledby="report-notices-title">
-          <h3 id="report-notices-title">유의사항</h3>
-          <details>
-            <summary>결과의 의미</summary>
-            <p>본 결과는 연구·교육용 해석 리포트이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다. 캐릭터는 입력한 유전자형으로 계산한 종합 점수 구간을 나타냅니다.</p>
-          </details>
+          <h3 id="report-notices-title">꼭 알아 두세요</h3>
+          <ul class="atlas-caution-list">
+            <li>이 결과는 유전자 정보로 알아본 연구·교육용 참고 결과예요. 병을 진단하거나 치료 방법을 정하는 데 쓸 수 없어요.</li>
+            <li>저민감형·중민감형·고민감형은 Caffeine Atlas가 정한 기준이에요. 병원 검사처럼 검증된 분류는 아니에요.</li>
+            <li>카페인에 대한 반응은 유전자 말고도 마신 양과 시간, 수면, 스트레스, 흡연, 임신, 복용 중인 약, 간 건강 등에 따라 달라질 수 있어요.</li>
+            <li id="cautionUnknown" hidden>'모름'으로 선택한 유전자는 점수에서 빼고 계산했어요. 모르는 항목이 많을수록 결과가 덜 정확할 수 있어요.</li>
+          </ul>
+          <p class="atlas-caution-sources">참고 자료: 미국 FDA, 유럽식품안전청(EFSA), Gardiner 등(2023)</p>
           <details>
             <summary>개인정보 처리</summary>
-            <p class="public-only">공개 체험의 유전자형과 검체 정보는 브라우저에서 처리합니다. PDF와 HTML을 내려받으면 파일에 검체 정보가 포함될 수 있으니 공유 전에 확인해 주세요.</p>
-            <p class="research-only">연구 저장은 동의 후 결과 화면에서 직접 실행합니다. PDF와 HTML에는 검체 정보가 포함될 수 있으니 공유 전에 확인해 주세요.</p>
+            <p class="public-only">공개 체험에서는 유전자형과 검체 정보를 이 브라우저 안에서만 처리해요. PDF와 HTML을 내려받으면 파일에 검체 정보가 들어갈 수 있으니 공유 전에 확인해 주세요.</p>
+            <p class="research-only">연구 저장은 동의한 뒤 결과 화면에서 직접 실행해요. PDF와 HTML에는 검체 정보가 들어갈 수 있으니 공유 전에 확인해 주세요.</p>
           </details>
           <details>
             <summary>유전정보 보관</summary>
-            <p class="public-only">‘이 브라우저에 보관’을 누르면 유전자형 4개, 보고일과 결과 요약이 현재 브라우저에 저장됩니다. 저장한 리포트는 ‘내 리포트’에서 삭제할 수 있습니다.</p>
-            <p class="research-only">내려받은 리포트에는 유전자형이 포함됩니다. 연구 데이터와 리포트는 기관의 보관·접근 기준에 따라 관리해 주세요.</p>
-          </details>
-          <details>
-            <summary>해석 시 주의</summary>
-            <p>‘모름’으로 입력한 항목은 각 영역 점수 계산에서 제외합니다. 핵심 SNP인 rs762551을 확인할 수 없으면 종합 점수와 유형 판정을 보류합니다. 실제 카페인 반응에는 섭취량과 시간, 수면 상태, 약물 등도 영향을 줄 수 있습니다.</p>
+            <p class="public-only">‘이 브라우저에 보관’을 누르면 유전자형 4개, 보고일과 결과 요약이 지금 쓰는 브라우저에 저장돼요. 저장한 리포트는 ‘내 리포트’에서 지울 수 있어요.</p>
+            <p class="research-only">내려받은 리포트에는 유전자형이 들어 있어요. 연구 데이터와 리포트는 기관의 보관·접근 기준에 따라 관리해 주세요.</p>
           </details>
         </section>
         </div>
@@ -542,6 +533,6 @@
   <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
   <script src="./batch-pdf.js?v=20261118"></script>
   <script src="./workspace.js?v=type-v3-20261127"></script>
-  <script src="./app.js?v=reference-20261127"></script>
+  <script src="./app.js?v=report-final-20261127"></script>
 </body>
 </html>

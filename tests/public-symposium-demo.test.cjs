@@ -62,9 +62,9 @@ test("public Caffeine Atlas bundle has no working Google Apps Script endpoint", 
 
 test("visible public notices accurately disclose data handling limitations", () => {
   assert.match(analyzer, /입력 내용은 브라우저에서만 처리합니다/);
-  assert.match(analyzer, /상세 리포트는 파일로 내려받을 수 있습니다/);
-  assert.match(analyzer, /브라우저의 ‘PDF로 저장’ 기능을 이용하세요/);
-  assert.match(analyzer, /연구·교육용 해석 리포트이며 질병 진단/);
+  assert.match(analyzer, /상세 리포트는 파일로 내려받을 수 있어요/);
+  assert.match(analyzer, /브라우저의 ‘PDF로 저장’ 기능을 이용해 주세요/);
+  assert.match(analyzer, /연구·교육용 참고 결과예요\. 병을 진단하거나/);
   assert.match(analyzer, /https:\/\/haru-today\.github\.io\/caffeine-atlas\/privacy\.html/);
   assert.match(analyzer, /https:\/\/haru-today\.github\.io\/caffeine-atlas\/terms\.html/);
 });
@@ -85,16 +85,19 @@ test("one-tap example is explicitly fictional and does not enable research uploa
 });
 
 test("reference distribution uses the current model and only displays complete results", () => {
-  assert.match(analyzer, /연구 참조분포/);
-  assert.match(source, /같은 방법으로 계산한 연구 참조자료 350명/);
+  assert.match(analyzer, /기존 연구 참여자 350명의 점수 분포/);
+  assert.match(source, /350명의 점수를 부드러운 곡선으로/);
+  assert.match(source, /REFERENCE_BANDWIDTH = 10/);
   assert.match(source, /unknownCount === 0/);
-  assert.match(source, /내 점수 이하/);
+  assert.match(source, /내 점수와 같거나 낮아요/);
+  assert.doesNotMatch(source, /referenceBins/);
   assert.doesNotMatch(source, /기존 연구 PRS 원자료/);
 });
 
 test("confirmed genes do not represent predictive confidence", () => {
   assert.match(analyzer, /<span>확인된 유전자<\/span>/);
-  assert.match(analyzer, /결과가 얼마나 정확한지를 뜻하는 숫자는 아니에요/);
+  assert.doesNotMatch(analyzer, /결과가 얼마나 정확한지를 뜻하는 숫자는 아니에요/);
+  assert.doesNotMatch(analyzer + source, /입력 완성도/);
   assert.match(source, /4개 중 /);
   assert.match(source, /confidence: confidence/);
 });
