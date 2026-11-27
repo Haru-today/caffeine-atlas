@@ -98,8 +98,8 @@ test("each batch PDF uses its own ID, dates, genotypes and held result", async (
   assert.doesNotMatch(flow.popups[0], /95\/100/);
   assert.match(flow.popups[2], /gauge is-unscored/);
   assert.match(flow.popups[2], /카페인 분해에 가장 중요한 유전자 정보가 없어서 350명과 비교하지 않았어요/);
-  assert.match(flow.popups[3], /28\.7.*제한적 결과 · 확인된 유전자 4개 중 3개/);
-  assert.match(flow.element("batchResultsBody").innerHTML, /28\.7점<small class="score-coverage-note">제한적 결과 · 확인된 유전자 4개 중 3개/);
+  assert.match(flow.popups[3], /58\.7.*제한적 결과 · 확인된 유전자 4개 중 3개/);
+  assert.match(flow.element("batchResultsBody").innerHTML, /58\.7점<small class="score-coverage-note">제한적 결과 · 확인된 유전자 4개 중 3개/);
   assert.doesNotMatch(flow.popups[2], /<circle class="distribution-marker"/);
   assert.equal(flow.networkCalls(), 0);
 });
@@ -330,9 +330,9 @@ test("download workbook retains every row, source values, errors and safe text c
   assert.equal(resultRows.length, records.length + 1, "each uploaded row must be represented");
   const partialOutput = resultRows.find(row => row[1] === "PARTIAL");
   assert.equal(partialOutput[4], "미기재");
-  assert.equal(partialOutput[11], 28.7);
+  assert.equal(partialOutput[11], 58.7);
   assert.equal(partialOutput[21], "제한적 결과 · 확인된 유전자 4개 중 3개");
-  assert.deepEqual(partialOutput.slice(24), [28.7, 42.5, "저민감형 / 중민감형", 3]);
+  assert.deepEqual(partialOutput.slice(24), [44.9, 58.7, "중민감형", 3]);
   assert.match(JSON.stringify(toRows(exported.Sheets["해석 안내"])), /350명의 점수를 부드러운 곡선으로/);
   const flattened = JSON.stringify(resultRows);
   for (const id of records.map(record => record.sampleId)) assert.ok(resultRows.some(row => row.includes(id)), id);
@@ -391,8 +391,8 @@ test("interpretation follows the metabolism layer even when the overall type dif
     ["FAST", ["AA", "GG", "CC", "AT"], "저민감형", "빠른 편"],
     ["MID", ["AC", "AG", "CT", "AT"], "중민감형", "보통"],
     ["SLOW", ["CC", "AA", "TT", "TT"], "고민감형", "느린 편"],
-    ["MIXED-SLOW", ["CC", "GG", "CC", "AA"], "중민감형", "느린 편"],
-    ["MIXED-FAST", ["AA", "AA", "TT", "TT"], "중민감형", "빠른 편"]
+    ["MIXED-SLOW", ["CC", "GG", "TT", "TT"], "중민감형", "느린 편"],
+    ["MIXED-FAST", ["AA", "AA", "CC", "AA"], "중민감형", "빠른 편"]
   ];
   const records = (await app.parseBatchWorkbook(file(workbook(entries.map(([id, g]) => row(id, g)))))).map(app.analyzeBatchRow);
   for (const [i, [id, , type, speed]] of entries.entries()) {
@@ -430,7 +430,7 @@ test("all report outputs use score-specific explanations and selected guide word
   assert.deepEqual(Array.from(low.genotypes, g => g.plainExplanation), [
     "이 유전자는 카페인이 빨리 빠져나가는 쪽이에요.",
     "이 유전자는 카페인이 빨리 빠져나가는 쪽이에요.",
-    "이 유전자는 커피를 적게 마시는 경향과 관련 있어요.",
+    "이 유전자형은 커피를 더 적게 마시는 경향과 관련된 방향이에요.",
     "이 유전자는 커피를 마시는 경향이 중간쯤이에요."
   ]);
   assert.match(high.genotypes[0].plainExplanation, /몸에 오래 남는 쪽/);
@@ -442,12 +442,29 @@ test("reference comparison counts ties and withholds incomplete genotypes", () =
     app.genes.forEach((gene, i) => { selections[gene.id] = gene.genotypes.find(g => g.code === codes[i]); });
     return app.buildComputedResult(selections);
   }
-  const low = calculate(["AA", "GG", "CC", "AA"]);
+  const low = calculate(["AA", "GG", "TT", "TT"]);
   assert.equal(low.score, 0);
-  assert.equal(low.referencePercent, 16 / 350 * 100);
+  assert.equal(low.referencePercent, 0);
   assert.equal(low.percentile, null);
   const example = calculate(["AA", "GG", "CC", "AT"]);
-  assert.ok(Math.abs(example.referencePercent - 72 / 350 * 100) < 1e-9);
-  assert.equal(calculate(["CC", "AA", "TT", "TT"]).referencePercent, 100);
+  assert.ok(Math.abs(example.referencePercent - 39 / 350 * 100) < 1e-9);
+  assert.equal(calculate(["CC", "AA", "CC", "AA"]).referencePercent, 100);
   assert.equal(calculate(["AA", "unknown", "CC", "AT"]).referencePercent, null);
+});
+
+
+test("all 81 complete genotypes follow the intended allele directions and weights", () => {
+  const sets = [["AA", "AC", "CC"], ["GG", "AG", "AA"], ["TT", "CT", "CC"], ["TT", "AT", "AA"]];
+  let count = 0;
+  for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) for (let c = 0; c < 3; c++) for (let d = 0; d < 3; d++) {
+    const choices = [a, b, c, d];
+    const selected = {};
+    app.genes.forEach((gene, i) => { selected[gene.id] = gene.genotypes.find(g => g.code === sets[i][choices[i]]); });
+    const result = app.buildComputedResult(selected);
+    const expected = 100 * (0.7 * (0.82 * a / 2 + 0.18 * b / 2) + 0.3 * (0.54 * c / 2 + 0.46 * d / 2));
+    assert.ok(Math.abs(result.score - expected) < 1e-9);
+    assert.equal(result.category.label, expected < 33.34 ? "저민감형" : expected < 66.67 ? "중민감형" : "고민감형");
+    count++;
+  }
+  assert.equal(count, 81);
 });

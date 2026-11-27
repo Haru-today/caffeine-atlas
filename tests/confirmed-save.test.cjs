@@ -44,7 +44,7 @@ const capabilities = { ok: true, capabilities: { batchSave: true, confirmedSave:
   assert.equal(publicDemo.posts(), 0, "public QR demo must never submit genetic data");
   const model = app([]);
   const ahr = model.genes.find(g => g.id === 'rs6968865');
-  for (const [input, expected, count] of [['AA', 'AA', 0], ['TA', 'AT', 1], ['A/T', 'AT', 1], ['TT', 'TT', 2]]) {
+  for (const [input, expected, count] of [['AA', 'AA', 2], ['TA', 'AT', 1], ['A/T', 'AT', 1], ['TT', 'TT', 0]]) {
     const gt = model.normalizeGenotype(ahr, input);
     assert.equal(gt.code, expected);
     assert.equal(gt.alleleCount, count);

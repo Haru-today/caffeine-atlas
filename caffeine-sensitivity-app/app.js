@@ -46,16 +46,16 @@
       rsid: "rs2472297",
       layer: "behavior",
       layerLabel: "섭취/조절",
-      allele: "T",
+      allele: "C",
       description: "CYP1A1-CYP1A2 좌위의 섭취 성향 및 조절 신호를 보조 레이어로 계산합니다.",
       evidence: "GWAS 기반",
       source: "GWAS",
       evidenceGrade: "Moderate",
       weightText: "조절 54%",
       genotypes: [
-        { code: "CC", alleleCount: 0, evidenceScore: 0, label: "T 0개" },
-        { code: "CT", alleleCount: 1, evidenceScore: 0.5, label: "T 1개" },
-        { code: "TT", alleleCount: 2, evidenceScore: 1, label: "T 2개" },
+        { code: "CC", alleleCount: 2, evidenceScore: 1, label: "C 2개" },
+        { code: "CT", alleleCount: 1, evidenceScore: 0.5, label: "C 1개" },
+        { code: "TT", alleleCount: 0, evidenceScore: 0, label: "C 0개" },
         { code: "unknown", alleleCount: null, evidenceScore: null, label: "모름" }
       ]
     },
@@ -65,16 +65,16 @@
       rsid: "rs6968865",
       layer: "behavior",
       layerLabel: "섭취/조절",
-      allele: "T",
+      allele: "A",
       description: "AHR은 CYP1A2 발현 조절 축과 연결됩니다. rs6968865를 조절 레이어에 반영합니다.",
       evidence: "AHR 조절자",
       source: "AHR 후보",
       evidenceGrade: "Moderate",
       weightText: "조절 46%",
       genotypes: [
-        { code: "AA", alleleCount: 0, evidenceScore: 0, label: "T 0개" },
-        { code: "AT", alleleCount: 1, evidenceScore: 0.5, label: "T 1개" },
-        { code: "TT", alleleCount: 2, evidenceScore: 1, label: "T 2개" },
+        { code: "AA", alleleCount: 2, evidenceScore: 1, label: "A 2개" },
+        { code: "AT", alleleCount: 1, evidenceScore: 0.5, label: "A 1개" },
+        { code: "TT", alleleCount: 0, evidenceScore: 0, label: "A 0개" },
         { code: "unknown", alleleCount: null, evidenceScore: null, label: "모름" }
       ]
     }
@@ -90,13 +90,14 @@
   var TYPE_THRESHOLDS = [33.34, 66.67];
 
   // Aggregate reference counts in hundredths of a current-model point. Individual records stay private.
-  var referenceScores = [[0,16],[630,31],[690,25],[1260,12],[1320,36],[1380,6],[1950,8],[2010,8],[2640,2],[2870,31],[3500,19],[3560,54],[4190,31],[4250,19],[4880,13],[5740,12],[6430,20],[7120,7]];
+  var referenceScores = [[1620,6],[2250,8],[2310,25],[2880,2],[2940,36],[3000,16],[3570,8],[3630,31],[4260,12],[4490,19],[5120,13],[5180,54],[5810,31],[5870,31],[6500,19],[7360,7],[8050,20],[8740,12]];
   var REFERENCE_TOTAL = 350;
   var REFERENCE_BANDWIDTH = 10;
   var REFERENCE_TITLE = "연구 참조 분포";
   var REFERENCE_SOURCE_NOTE = "350명의 점수를 부드러운 곡선으로 나타냈어요.\n곡선이 높은 곳일수록 그 점수의 사람이 많아요.\n빨간 점이 내 위치예요. 일반 인구 전체의 순위는 아니에요.";
   var CAUTION_LINES = [
     "이 결과는 유전자 정보로 알아본 연구·교육용 참고 결과예요. 병을 진단하거나 치료 방법을 정하는 데 쓸 수 없어요.",
+    "커피 섭취량이 적은 경향을 높은 민감도로 반영한 것은 연구 가설이며, 실제 민감도를 직접 검증한 것은 아니에요.",
     "저민감형·중민감형·고민감형은 Caffeine Atlas가 정한 기준이에요. 병원 검사처럼 검증된 분류는 아니에요.",
     "카페인에 대한 반응은 유전자 말고도 마신 양과 시간, 수면, 스트레스, 흡연, 임신, 복용 중인 약, 간 건강 등에 따라 달라질 수 있어요."
   ];
@@ -960,7 +961,7 @@
 
   var LAYER_CARD_TEXT = {
     metabolism: "점수가 높을수록 카페인이 몸에 오래 남는 쪽과 관련 있어요.",
-    behavior: "점수가 높을수록 커피를 많이 마시는 경향과 관련 있어요."
+    behavior: "섭취량이 적은 경향을 민감도가 높은 방향으로 반영한 연구 가설이에요. 실제 민감도를 직접 확인한 결과는 아니에요."
   };
   var GENOTYPE_EXPLANATIONS = {
     metabolism: {
@@ -969,9 +970,9 @@
       100: "이 유전자는 카페인이 몸에 오래 남는 쪽이에요."
     },
     behavior: {
-      0: "이 유전자는 커피를 적게 마시는 경향과 관련 있어요.",
+      0: "이 유전자형은 커피를 더 많이 마시는 경향과 관련된 방향이에요.",
       50: "이 유전자는 커피를 마시는 경향이 중간쯤이에요.",
-      100: "이 유전자는 커피를 많이 마시는 경향과 관련 있어요."
+      100: "이 유전자형은 커피를 더 적게 마시는 경향과 관련된 방향이에요."
     }
   };
   var SOURCE_LABELS = { "기능 연구": "실험 연구", "GWAS": "대규모 유전자 연구", "AHR 후보": "후보 유전자(근거 보완 중)" };
@@ -1870,6 +1871,7 @@
       ["확인된 유전자", "유전자 4개 중 결과가 확인된 개수를 보여 줘요. 결과가 얼마나 정확한지를 뜻하는 숫자는 아니에요."],
       ["점수", "대사 70% + 조절 30%의 연구·교육용 모형 지수. 기존 점수식은 유지했으며 임상 검증된 PRS가 아닙니다."],
       ["양식의 구 명칭", "CYP1A2*1F/*1C 열 이름은 기존 양식과의 호환을 위해 유지했습니다. 분석은 rs762551/rs2069514 유전자형 기준이며 완전한 star allele 판정이 아닙니다."],
+      ["섭취 점수 가설", "커피 섭취량이 적은 경향을 높은 민감도로 반영한 것은 연구 가설이며 실제 민감도를 직접 검증한 것은 아닙니다."],
       ["섭취 가이드 근거", "FDA 일반 성인 안내: https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much / EFSA: https://www.efsa.europa.eu/en/topics/topic/caffeine / Gardiner 등(2023): https://doi.org/10.1016/j.smrv.2023.101764. 개인별 안전량·시간이 아닙니다."],
        ["대사와 수면", "카페인 분해 속도와 각성·수면 반응은 구분해서 살펴보아야 합니다. 이 점수로 실제 분해 속도, 수면 능력, 내성, 안전 섭취량을 판정할 수 없습니다."],
       ["개인정보", "코드형 Sample ID를 사용하세요. 파일은 브라우저에서 처리하며 이 다운로드 동작은 서버 저장을 수행하지 않습니다."],
