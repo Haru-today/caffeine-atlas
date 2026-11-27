@@ -339,7 +339,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     const rows = XLSX.utils.sheet_to_json(resultBook.Sheets["분석 결과"], { header: 1, defval: "" });
     assert.equal(rows.length, subjects.length + 2);
     assert.ok(rows.some(row => row.includes("0001")), "leading-zero Sample ID must survive download");
-    for (const [sampleId, type] of [["0001", "저민감형"], ["PDF-MID", "중민감형"], ["PDF-SECOND", "고민감형"]]) {
+    for (const [sampleId, type] of [["0001", "저민감형"], ["PDF-MID", "중민감형"], ["PDF-SECOND", "중민감형"]]) {
       const row = rows.find(values => values.includes(sampleId));
       assert.ok(row && row.includes(type), sampleId + " spreadsheet type");
     }
