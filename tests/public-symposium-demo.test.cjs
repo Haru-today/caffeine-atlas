@@ -85,7 +85,7 @@ test("one-tap example is explicitly fictional and does not enable research uploa
 });
 
 test("historical PRS distribution is not a current-model percentile", () => {
-  assert.match(analyzer, /기존 연구 참조분포/);
+  assert.match(analyzer, /연구 참조분포/);
   assert.match(analyzer, /caffeine_model_evidence_pack\.md/);
   assert.match(source, /기존 연구 PRS 원자료/);
   assert.match(source, /개인 참조 위치·백분위는 제공하지 않습니다/);
@@ -179,7 +179,22 @@ test("type badges describe the composite score and never claim a metabolizer typ
   require("node:vm").runInNewContext(source.replace("  init();",
     "  window.__model = { classify: classify };"), { window, document, console });
   const badges = [0, 50, 100].map(score => window.__model.classify(score).badge);
-  assert.deepEqual(badges, ["민감도 지수 낮음", "민감도 지수 중간", "민감도 지수 높음"]);
+  assert.deepEqual(badges, ["카페인 민감도 지수가 낮아요.", "카페인 민감도 지수가 중간이에요.", "카페인 민감도 지수가 높아요."]);
   assert.doesNotMatch(landing, /(빠른|평균|느린) 대사형/);
   assert.doesNotMatch(source, /badge: "[^"]*대사형"/);
+});
+
+test("plain explanations preserve the scoring direction and handle missing data", () => {
+  const window = {};
+  const document = { getElementById: () => ({ value: "", options: [], classList: { toggle() {} } }) };
+  require("node:vm").runInNewContext(source.replace("  init();",
+    "  window.__explanations = { genotypeExplanation, layerComparison };"), { window, document, console });
+  const { genotypeExplanation, layerComparison } = window.__explanations;
+  assert.match(genotypeExplanation("metabolism", 100), /100점.*느린 분해/);
+  assert.match(genotypeExplanation("behavior", 100), /실제 섭취량은 알 수 없어요/);
+  assert.match(genotypeExplanation("metabolism", null), /확인하지 못해/);
+  assert.match(layerComparison(100, 50), /높아요/);
+  assert.match(layerComparison(50, 100), /낮아요/);
+  assert.match(layerComparison(50, 50), /같아요/);
+  assert.match(layerComparison(null, 50), /비교할 수 없어요/);
 });
