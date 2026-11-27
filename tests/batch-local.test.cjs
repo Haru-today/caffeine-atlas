@@ -398,7 +398,8 @@ test("interpretation follows the metabolism layer even when the overall type dif
     const result = records[i].result;
     assert.equal(result.category.label, type, id);
     assert.match(result.interpretationSections[1].title, new RegExp(speed), id);
-    assert.equal(result.interpretationSections.length, 2, id);
+    assert.equal(result.interpretationSections[2].title, "알아 두세요", id);
+    assert.match(result.interpretation, /잰 것은 아니에요/, id);
     assert.match(records[i].reportData.limitations.join(" "), /연구·교육용 참고 결과예요/, id);
     assert.equal(records[i].reportData.result.interpretation, result.interpretation, id);
   }

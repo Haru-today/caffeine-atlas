@@ -216,7 +216,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     const content = await popup.locator("body").textContent();
     assert.match(content, /DEMO-001/);
     assert.match(content, /rs6968865|AHR/);
-    assert.match(content, /기존 연구 참여자 350명의 점수 분포/);
+    assert.match(content, /연구 참조 분포/);
     assert.match(content, /350명 중 20\.6%가 내 점수와 같거나 낮아요/);
     assert.match(content, /350명의 점수를 부드러운 곡선으로/);
     assert.doesNotMatch(content, /95\/100/);

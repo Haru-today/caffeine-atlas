@@ -85,7 +85,7 @@ test("one-tap example is explicitly fictional and does not enable research uploa
 });
 
 test("reference distribution uses the current model and only displays complete results", () => {
-  assert.match(analyzer, /기존 연구 참여자 350명의 점수 분포/);
+  assert.match(analyzer, /연구 참조 분포/);
   assert.match(source, /350명의 점수를 부드러운 곡선으로/);
   assert.match(source, /REFERENCE_BANDWIDTH = 10/);
   assert.match(source, /unknownCount === 0/);
