@@ -378,3 +378,25 @@ test("all 256 combinations produce finite bounded scores or an explicit core-mar
   visit(0, {});
   assert.equal(count, 256);
 });
+
+test("interpretation follows the metabolism layer even when the overall type differs", async () => {
+  const entries = [
+    ["FAST", ["AA", "GG", "CC", "AT"], "저민감형", "빠른 방향"],
+    ["MID", ["AC", "AG", "CT", "AT"], "중민감형", "중간 방향"],
+    ["SLOW", ["CC", "AA", "TT", "TT"], "고민감형", "느린 방향"],
+    ["MIXED-SLOW", ["CC", "GG", "CC", "AA"], "중민감형", "느린 방향"],
+    ["MIXED-FAST", ["AA", "AA", "TT", "TT"], "중민감형", "빠른 방향"]
+  ];
+  const records = (await app.parseBatchWorkbook(file(workbook(entries.map(([id, g]) => row(id, g)))))).map(app.analyzeBatchRow);
+  for (const [i, [id, , type, speed]] of entries.entries()) {
+    const result = records[i].result;
+    assert.equal(result.category.label, type, id);
+    assert.match(result.interpretationSections[1].title, new RegExp(speed), id);
+    assert.equal(result.interpretationSections[2].title, "알아 두세요", id);
+    assert.match(result.interpretation, /잰 것은 아니에요/, id);
+    assert.equal(records[i].reportData.result.interpretation, result.interpretation, id);
+  }
+  const unknown = (await app.parseBatchWorkbook(file(workbook([row("HOLD", ["모름", "GG", "CC", "AT"])])))).map(app.analyzeBatchRow)[0].result;
+  assert.equal(unknown.category.label, "정보 부족형");
+  assert.doesNotMatch(unknown.interpretation, /속도: (빠른|중간|느린)/);
+});
