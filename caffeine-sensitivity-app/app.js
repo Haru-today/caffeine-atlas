@@ -89,17 +89,18 @@
 
   var TYPE_THRESHOLDS = [33.34, 66.67];
 
+  // Historical PRS distribution only: aggregate counts, not the current score model.
   var referenceBins = [
-    { raw: -0.5, level: 1 },
-    { raw: -0.25, level: 3 },
-    { raw: 0, level: 5 },
-    { raw: 0.25, level: 5 },
-    { raw: 0.5, level: 4 },
-    { raw: 0.75, level: 2 },
-    { raw: 1, level: 1 }
+    { raw: -0.5, level: 12 },
+    { raw: -0.25, level: 50 },
+    { raw: 0, level: 79 },
+    { raw: 0.25, level: 85 },
+    { raw: 0.5, level: 76 },
+    { raw: 0.75, level: 32 },
+    { raw: 1, level: 16 }
   ];
 
-  var REFERENCE_SOURCE_NOTE = "Caffeine Atlas 모델 근거 문서 D.3의 내부 참조표준 SNP 유전형 자료를 참고한 모형 내 고정 7구간입니다. 내 점수보다 낮은 구간의 가중치를 누적합니다. 참조 표본 수와 구간 가중치의 원자료 대조는 확인이 필요합니다.";
+  var REFERENCE_SOURCE_NOTE = "기존 연구 PRS 원자료(참조표준SNP 샘플별 유전형, n=350)의 점수별 빈도입니다. 현재 70:30 모델과 동일한 방식으로 재산출된 분포가 아니므로 개인 참조 위치·백분위는 제공하지 않습니다.";
 
   // The public QR demo is offline-first for analysis: no research upload API.
   // A separately hosted, Access-authenticated research build enables storage.
@@ -437,7 +438,7 @@
     });
     var hasScore = hasCoreGenotype && result.finalNorm !== null && typeof result.finalNorm === "number";
     var score = hasScore ? clamp(result.finalNorm * 100, 0, 100) : null;
-    var percentile = hasScore ? calculatePercentile(score) : { percentile: null, total: 0 };
+    var percentile = { percentile: null, total: 0 };
     var confidence = Math.round((valid.length / genes.length) * 100);
     var category = hasScore ? classify(score) : getInsufficientCategory(valid.length);
     var habitGuide = buildCaffeineHabitGuide(category.illustration);
@@ -452,7 +453,7 @@
         desc: "핵심 대사 표지자인 CYP1A2*1F(rs762551)가 미확인되어 대사 모형 분류를 보류했습니다."
       };
     // Preserve the existing research-storage field; public reports use the cumulative position.
-    var sensitivityRank = hasScore ? calculateRankFromPercentile(percentile.percentile) : null;
+    var sensitivityRank = null;
     var coverageLabel = hasScore && unknownCount
       ? "제한적 결과 · " + valid.length + "/" + genes.length + " SNP 확인"
       : "";
@@ -506,60 +507,19 @@
   }
 
   var caffeineHabitPlans = {
-    awake: {
-      cups: 2,
-      hoursBeforeBed: 9,
-      coffee: "두 잔을 마시는 날엔 오전과 점심 무렵에 나눠 보세요.",
-      alternative: "녹차 · 보리차",
-      swap: "커피를 녹차로 바꿔 보세요. 녹차에도 카페인이 있으니 마감 전에 마시고, 이후에는 보리차나 물을 골라 보세요."
-    },
-    calm: {
-      cups: 1,
-      hoursBeforeBed: 10,
-      coffee: "커피를 마신다면 오전에 한 잔으로 계획해 보세요.",
-      alternative: "디카페인 · 루이보스차",
-      swap: "오전에는 카페인 함량을 확인한 디카페인 커피를, 마감 이후에는 순수 루이보스차를 골라 보세요."
-    },
-    sleepy: {
-      cups: 0.5,
-      hoursBeforeBed: 11,
-      coffee: "커피를 마신다면 오전에 반 잔 정도로 줄여 보세요.",
-      alternative: "보리차 · 루이보스차",
-      swap: "커피가 생각날 때 순수 보리차나 루이보스차를 먼저 골라 보세요."
-    },
-    pending: {
-      cups: null,
-      hoursBeforeBed: 9,
-      coffee: "평소 마시는 양과 메뉴에 표시된 카페인 함량을 함께 적어 보세요.",
-      alternative: "보리차 · 물",
-      swap: "카페인을 줄여 보고 싶다면 커피 한 잔을 보리차나 물로 바꿔 보세요."
-    }
+    sleepy: { amount: "평소 섭취량 확인", coffee: "낮은 지수라도 증상이 있으면 줄이세요. 섭취량을 늘릴 근거는 아닙니다.", timing: "수면 반응 확인", alternative: "물 · 순수 보리차" },
+    calm: { amount: "섭취량 조절", coffee: "소량부터 몸의 반응을 확인하고 카페인 총량을 기록하세요.", timing: "오전 위주", alternative: "디카페인 · 순수 루이보스차" },
+    awake: { amount: "섭취량 줄이기", coffee: "각성감·두근거림·수면 방해가 있다면 섭취량을 줄이거나 피하세요.", timing: "늦은 섭취 피하기", alternative: "물 · 순수 보리차 · 루이보스차" },
+    pending: { amount: "평소 섭취량 확인", coffee: "유형 판정 없이 일반적인 성인 참고 안내를 제공합니다.", timing: "수면 반응 확인", alternative: "물 · 순수 보리차" }
   };
 
   function buildCaffeineHabitGuide(illustration) {
-    // Preserve the existing score-tier guidance until the guide itself is reviewed.
-    var guideKey = illustration === "sleepy" ? "awake" : illustration === "awake" ? "sleepy" : illustration;
-    var plan = caffeineHabitPlans[guideKey] || caffeineHabitPlans.pending;
-    var dailyCoffee = { title: "하루 커피", value: "평소 양 확인", text: plan.coffee };
-    if (plan.cups !== null) {
-      dailyCoffee.value = (plan.cups === 0.5 ? "반 잔" : plan.cups + "잔") + " 이내";
-      dailyCoffee.text = "카페인 100 mg을 1잔으로 잡으면 " + (plan.cups * 100) +
-        " mg 이내인 성인 생활 예시예요. " + plan.coffee;
-    }
-    var cutoffHour = 23 - plan.hoursBeforeBed;
-    var cutoffTime = cutoffHour === 12 ? "정오" : "오후 " + (cutoffHour - 12) + "시";
+    var plan = caffeineHabitPlans[illustration] || caffeineHabitPlans.pending;
     return [
-      dailyCoffee,
-      {
-        title: "카페인 마감",
-        value: cutoffTime + " 이후",
-        text: "밤 11시 취침 기준 " + plan.hoursBeforeBed + "시간 전이에요. 이 시각부터 카페인 음료를 피해 보세요."
-      },
-      {
-        title: "대체 음료",
-        value: plan.alternative,
-        text: plan.swap
-      }
+      { title: "섭취량 관리", value: plan.amount, text: plan.coffee },
+      { title: "섭취 시간", value: plan.timing, text: "연구에서 카페인 107 mg의 커피는 취침 약 8.8시간 전이 참고값입니다(Gardiner 등, 2023). 개인별 안전 시간은 아니며 수면 방해 시 더 일찍 줄이세요." },
+      { title: "대체 음료", value: plan.alternative, text: "디카페인도 카페인이 남을 수 있으므로 표시 함량을 확인하세요." },
+      { title: "성인 공통 참고", value: "하루 400 mg · 1회 200 mg", text: "FDA·EFSA의 일반 건강한 성인 참고 수준이며 권장 섭취량이나 개인별 안전량이 아닙니다. 임신·수유, 미성년자, 질환·약물 복용 시 별도 지침 또는 의료진 상담이 필요합니다." }
     ];
   }
 
@@ -647,10 +607,8 @@
     };
   }
 
-  function formatReferencePosition(percentile) {
-    return typeof percentile === "number"
-      ? "낮은 점수부터 누적 " + percentile.toFixed(1) + "%"
-      : "핵심 SNP 미확인으로 참조 위치 산출 보류";
+  function formatReferencePosition(percentile, hasScore) {
+    return hasScore ? "동일 모델 참조자료 미확보 · 개인 위치 산출 보류" : "핵심 SNP 미확인으로 참조 위치 산출 보류";
   }
 
   function formatCollectionDate(value) {
@@ -794,7 +752,7 @@
     }
     window.requestAnimationFrame(function () {
       document.getElementById("result-title").focus({ preventScroll: true });
-      drawReferenceChart(lastResult && typeof lastResult.score === "number" ? lastResult.score : null);
+      drawReferenceChart(null);
     });
     window.location.hash = "resultReport";
     elements.resultReport.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -847,7 +805,7 @@
     elements.confidenceScore.textContent = confidence + "%";
     elements.confidenceBar.style.width = confidence + "%";
 
-    elements.referencePositionText.textContent = formatReferencePosition(lastResult.percentile);
+    elements.referencePositionText.textContent = formatReferencePosition(lastResult.percentile, typeof lastResult.score === "number");
     elements.detailCategory.textContent = category.label;
     elements.detailInputQuality.textContent = "확인 " + valid.length + "개 · 모름 " + unknownCount + "개";
     elements.metabolismTypeName.textContent = metabolismSubtype.displayName;
@@ -866,7 +824,7 @@
     }).join("");
 
     renderSummary();
-    drawReferenceChart(hasScore ? score : null);
+    drawReferenceChart(null);
   }
 
   function setLayer(layer, norm) {
@@ -1033,6 +991,7 @@
       ctx.moveTo(padLeft, y);
       ctx.lineTo(width - padRight, y);
       ctx.stroke();
+      ctx.fillText(String(Math.round(i / 4 * maxLevel)), padLeft - 5, y + 3);
     }
 
     var points = referenceBins.map(function (bin) {
@@ -1077,21 +1036,21 @@
       ctx.fillStyle = "#657487";
       ctx.textAlign = "center";
       ctx.font = (compact ? "10px" : "12px") + " sans-serif";
-      ctx.fillText(Math.round(normalizeReference(referenceBins[index].raw)), point.x, height - 24);
+      ctx.fillText(referenceBins[index].raw.toFixed(2), point.x, height - 24);
     });
 
     ctx.fillStyle = "#334155";
     ctx.textAlign = "center";
     ctx.font = "bold " + (compact ? "10px" : "13px") + " sans-serif";
-    ctx.fillText("민감도 점수 환산값", padLeft + chartW / 2, height - 7);
+    ctx.fillText("기존 PRS 점수", padLeft + chartW / 2, height - 7);
 
     ctx.save();
     ctx.translate(16, padTop + chartH / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText("연구 참조분포", 0, 0);
+    ctx.fillText("표본 빈도", 0, 0);
     ctx.restore();
 
-    if (typeof userScore === "number") {
+    if (false && typeof userScore === "number") {
       var safeScore = clamp(userScore, 0, 100);
       var markerX = padLeft + safeScore / 100 * chartW;
       var markerLevel = getReferenceLevelAtScore(safeScore);
@@ -1255,7 +1214,7 @@
         + (lastResult.coverageLabel ? " (" + lastResult.coverageLabel + ")" : ""),
       "유형: " + lastResult.category.label,
       "대사 레이어 판정: " + lastResult.metabolismSubtype.displayName,
-      formatReferencePosition(lastResult.percentile),
+      formatReferencePosition(lastResult.percentile, typeof lastResult.score === "number"),
       REFERENCE_SOURCE_NOTE,
       layerText.join("\n"),
       "",
@@ -1266,7 +1225,7 @@
       lastResult.category.title,
       lastResult.interpretation
     ];
-    lines.push("", "[카페인 섭취 계획 예시]", lastResult.category.recommendations.map(function (item) {
+    lines.push("", "[카페인 섭취 가이드]", lastResult.category.recommendations.map(function (item) {
       return "- " + item;
     }).join("\n"));
     lines.push("", "[주의]", "연구·교육용 해석 리포트이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다.");
@@ -1898,7 +1857,7 @@
         hasError ? null : result.unknownCount, hasError ? "" : result.interpretation,
         hasError ? "" : result.category.recommendations.join("\n"),
         hasError ? record.errors.join(" · ") : (result.score === null ? "핵심 유전자형 확인 필요" : result.coverageLabel),
-        generatedAt, "0.4 / scoring 0.3",
+        generatedAt, "0.5 / scoring 0.3",
         sensitivity ? Number(sensitivity.minimum.toFixed(1)) : null,
         sensitivity ? Number(sensitivity.maximum.toFixed(1)) : null,
         sensitivity ? sensitivity.categories.join(" / ") : "",
@@ -1916,11 +1875,12 @@
       ["입력 완성도", "확인된 SNP 수 ÷ 4 × 100 (%). 예측 정확도나 통계적 신뢰도가 아닙니다."],
       ["점수", "대사 70% + 조절 30%의 연구·교육용 모형 지수. 기존 점수식은 유지했으며 임상 검증된 PRS가 아닙니다."],
       ["양식의 구 명칭", "CYP1A2*1F/*1C 열 이름은 기존 양식과의 호환을 위해 유지했습니다. 분석은 rs762551/rs2069514 유전자형 기준이며 완전한 star allele 판정이 아닙니다."],
-      ["대사와 수면", "카페인 분해 속도와 각성·수면 반응은 구분해서 살펴보아야 합니다. 이 점수로 실제 분해 속도, 수면 능력, 내성, 안전 섭취량을 판정할 수 없습니다."],
+      ["섭취 가이드 근거", "FDA 일반 성인 안내: https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much / EFSA: https://www.efsa.europa.eu/en/topics/topic/caffeine / Gardiner 등(2023): https://doi.org/10.1016/j.smrv.2023.101764. 개인별 안전량·시간이 아닙니다."],
+       ["대사와 수면", "카페인 분해 속도와 각성·수면 반응은 구분해서 살펴보아야 합니다. 이 점수로 실제 분해 속도, 수면 능력, 내성, 안전 섭취량을 판정할 수 없습니다."],
       ["개인정보", "코드형 Sample ID를 사용하세요. 파일은 브라우저에서 처리하며 이 다운로드 동작은 서버 저장을 수행하지 않습니다."],
       ["보관", "유전자형이 포함된 결과 파일은 접근 권한을 제한해 보관하고 공용 기기에 남기지 마세요. 페이지를 새로 열면 재업로드가 필요합니다."],
       ["사용 범위", "연구·교육용. 질병 진단, 의학적 처방, 치료 판단에 사용할 수 없습니다."],
-      ["생성 시각 (KST)", generatedAt], ["모델 버전", "0.4 / scoring 0.3"]
+      ["생성 시각 (KST)", generatedAt], ["모델 버전", "0.5 / scoring 0.3"]
     ];
     var workbook = xlsx.utils.book_new();
     [["분석 결과", output], ["입력 오류", errors], ["해석 안내", guide]].forEach(function (entry) {
@@ -2242,7 +2202,7 @@
     var hasScore = typeof result.score === "number";
     var pdfScoreText = hasScore ? result.score.toFixed(1) : "--";
     var pdfScoreUnit = hasScore ? "<small> 점</small>" : "";
-    var referencePosition = formatReferencePosition(result.percentile);
+    var referencePosition = formatReferencePosition(result.percentile, hasScore);
     var coverageMarkup = result.coverageLabel
       ? '<p class="score-coverage-note">' + escapeHtml(result.coverageLabel) + '</p>'
       : "";
@@ -2250,7 +2210,7 @@
     if (result.sensitivitySummary) coverageMarkup += '<p class="score-coverage-note">미확인 SNP 대입 시 ' +
       escapeHtml(result.sensitivitySummary) + '</p>';
     var pdfMarker = "";
-    if (hasScore) {
+    if (false && hasScore) {
       var pdfMarkerX = clamp(result.score, 0, 100);
       var pdfMarkerY = 54 - (getReferenceLevelAtScore(pdfMarkerX) / maxReferenceLevel) * 44;
       pdfMarker = [
@@ -2259,7 +2219,7 @@
       ].join("");
     }
     var pdfDistributionChart = [
-      '<svg class="distribution-chart" viewBox="0 0 100 60" role="img" aria-label="연구 참조분포 7개 점수 구간에서의 위치">',
+      '<svg class="distribution-chart" viewBox="0 0 100 60" role="img" aria-label="기존 연구 PRS 350개 표본의 점수별 빈도">',
       '<line class="distribution-grid" x1="0" y1="21" x2="100" y2="21" stroke="#e3eaec" stroke-width=".45"></line>',
       '<line class="distribution-grid" x1="0" y1="38" x2="100" y2="38" stroke="#e3eaec" stroke-width=".45"></line>',
       '<polygon class="distribution-area" points="0,54 ', pdfChartPoints, ' 100,54" fill="#dceff0"></polygon>',
@@ -2338,10 +2298,10 @@
       "<section class=\"pdf-meta\"><div><span>Sample ID</span><strong>", escapeHtml(info.sampleId), "</strong></div><div><span>Report date</span><strong>", escapeHtml(info.reportDate), "</strong></div><div><span>Collection</span><strong>", escapeHtml(formatCollectionDate(info.collectionDate)), "</strong></div><div><span>Specimen / Sex</span><strong>", escapeHtml(info.sampleType), " / ", escapeHtml(info.sex), "</strong></div><div><span>Institution</span><strong>", escapeHtml(info.institution), "</strong></div></section>",
       "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", hasScore ? "<small>제 카페인 유형은</small> " : "", escapeHtml(result.category + (hasScore ? "이에요!" : "")), "</h2><p>", escapeHtml(result.typeDescription), "</p></div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div>", coverageMarkup, "<div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>잠꾸러기형 · 낮음</span><span>잠잠형 · 중간</span><span>각성형 · 높음</span></div></div></section>",
       "<section class=\"metrics\"><div class=\"metric\"><span>Result type</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>Metabolism</span><strong>", escapeHtml(result.metabolismSubtype.displayName || result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>SNP coverage</span><strong>", result.confidence, "%</strong></div></section>",
-      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><h3>연구 참조분포</h3><strong>", escapeHtml(referencePosition), "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>낮음</span><span>민감도 점수</span><span>높음</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>입력 완성도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
+      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><h3>기존 연구 참조분포 (n=350)</h3><strong>", escapeHtml(referencePosition), "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>-0.50</span><span>기존 PRS 점수</span><span>1.00</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>입력 완성도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
       "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>Score</th></tr></thead><tbody>", genotypeRows, "</tbody></table></div></section>",
-      "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3><strong>", escapeHtml(result.title), "</strong><p>", escapeHtml(result.interpretation), "</p></div><div class=\"pdf-card guide\"><h3>카페인 섭취 계획 예시</h3><ul>", recommendations, "</ul></div></section>",
-      "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.concat(REFERENCE_SOURCE_NOTE).join(" ")), "</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
+      "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3><strong>", escapeHtml(result.title), "</strong><p>", escapeHtml(result.interpretation), "</p></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드</h3><ul>", recommendations, "</ul></div></section>",
+      "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.concat(REFERENCE_SOURCE_NOTE, "섭취 가이드 근거: FDA 카페인 안내; EFSA 카페인 안전성; Gardiner 등(2023), doi:10.1016/j.smrv.2023.101764.").join(" ")), "</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
       "</main>",
       forArchive ? "" : "<script>window.addEventListener('load',function(){if(navigator.webdriver||matchMedia('(max-width: 820px), (pointer: coarse)').matches)return;var ready=document.fonts?document.fonts.ready:Promise.resolve();ready.then(function(){setTimeout(function(){window.print()},350)})});<\/script>",
       "</body></html>"
@@ -2475,7 +2435,7 @@
     window.addEventListener("resize", function () {
       window.clearTimeout(chartResizeTimer);
       chartResizeTimer = window.setTimeout(function () {
-        drawReferenceChart(lastResult && typeof lastResult.score === "number" ? lastResult.score : null);
+        drawReferenceChart(null);
       }, 120);
     });
   }
