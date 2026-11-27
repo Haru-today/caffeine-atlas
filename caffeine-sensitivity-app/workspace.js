@@ -2,7 +2,7 @@
   "use strict";
 
   var storagePrefix = "caffeine-atlas:report:v1:";
-  var categoryNames = ["각성형", "잠잠형", "잠꾸러기형", "판정 보류", "정보 부족형"];
+  var categoryNames = ["저민감형", "중민감형", "고민감형", "판정 보류", "정보 부족형"];
 
   function readRecord(id) {
     var record;
@@ -16,9 +16,10 @@
         !Array.isArray(record.genotypes) || record.genotypes.length !== 4 ||
         !record.genotypes.every(function (code) { return /^(?:[ACGT]{2}|unknown)$/.test(code); }) ||
         !Number.isFinite(record.savedAt)) return null;
-    if (record.categoryVersion !== 2) {
-      if (record.category === "각성형") record.category = "잠꾸러기형";
-      else if (record.category === "잠꾸러기형") record.category = "각성형";
+    if (record.categoryVersion === 2) {
+      record.category = ({ "잠꾸러기형": "저민감형", "잠잠형": "중민감형", "각성형": "고민감형" })[record.category] || record.category;
+    } else if (record.categoryVersion == null) {
+      record.category = ({ "각성형": "저민감형", "잠잠형": "중민감형", "잠꾸러기형": "고민감형" })[record.category] || record.category;
     }
     return record;
   }
@@ -189,7 +190,7 @@
         genotypes: activeReport.genotypes,
         score: activeReport.score,
         category: activeReport.category,
-        categoryVersion: 2,
+        categoryVersion: 3,
         savedAt: Date.now()
       };
       try {

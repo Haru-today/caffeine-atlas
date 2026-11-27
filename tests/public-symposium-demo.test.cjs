@@ -198,3 +198,11 @@ test("plain explanations preserve the scoring direction and handle missing data"
   assert.match(layerComparison(50, 50), /같아요/);
   assert.match(layerComparison(null, 50), /비교할 수 없어요/);
 });
+
+test("classification thresholds use unrounded scores", () => {
+  const window = {};
+  const document = { getElementById: () => ({ value: "", options: [], classList: { toggle() {} } }) };
+  require("node:vm").runInNewContext(source.replace("  init();", "  window.classify = classify;"), {window, document, console});
+  assert.deepEqual([0, 33.3399, 33.34, 66.6699, 66.67, 100].map(x => window.classify(x).label),
+    ["저민감형", "저민감형", "중민감형", "중민감형", "고민감형", "고민감형"]);
+});

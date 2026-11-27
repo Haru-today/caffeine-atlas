@@ -325,7 +325,7 @@ test("download workbook retains every row, source values, errors and safe text c
   assert.equal(partialOutput[4], "미기재");
   assert.equal(partialOutput[11], 28.7);
   assert.equal(partialOutput[21], "제한적 결과 · 3/4 SNP 확인");
-  assert.deepEqual(partialOutput.slice(24), [28.7, 42.5, "잠꾸러기형 / 잠잠형", 3]);
+  assert.deepEqual(partialOutput.slice(24), [28.7, 42.5, "저민감형 / 중민감형", 3]);
   assert.match(JSON.stringify(toRows(exported.Sheets["해석 안내"])), /기존 연구 PRS 원자료/);
   const flattened = JSON.stringify(resultRows);
   for (const id of records.map(record => record.sampleId)) assert.ok(resultRows.some(row => row.includes(id)), id);

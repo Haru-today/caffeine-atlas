@@ -423,9 +423,9 @@
   function describeTypePosition(score) {
     var lower = TYPE_THRESHOLDS[0];
     var upper = TYPE_THRESHOLDS[1];
-    if (score < lower) return "잠잠형 경계까지 " + (lower - score).toFixed(2) + "점";
-    if (score >= upper) return "잠잠형과의 경계보다 " + (score - upper).toFixed(2) + "점 높음";
-    return "잠꾸러기형과의 경계보다 " + (score - lower).toFixed(2) + "점 높음 · 각성형 경계까지 " +
+    if (score < lower) return "중민감형 경계까지 " + (lower - score).toFixed(2) + "점";
+    if (score >= upper) return "중민감형과의 경계보다 " + (score - upper).toFixed(2) + "점 높음";
+    return "저민감형과의 경계보다 " + (score - lower).toFixed(2) + "점 높음 · 고민감형 경계까지 " +
       (upper - score).toFixed(2) + "점";
   }
 
@@ -508,33 +508,33 @@
   function classify(score) {
     if (score < TYPE_THRESHOLDS[0]) {
       return {
-        label: "잠꾸러기형",
+        label: "저민감형",
         illustration: "sleepy",
         badge: "카페인 민감도 지수가 낮아요.",
         emoji: "🌙",
-        desc: "잠꾸러기형 · 연구용 민감도 지수가 낮은 구간입니다.",
-        title: "잠꾸러기형 | 민감도 지수 낮음",
+        desc: "저민감형 · 연구용 민감도 지수가 낮은 구간입니다.",
+        title: "저민감형 | 민감도 지수 낮음",
         text: "유전자 정보를 반영한 연구용 점수가 낮은 구간이에요. 카페인에 덜 민감한 방향이지만, 많이 마셔도 괜찮거나 수면에 영향이 없다는 뜻은 아니에요."
       };
     }
     if (score < TYPE_THRESHOLDS[1]) {
       return {
-        label: "잠잠형",
+        label: "중민감형",
         illustration: "calm",
         badge: "카페인 민감도 지수가 중간이에요.",
         emoji: "🌿",
-        desc: "잠잠형 · 연구용 민감도 지수가 중간 구간입니다.",
-        title: "잠잠형 | 민감도 지수 중간",
+        desc: "중민감형 · 연구용 민감도 지수가 중간 구간입니다.",
+        title: "중민감형 | 민감도 지수 중간",
         text: "유전자 정보를 반영한 연구용 점수가 중간 구간이에요. 실제 카페인 반응이 평균적이라는 뜻은 아니에요."
       };
     }
     return {
-      label: "각성형",
+      label: "고민감형",
       illustration: "awake",
       badge: "카페인 민감도 지수가 높아요.",
       emoji: "⚡",
-      desc: "각성형 · 연구용 민감도 지수가 높은 구간입니다.",
-      title: "각성형 | 민감도 지수 높음",
+      desc: "고민감형 · 연구용 민감도 지수가 높은 구간입니다.",
+      title: "고민감형 | 민감도 지수 높음",
       text: "유전자 정보를 반영한 연구용 점수가 높은 구간이에요. 커피를 마신 뒤 두근거림이나 수면 변화를 살펴보세요. 불면증이나 카페인 불내성을 뜻하지는 않아요."
     };
   }
@@ -841,7 +841,7 @@
   }
 
   function typeArtworkHtml(key) {
-    var labels = { awake: "각성형 커피콩 캐릭터", calm: "잠잠형 커피콩 캐릭터", sleepy: "잠꾸러기형 커피콩 캐릭터" };
+    var labels = { awake: "고민감형 커피콩 캐릭터", calm: "중민감형 커피콩 캐릭터", sleepy: "저민감형 커피콩 캐릭터" };
     if (!Object.prototype.hasOwnProperty.call(labels, key)) return "";
     var imageUrl = new URL("./assets/atlas-mascots.webp", window.location.href).href;
     return '<span class="type-art type-art--' + key + '" role="img" aria-label="' + labels[key] +
@@ -895,15 +895,15 @@
   function genotypeExplanation(layer, points) {
     if (points === null) return "유전자형을 확인하지 못해 점수에 반영하지 않았어요.";
     if (layer === "metabolism") {
-      return "대사 점수에 " + points + "점을 반영해요. 높은 점수는 느린 분해 방향이에요.";
+      return "대사 민감도 점수에 " + points + "점을 반영해요. 높은 점수는 느린 분해 방향이에요.";
     }
-    return "섭취·조절 점수에 " + points + "점을 반영해요. 실제 섭취량은 알 수 없어요.";
+    return "섭취·조절 민감도 점수에 " + points + "점을 반영해요. 실제 섭취량은 알 수 없어요.";
   }
 
   function layerComparison(metabolism, behavior) {
     if (metabolism === null || behavior === null) return "확인되지 않은 영역이 있어 두 영역의 점수를 비교할 수 없어요.";
     var relation = metabolism > behavior ? "높아요" : metabolism < behavior ? "낮아요" : "같아요";
-    return "대사 관련 점수는 섭취·조절 관련 점수와 비교하면 " + relation + ". 두 점수는 서로 다른 유전자 항목을 요약한 연구용 값이며, 실제 분해 속도나 섭취량을 비교한 결과는 아니에요.";
+    return "대사 민감도 점수는 섭취·조절 민감도 점수와 비교하면 " + relation + ". 두 점수는 서로 다른 유전자 항목을 요약한 연구용 값이며, 실제 분해 속도나 섭취량을 비교한 결과는 아니에요.";
   }
 
   function renderSummary() {
@@ -1064,10 +1064,10 @@
       ["rs6968865", "AT"]
     ];
     elements.sampleId.value = "DEMO-001";
-    if (variant === "calm") {
+    if (variant === "calm" || variant === "mid") {
       elements.sampleId.value = "DEMO-002";
       exampleGenotypes = [["rs762551", "AC"], ["rs2069514", "AG"], ["rs2472297", "CT"], ["rs6968865", "AT"]];
-    } else if (variant === "awake" || variant === "sleepy") {
+    } else if (variant === "awake" || variant === "high" || variant === "sleepy") {
       elements.sampleId.value = "DEMO-003";
       exampleGenotypes = [["rs762551", "CC"], ["rs2069514", "AA"], ["rs2472297", "TT"], ["rs6968865", "TT"]];
     }
@@ -1130,8 +1130,8 @@
     if (!lastResult) return "카페인 민감도 결과가 아직 계산되지 않았습니다.";
     var reportInfo = getReportInfo();
     var layerText = [
-      "대사 레이어: " + formatLayer(lastResult.metabolismNorm),
-      "섭취/조절 레이어: " + formatLayer(lastResult.behaviorNorm),
+      "대사 민감도 점수: " + formatLayer(lastResult.metabolismNorm),
+      "섭취·조절 민감도 점수: " + formatLayer(lastResult.behaviorNorm),
       "분석 완성도: " + lastResult.confidence + "%"
     ];
     if (lastResult.typePosition) layerText.push("유형 경계: " + lastResult.typePosition);
@@ -1778,7 +1778,7 @@
     if (!xlsx) throw new Error("엑셀 처리 모듈을 불러오지 못했습니다.");
     var headers = ["원본 행", "Sample ID", "처리 상태", "리포트 날짜", "채취일", "검체 종류", "성별",
       "rs762551", "rs2069514", "rs2472297", "rs6968865", "민감도 지수 (0-100)", "결과 유형",
-      "대사 유형", "대사 레이어 (%)", "조절 레이어 (%)", "입력 완성도 (%)", "확인된 SNP 수",
+      "대사 유형", "대사 민감도 점수 (%)", "섭취·조절 민감도 점수 (%)", "입력 완성도 (%)", "확인된 SNP 수",
       "모름 SNP 수", "해석", "생활 참고 안내", "오류·확인 사항", "생성 시각 (KST)", "모델 버전",
       "대입 시 최저점", "대입 시 최고점", "대입 시 가능 유형", "대입 조합 수"];
     var generatedAt = getKoreaDateTimeString();
@@ -1814,7 +1814,7 @@
       ["항목", "안내"],
       ["결과 파일", "분석 결과: 모든 입력 행 / 입력 오류: 수정할 행과 원본 입력 / 해석 안내: 기준 및 한계"],
       ["처리 상태", "분석 완료: 핵심 SNP 확인 / 판정 보류: rs762551 모름 / 입력 오류: 점수 미산출"],
-      ["유형", "잠꾸러기형: 33.34 미만 / 잠잠형: 33.34 이상 66.67 미만 / 각성형: 66.67 이상. 반올림 전 점수로 구분합니다."],
+      ["유형", "저민감형: 33.34 미만 / 중민감형: 33.34 이상 66.67 미만 / 고민감형: 66.67 이상. 반올림 전 점수로 구분합니다."],
       ["모름", "누락과 다릅니다. 명시적으로 ‘모름’을 입력한 SNP는 제외하고 확인된 항목의 가중치를 다시 계산합니다. 서로 다른 입력 완성도의 점수를 직접 비교하지 마세요."],
       ["대입 시나리오", "미확인 SNP의 가능한 유전자형을 대입해 계산한 범위입니다. 현재 결과는 민감도 지수와 결과 유형 열에서 확인할 수 있습니다."],
       ["참조 위치", REFERENCE_SOURCE_NOTE],
@@ -2232,10 +2232,10 @@
       "<main class=\"pdf-sheet\" style=\"--score:", hasScore ? result.score : 0, "%\">",
       "<header class=\"pdf-header\"><div class=\"pdf-brand\"><img src=\"", escapeHtml(logoUrl), "\" alt=\"Caffeine Atlas\"><p>Evidence-based caffeine response interpretation</p></div><div class=\"pdf-title\"><h1>Caffeine Atlas Report</h1><p>", escapeHtml(data.generatedAt), "</p></div></header>",
       "<section class=\"pdf-meta\"><div><span>Sample ID</span><strong>", escapeHtml(info.sampleId), "</strong></div><div><span>Report date</span><strong>", escapeHtml(info.reportDate), "</strong></div><div><span>Collection</span><strong>", escapeHtml(formatCollectionDate(info.collectionDate)), "</strong></div><div><span>Specimen / Sex</span><strong>", escapeHtml(info.sampleType), " / ", escapeHtml(info.sex), "</strong></div><div><span>Institution</span><strong>", escapeHtml(info.institution), "</strong></div></section>",
-      "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", hasScore ? "<small>제 카페인 유형은</small> " : "", escapeHtml(result.category + (hasScore ? "이에요!" : "")), "</h2>", hasScore ? "" : "<p>" + escapeHtml(result.typeDescription) + "</p>", "</div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div>", coverageMarkup, "<div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>잠꾸러기형 · 낮음</span><span>잠잠형 · 중간</span><span>각성형 · 높음</span></div></div></section>",
+      "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", hasScore ? "<small>제 카페인 유형은</small> " : "", escapeHtml(result.category + (hasScore ? "이에요!" : "")), "</h2>", hasScore ? "" : "<p>" + escapeHtml(result.typeDescription) + "</p>", "</div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div>", coverageMarkup, "<div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>저민감형 · 낮음</span><span>중민감형 · 중간</span><span>고민감형 · 높음</span></div></div></section>",
       "<section class=\"metrics\"><div class=\"metric\"><span>Result type</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>Metabolism</span><strong>", escapeHtml(result.metabolismSubtype.displayName || result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>SNP coverage</span><strong>", result.confidence, "%</strong></div></section>",
-      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><h3>연구 참조분포</h3><strong>", escapeHtml(referencePosition), "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>-0.50</span><span>기존 PRS 점수</span><span>1.00</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>입력 완성도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
-      "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>Score</th></tr></thead><tbody>", genotypeRows, "</tbody></table><p class=\"genotype-note\">", escapeHtml(layerComparison(result.metabolismScore, result.regulationScore)), "</p></div></section>",
+      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><h3>연구 참조분포</h3><strong>", escapeHtml(referencePosition), "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>-0.50</span><span>기존 PRS 점수</span><span>1.00</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사 민감도 점수</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취·조절 민감도 점수</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>입력 완성도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
+      "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>민감도 반영 점수</th></tr></thead><tbody>", genotypeRows, "</tbody></table><p class=\"genotype-note\">점수는 카페인 분해를 늦추는 쪽의 유전자 개수를 반영합니다. 높을수록 느린 분해·높은 민감도 방향입니다. 모든 항목이 실제 분해 속도를 직접 나타내는 것은 아니며, 섭취·조절 항목은 섭취 관련 신호입니다.</p><p class=\"genotype-note\">", escapeHtml(layerComparison(result.metabolismScore, result.regulationScore)), "</p></div></section>",
       "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3><strong>", escapeHtml(result.title), "</strong><p>", escapeHtml(result.interpretation), "</p></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드</h3><ul>", recommendations, "</ul></div></section>",
       "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.concat(REFERENCE_SOURCE_NOTE, "섭취 가이드 근거: FDA 카페인 안내; EFSA 카페인 안전성; Gardiner 등(2023), doi:10.1016/j.smrv.2023.101764.").join(" ")), "</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
       "</main>",
@@ -2397,7 +2397,7 @@
       });
     }
     var example = new URLSearchParams(window.location.search).get("example");
-    if (["1", "calm", "awake", "sleepy"].indexOf(example) >= 0) showExampleReport(example);
+    if (["1", "low", "calm", "mid", "awake", "high", "sleepy"].indexOf(example) >= 0) showExampleReport(example);
   }
 
   init();

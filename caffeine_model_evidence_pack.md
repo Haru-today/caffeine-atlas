@@ -99,7 +99,7 @@ AA가 non-AA보다 CYP1A2 활성이 낮음
 2026-07-02 정정:
 
 ```text
-현재 앱의 rs762551 점수 방향은 AA = 빠른 대사형, AC/CC = 느린 대사형 방향이다.
+현재 앱은 rs762551의 C 대립유전자 수가 많을수록 대사 민감도 점수가 높은 방향으로 반영한다. AA, AC, CC만으로 실제 대사 속도를 확정하지 않는다.
 즉 C allele / CYP1A2*1F carrier를 민감도 증가 방향으로 반영한다.
 위 내부 요약 통계의 AA 방향 해석은 allele coding 또는 활성 지표 정의를 원논문에서 재확인하기 전까지 앱 점수 방향의 근거로 사용하지 않는다.
 ```
@@ -144,6 +144,8 @@ CYP1A2*1F = 0.82
 CYP1A2*1C = 0.18
 ```
 
+가중치는 Shin 등(2007) 한국인 자료의 효과 크기를 참고했고, rs762551의 점수 방향(C=느린 대사)은 기존 서양인·중국인 연구 기준을 따른다. Shin 등(2007)은 한국인에서 AA의 활성이 더 낮다는 반대 결과를 보고했다. [Shin 등 논문 초록](https://www.dbpia.co.kr/journal/articleDetail?nodeId=NODE10404998).
+
 주의: 이 수치는 원자료가 아닌 업로드된 분석 메모의 요약 통계에서 유도한 상대 가중치다. rs762551의 점수 방향은 JAMA 2006의 *1F slow metabolizer 구분을 우선 적용하며, 논문에 최종 인용하려면 원논문 PDF/DOI와 allele coding 확인이 필요하다.
 
 ## 5. 대사 70%, 조절 30% 설계 근거
@@ -162,6 +164,8 @@ Regulation layer: CYP1A1-CYP1A2 locus + AHR
 ```
 
 이 비율은 검증된 임상 표준값이 아니라, 생물학적 직접성에 기반한 프로젝트 설계값이다. 논문에는 "weighted more heavily because CYP1A2 enzymatic activity is more directly related to caffeine clearance than habitual intake loci"처럼 설명하는 것이 적절하다.
+
+유형은 반올림 전 종합점수 기준 저민감형(33.34 미만), 중민감형(33.34 이상 66.67 미만), 고민감형(66.67 이상)이다. 저민감형은 낮은 민감도·빠른 분해 방향, 고민감형은 높은 민감도·느린 분해 방향의 모형상 이름이며 개인의 실제 대사 속도·수면 반응을 측정한 결과가 아니다. 종합 유형과 대사 영역 점수는 서로 다를 수 있다. 현재 모든 결과에서 개인 백분위와 순위는 제공하지 않는다.
 
 ### 유전자형 `모름` 처리 원칙
 
@@ -221,7 +225,7 @@ Cornelis et al. (2006), JAMA.
 
 - 커피 섭취와 비치명적 심근경색 위험의 관련성이 CYP1A2 genotype에 따라 달라지는지 분석.
 - 논문은 CYP1A2*1A/*1A를 rapid metabolizer, CYP1A2*1F carrier를 slow metabolizer로 구분.
-- 현재 앱은 이 구분에 맞춰 rs762551 AA를 빠른 대사형 방향, AC/CC를 느린 대사형 방향으로 점수화.
+- 현재 앱은 이 구분을 참고해 rs762551의 C 대립유전자 수를 연구용 대사 민감도 점수에 반영하며, 실제 속도를 확정하지 않는다.
 - *1F carrier에서 높은 커피 섭취와 MI risk 증가가 더 뚜렷하게 나타남.
 
 논문 링크:
@@ -253,7 +257,7 @@ Sulem P, Gudbjartsson DF, Geller F, et al. Sequence variants at CYP1A1-CYP1A2 an
    - AHR SNP가 현재 앱의 rs6968865와 정확히 일치하지 않으므로 주의
 
 3. `참조표준SNP 샘플별 유전형(김덕원).pdf`
-   - 참조표준 PRS 분포 및 히스토그램/백분위 시각화의 근거
+   - 과거 PRS 빈도 분포의 근거. 현재 모델의 개인 백분위·순위는 제공하지 않는다.
    - 생물학적 연관성 검증 자료는 아니며, 점수 분포 기준으로만 사용
 
 4. AHR 실험자료 폴더
