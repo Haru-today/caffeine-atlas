@@ -154,9 +154,9 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     await marker.locator("summary").click();
     assert.match(await marker.locator(".atlas-snp-body").innerText(), /결과에 반영되는 비중\s*카페인 분해 영역 중 82%/);
     await page.locator("#atlas-snp-sort").selectOption("highest");
-    assert.deepEqual(await page.locator('[data-report-layer="behavior"] > details').evaluateAll(items => items.map(item => Number(item.dataset.points))), [50, 0]);
+    assert.deepEqual(await page.locator('[data-report-layer="behavior"] > details').evaluateAll(items => items.map(item => Number(item.dataset.points))), [100, 50]);
     await page.locator("#atlas-snp-sort").selectOption("lowest");
-    assert.deepEqual(await page.locator('[data-report-layer="behavior"] > details').evaluateAll(items => items.map(item => Number(item.dataset.points))), [0, 50]);
+    assert.deepEqual(await page.locator('[data-report-layer="behavior"] > details').evaluateAll(items => items.map(item => Number(item.dataset.points))), [50, 100]);
     await page.locator("#atlas-snp-sort").selectOption("default");
 
     assert.equal(await page.locator("#sampleId").inputValue(), "DEMO-001");
