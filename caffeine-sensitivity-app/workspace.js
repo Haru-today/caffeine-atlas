@@ -16,6 +16,10 @@
         !Array.isArray(record.genotypes) || record.genotypes.length !== 4 ||
         !record.genotypes.every(function (code) { return /^(?:[ACGT]{2}|unknown)$/.test(code); }) ||
         !Number.isFinite(record.savedAt)) return null;
+    if (record.categoryVersion !== 2) {
+      if (record.category === "각성형") record.category = "잠꾸러기형";
+      else if (record.category === "잠꾸러기형") record.category = "각성형";
+    }
     return record;
   }
 
@@ -185,6 +189,7 @@
         genotypes: activeReport.genotypes,
         score: activeReport.score,
         category: activeReport.category,
+        categoryVersion: 2,
         savedAt: Date.now()
       };
       try {
