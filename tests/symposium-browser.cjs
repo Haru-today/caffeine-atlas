@@ -226,13 +226,13 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     await page.locator("#editBtn").click();
     await page.locator('[data-gene="rs6968865"][data-genotype="unknown"]').click();
     await page.locator("#analyzeBtn").click();
-    assert.equal(await page.locator("#scoreCoverageNote").textContent(), "제한적 결과 · 3/4 SNP 확인");
+    assert.equal(await page.locator("#scoreCoverageNote").textContent(), "제한적 결과 · 확인된 유전자 4개 중 3개");
 
     await page.locator("#editBtn").click();
     await page.locator('[data-gene="rs6968865"][data-genotype="AT"]').click();
     await page.locator('[data-gene="rs762551"][data-genotype="unknown"]').click();
     await page.locator("#analyzeBtn").click();
-    assert.equal(await page.locator("#referencePositionText").textContent(), "핵심 SNP 미확인으로 참조 위치 산출 보류");
+    assert.equal(await page.locator("#referencePositionText").textContent(), "핵심 유전자를 확인하지 못해 위치를 표시하지 않아요.");
     assert.match(await page.locator("#detailInputQuality").textContent(), /확인 3개/);
     assert.equal(await page.locator("#scoreCoverageNote").isVisible(), false);
 
