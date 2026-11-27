@@ -87,14 +87,17 @@ test("each batch PDF uses its own ID, dates, genotypes and held result", async (
   assert.match(flow.popups[1], /<title>Caffeine-Atlas-Report-PDF-SECOND-2026-11-09<\/title>/);
   assert.doesNotMatch(flow.popups[1], /PDF-FIRST|PDF-HOLD/);
   assert.match(flow.popups[1], /<td>CC<\/td>/);
-  assert.match(flow.popups[0], /점수 보는 법/);
-  assert.match(flow.popups[0], /이 유전자는 카페인이 빨리 빠져나가는 쪽이에요/);
+  assert.doesNotMatch(flow.popups[0], /점수 보는 법|주의 및 한계|생활 안내|기준\(33\.3점\)/);
+  assert.match(flow.popups[0], /카페인이 빨리 빠져나가는 쪽/);
+  assert.match(flow.popups[0], /꼭 알아 두세요/);
+  assert.match(flow.popups[0], /카페인 섭취 가이드 · /);
   assert.doesNotMatch(flow.popups[0], /대사 민감도 점수는 섭취·조절 민감도 점수와 비교하면/);
-  assert.match(flow.popups[0], /평소 마시는 양 그대로 살펴보기/);
-  assert.match(flow.popups[0], /내 점수 이하: 20\.6%/);
+  assert.match(flow.popups[0], /평소 양 유지하기/);
+  assert.match(flow.popups[0], /class="dist-label"[^>]*>내 위치</);
+  assert.doesNotMatch(flow.popups[0], /같거나 낮아요|100점 만점/);
   assert.doesNotMatch(flow.popups[0], /95\/100/);
   assert.match(flow.popups[2], /gauge is-unscored/);
-  assert.match(flow.popups[2], /핵심 유전자를 확인하지 못해 위치를 표시하지 않아요/);
+  assert.match(flow.popups[2], /카페인 분해에 가장 중요한 유전자 정보가 없어서 350명과 비교하지 않았어요/);
   assert.match(flow.popups[3], /28\.7.*제한적 결과 · 확인된 유전자 4개 중 3개/);
   assert.match(flow.element("batchResultsBody").innerHTML, /28\.7점<small class="score-coverage-note">제한적 결과 · 확인된 유전자 4개 중 3개/);
   assert.doesNotMatch(flow.popups[2], /<circle class="distribution-marker"/);
@@ -330,7 +333,7 @@ test("download workbook retains every row, source values, errors and safe text c
   assert.equal(partialOutput[11], 28.7);
   assert.equal(partialOutput[21], "제한적 결과 · 확인된 유전자 4개 중 3개");
   assert.deepEqual(partialOutput.slice(24), [28.7, 42.5, "저민감형 / 중민감형", 3]);
-  assert.match(JSON.stringify(toRows(exported.Sheets["해석 안내"])), /같은 방법으로 계산한 연구 참조자료/);
+  assert.match(JSON.stringify(toRows(exported.Sheets["해석 안내"])), /350명의 점수를 부드러운 곡선으로/);
   const flattened = JSON.stringify(resultRows);
   for (const id of records.map(record => record.sampleId)) assert.ok(resultRows.some(row => row.includes(id)), id);
   assert.match(flattened, /GG/);
@@ -398,6 +401,7 @@ test("interpretation follows the metabolism layer even when the overall type dif
     assert.match(result.interpretationSections[1].title, new RegExp(speed), id);
     assert.equal(result.interpretationSections[2].title, "알아 두세요", id);
     assert.match(result.interpretation, /잰 것은 아니에요/, id);
+    assert.match(records[i].reportData.limitations.join(" "), /연구·교육용 참고 결과예요/, id);
     assert.equal(records[i].reportData.result.interpretation, result.interpretation, id);
   }
   const unknown = (await app.parseBatchWorkbook(file(workbook([row("HOLD", ["모름", "GG", "CC", "AT"])])))).map(app.analyzeBatchRow)[0].result;
@@ -413,14 +417,23 @@ test("all report outputs use score-specific explanations and selected guide word
   assert.match(mid.genotypes[0].plainExplanation, /중간쯤/);
   assert.match(high.genotypes[0].plainExplanation, /오래 남는/);
   assert.match(high.genotypes[2].plainExplanation, /많이 마시는/);
-  assert.match(low.recommendations.join(" "), /평소 마시는 양 그대로 살펴보기/);
-  assert.match(mid.recommendations.join(" "), /조금씩 마시며 반응 살펴보기/);
+  assert.match(low.recommendations.join(" "), /평소 양 유지하기/);
+  assert.match(mid.recommendations.join(" "), /조금씩 나눠 마시기/);
   assert.match(high.recommendations.join(" "), /양을 줄여 보기/);
   for (const report of [low, mid, high]) {
-    assert.match(report.recommendations.join(" "), /커피 한 잔/);
-    assert.match(report.recommendations.join(" "), /일반적인 안전 참고 수준/);
+    assert.match(report.recommendations.join(" "), /9시간/);
+    assert.match(report.recommendations.join(" "), /넘지 않도록 권하는 일반적인 기준/);
+    assert.doesNotMatch(report.recommendations.join(" "), /FDA|유럽식품안전청|Gardiner/);
   }
-  assert.match(high.recommendations.join(" "), /반 잔이나 디카페인으로 바꿔 보세요/);
+  assert.match(low.habitIntro, /^저민감형이라고 해서 커피를 더 마셔도 된다는 뜻은 아니에요\./);
+  assert.match(high.recommendations.join(" "), /반 잔이나 디카페인 커피로 바꿔 보세요/);
+  assert.deepEqual(Array.from(low.genotypes, g => g.plainExplanation), [
+    "이 유전자는 카페인이 빨리 빠져나가는 쪽이에요.",
+    "이 유전자는 카페인이 빨리 빠져나가는 쪽이에요.",
+    "이 유전자는 커피를 적게 마시는 경향과 관련 있어요.",
+    "이 유전자는 커피를 마시는 경향이 중간쯤이에요."
+  ]);
+  assert.match(high.genotypes[0].plainExplanation, /몸에 오래 남는 쪽/);
 });
 
 test("reference comparison counts ties and withholds incomplete genotypes", () => {

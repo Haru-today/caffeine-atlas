@@ -367,3 +367,35 @@
     font-size: 0.9rem;
   }
 }
+
+.atlas-caution-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 14px 12px 30px;
+  border: 1px solid var(--atlas-border, #dfe5e8);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--atlas-text, #17222c);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.atlas-report-notices .atlas-caution-sources {
+  margin: 0 2px 6px;
+  color: #687b82;
+  font-size: 0.82rem;
+}
+
+.atlas-life-heading #atlas-life-intro,
+.atlas-life-text {
+  line-height: 1.65;
+}
+
+.report-hero-card .atlas-type-copy #typeDesc {
+  margin-top: 8px;
+  color: #52676f;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.6;
+}

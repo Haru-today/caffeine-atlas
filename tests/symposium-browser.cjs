@@ -169,11 +169,11 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       assert.equal(await page.locator('[data-gene="' + gene + '"][data-genotype="' + genotype + '"]').getAttribute("aria-pressed"), "true", gene);
     }
     assert.equal(await page.locator("#resultReport").isVisible(), true);
-    assert.equal(await page.locator("#referencePositionText").textContent(), "내 점수 이하: 20.6% (350명 기준)");
+    assert.equal(await page.locator("#referencePositionText").textContent(), "");
     assert.match(await page.locator("#reportMeta").textContent(), /Collection date: 미기재/);
     assert.equal(await page.locator("#scoreCoverageNote").isVisible(), false);
-    assert.equal(await page.locator(".chart-card .reference-scope-note").isVisible(), true);
-    assert.equal(await page.locator(".layer-stack .reference-scope-note").isVisible(), true);
+    assert.equal(await page.locator(".chart-card .reference-scope-note").count(), 0);
+    assert.equal(await page.locator(".layer-stack .reference-scope-note").count(), 0);
     assert.match(await page.locator(".layer-stack").textContent(), /확인된 유전자/);
 
     // Shared-event-device hygiene: previous demo inputs must be removable.
@@ -216,9 +216,9 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     const content = await popup.locator("body").textContent();
     assert.match(content, /DEMO-001/);
     assert.match(content, /rs6968865|AHR/);
-    assert.match(content, /연구 참조분포/);
-    assert.match(content, /내 점수 이하: 20\.6% \(350명 기준\)/);
-    assert.match(content, /같은 방법으로 계산한 연구 참조자료 350명/);
+    assert.match(content, /연구 참조 분포/);
+    assert.match(content, /내 위치/);
+    assert.doesNotMatch(content, /350명의 점수를 부드러운 곡선으로/);
     assert.doesNotMatch(content, /95\/100/);
     assert.match(content, /확인된 유전자/);
     await popup.close();
@@ -232,7 +232,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     await page.locator('[data-gene="rs6968865"][data-genotype="AT"]').click();
     await page.locator('[data-gene="rs762551"][data-genotype="unknown"]').click();
     await page.locator("#analyzeBtn").click();
-    assert.equal(await page.locator("#referencePositionText").textContent(), "핵심 유전자를 확인하지 못해 위치를 표시하지 않아요.");
+    assert.equal(await page.locator("#referencePositionText").textContent(), "카페인 분해에 가장 중요한 유전자 정보가 없어서 350명과 비교하지 않았어요.");
     assert.match(await page.locator("#detailInputQuality").textContent(), /확인 3개/);
     assert.equal(await page.locator("#scoreCoverageNote").isVisible(), false);
 
