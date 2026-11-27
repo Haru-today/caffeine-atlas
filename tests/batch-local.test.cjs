@@ -87,7 +87,7 @@ test("each batch PDF uses its own ID, dates, genotypes and held result", async (
   assert.match(flow.popups[1], /<title>Caffeine-Atlas-Report-PDF-SECOND-2026-11-09<\/title>/);
   assert.doesNotMatch(flow.popups[1], /PDF-FIRST|PDF-HOLD/);
   assert.match(flow.popups[1], /<td>CC<\/td>/);
-  assert.match(flow.popups[0], /낮은 점수부터 누적 4\.8%/);
+  assert.match(flow.popups[0], /동일 모델 참조자료 미확보 · 개인 위치 산출 보류/);
   assert.doesNotMatch(flow.popups[0], /95\/100/);
   assert.match(flow.popups[2], /gauge is-unscored/);
   assert.match(flow.popups[2], /핵심 SNP 미확인으로 참조 위치 산출 보류/);
@@ -325,8 +325,8 @@ test("download workbook retains every row, source values, errors and safe text c
   assert.equal(partialOutput[4], "미기재");
   assert.equal(partialOutput[11], 28.7);
   assert.equal(partialOutput[21], "제한적 결과 · 3/4 SNP 확인");
-  assert.deepEqual(partialOutput.slice(24), [28.7, 42.5, "각성형 / 잠잠형", 3]);
-  assert.match(JSON.stringify(toRows(exported.Sheets["해석 안내"])), /내부 참조표준 SNP 유전형 자료/);
+  assert.deepEqual(partialOutput.slice(24), [28.7, 42.5, "잠꾸러기형 / 잠잠형", 3]);
+  assert.match(JSON.stringify(toRows(exported.Sheets["해석 안내"])), /기존 연구 PRS 원자료/);
   const flattened = JSON.stringify(resultRows);
   for (const id of records.map(record => record.sampleId)) assert.ok(resultRows.some(row => row.includes(id)), id);
   assert.match(flattened, /GG/);

@@ -328,10 +328,10 @@
           <div class="recommend-card atlas-life-guide">
             <header class="atlas-life-heading">
               <h3 id="atlas-life-title">생활 안내</h3>
-              <p><strong id="atlas-life-focus"></strong> · 밤 11시 취침 기준</p>
+              <p><strong id="atlas-life-focus"></strong> · 건강한 성인 참고 안내</p>
             </header>
             <dl class="atlas-life-actions" id="recommendList"></dl>
-            <p class="atlas-life-note">평소 커피를 마시는 건강한 성인의 생활 계획 예시예요. 한 잔의 카페인 함량은 메뉴와 용량에 따라 달라요. 녹차와 디카페인 커피도 실제 카페인 함량을 확인해 하루 총량에 더하세요.</p>
+            <p class="atlas-life-note">개인별 안전 섭취량을 산출하지 않습니다. 제품별 카페인 함량과 모든 음료·식품의 하루 총량을 확인하세요.</p>
             <details class="atlas-life-log">
               <summary>섭취·수면 기록 예시</summary>
               <div class="atlas-life-log-body">
@@ -340,11 +340,12 @@
                   <div><dt>수면</dt><dd>잠들기까지 30분 · 밤중에 1번 깸</dd></div>
                   <div><dt>몸 반응</dt><dd>마신 뒤 두근거림 없음</dd></div>
                 </dl>
-                <p>취침 시각이 다르면 제시한 시간 간격을 기준으로 마감 시각을 조정해 보세요. 수면 문제나 두근거림이 반복되면 섭취 기록을 가지고 의료진과 상의하세요.</p>
+                <p>수면 기록을 참고해 섭취 시각을 앞당기거나 양을 줄여 보세요. 수면 문제나 두근거림이 반복되면 섭취 기록을 가지고 의료진과 상의하세요.</p>
               </div>
             </details>
             <p class="atlas-life-references">
               <a href="https://www.mfds.go.kr/brd/m_629/view.do?seq=28" target="_blank" rel="noopener noreferrer">식약처 음료별 카페인</a>
+              <a href="https://www.efsa.europa.eu/en/topics/topic/caffeine" target="_blank" rel="noopener noreferrer">EFSA 카페인 안전성</a>
               <a href="https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much" target="_blank" rel="noopener noreferrer">FDA 카페인 안내</a>
               <a href="https://doi.org/10.1016/j.smrv.2023.101764" target="_blank" rel="noopener noreferrer">카페인과 수면 연구</a>
               <a href="https://www.nhlbi.nih.gov/sites/default/files/publications/Sleep_Diary_508.pdf" target="_blank" rel="noopener noreferrer">NIH 수면 일지</a>
@@ -386,9 +387,9 @@
               <div class="gauge-marker" id="gaugeMarker"></div>
             </div>
             <div class="gauge-scale">
-              <span>각성형</span>
-              <span>잠잠형</span>
-              <span>잠꾸러기형</span>
+              <span>잠꾸러기형 · 낮음</span>
+              <span>잠잠형 · 중간</span>
+              <span>각성형 · 높음</span>
             </div>
           </div>
           <p class="score-position" id="scorePosition" hidden></p>
@@ -428,12 +429,12 @@
 
         <div class="chart-card">
           <div class="chart-head">
-            <h3>연구 참조분포에서의 위치</h3>
+            <h3>기존 연구 참조분포 (n=350)</h3>
             <div class="chart-position">
               <strong id="referencePositionText">--</strong>
             </div>
           </div>
-          <canvas id="referenceChart" width="680" height="300" role="img" aria-label="모형 내부 참조분포의 7개 점수 구간과 분석 점수 위치"></canvas>
+          <canvas id="referenceChart" width="680" height="300" role="img" aria-label="기존 연구 PRS 350개 표본의 점수별 빈도. 개인 참조 위치는 산출하지 않습니다."></canvas>
           <p class="reference-scope-note"><span id="referenceSourceNote"></span> <a href="https://github.com/Haru-today/caffeine-atlas/blob/main/caffeine_model_evidence_pack.md">모델 근거 문서 보기</a></p>
         </div>
         </section>
@@ -529,7 +530,7 @@
   </nav>
   <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
   <script src="./batch-pdf.js?v=20261118"></script>
-  <script src="./workspace.js?v=atlas-design-5"></script>
-  <script src="./app.js?v=atlas-design-5"></script>
+  <script src="./workspace.js?v=report-review-20261127"></script>
+  <script src="./app.js?v=report-review-20261127"></script>
 </body>
 </html>
