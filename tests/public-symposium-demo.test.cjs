@@ -84,26 +84,18 @@ test("one-tap example is explicitly fictional and does not enable research uploa
   assert.match(source, /if \(!RESEARCH_STORAGE_MODE\)\s*\{\s*\/\/ Important for a shared symposium demo device/);
 });
 
-test("historical PRS distribution is not a current-model percentile", () => {
+test("reference distribution uses the current model and only displays complete results", () => {
   assert.match(analyzer, /연구 참조분포/);
-  assert.match(analyzer, /caffeine_model_evidence_pack\.md/);
-  assert.match(source, /기존 연구 PRS 원자료/);
-  assert.match(source, /개인 참조 위치·백분위는 제공하지 않습니다/);
-  assert.match(source, /동일 모델 참조자료 미확보/);
-  assert.match(source, /핵심 SNP 미확인으로 참조 위치 산출 보류/);
-  assert.doesNotMatch(source, /참조자료 대비 순서|확인된 유전자형 없음/);
-  assert.match(landing, /개인별 안전 섭취량도 산출하지 않습니다/);
+  assert.match(source, /같은 방법으로 계산한 연구 참조자료 350명/);
+  assert.match(source, /unknownCount === 0/);
+  assert.match(source, /내 점수 이하/);
+  assert.doesNotMatch(source, /기존 연구 PRS 원자료/);
 });
 
-
-test("four-SNP coverage is not misrepresented as predictive confidence", () => {
-  assert.match(analyzer, /<span>입력 완성도<\/span>/);
-  assert.match(analyzer, /예측 정확도·통계적 신뢰도를 의미하지 않습니다/);
-  assert.doesNotMatch(analyzer, /<span>신뢰도<\/span>/);
-  assert.match(source, /<span>SNP coverage<\/span>/);
-  assert.match(source, /<span>입력 완성도<\/span>/);
-  assert.doesNotMatch(source, /<span>Confidence<\/span>|<span>신뢰도<\/span>/);
-  // Keep historical JSON schema stable; only copy/labels change.
+test("confirmed genes do not represent predictive confidence", () => {
+  assert.match(analyzer, /<span>확인된 유전자<\/span>/);
+  assert.match(analyzer, /결과가 얼마나 정확한지를 뜻하는 숫자는 아니에요/);
+  assert.match(source, /4개 중 /);
   assert.match(source, /confidence: confidence/);
 });
 

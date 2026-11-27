@@ -7,7 +7,7 @@
   <title>리포트 생성 | Caffeine Atlas</title>
   <link rel="stylesheet" href="./styles.css?v=readability-20261016&amp;rev=score-scenarios-20261120">
   <link rel="stylesheet" href="./analyzer.css?v=atlas-design-5">
-  <link rel="stylesheet" href="./experience.css?v=life-guide-20261127">
+  <link rel="stylesheet" href="./experience.css?v=reference-20261127">
 </head>
 <body class="public-demo">
   <div class="app-shell analyzer-shell">
@@ -202,7 +202,7 @@
                     <th>민감도 점수</th>
                     <th>결과 유형</th>
                     <th>대사 판정</th>
-                    <th>입력 완성도</th>
+                    <th>확인된 유전자</th>
                     <th>확인 사항</th>
                   </tr>
                 </thead>
@@ -256,7 +256,7 @@
             <div class="score-stage">
               <p class="score-kicker">카페인 민감도 점수</p>
               <div class="score-number">
-                <span id="scoreValue">--</span><small id="atlas-score-unit">/ 100</small>
+                <span id="scoreValue">--</span><small id="atlas-score-unit">(100점 만점)</small>
               </div>
               <p class="score-label" id="scoreLabel">대기 중</p>
               <p class="score-coverage-note" id="scoreCoverageNote" hidden></p>
@@ -268,7 +268,6 @@
             </div>
           </div>
           <span class="type-illustration" id="typeIllustration" hidden></span>
-          <span class="type-code" id="typeEmoji" aria-hidden="true">--</span>
           <section class="atlas-result-explanation" aria-label="결과 해석">
             <p id="atlas-interpretation-summary">유전자형을 선택해 주세요.</p>
             <details class="atlas-interpretation-more" id="atlas-interpretation-more" hidden>
@@ -338,14 +337,14 @@
             </header>
             <dl class="atlas-life-actions" id="recommendList"></dl>
             <details class="atlas-life-log">
-              <summary>📝 커피와 잠, 이렇게 기록해 보세요</summary>
+              <summary>커피와 잠, 이렇게 기록해 보세요</summary>
               <div class="atlas-life-log-body">
                 <p>며칠만 적어 봐도 나에게 맞는 커피 양과 시간을 찾는 데 도움이 돼요.</p>
                 <h4>기록 예시</h4>
                 <dl>
-                  <div><dt>☕ 언제, 얼마나 마셨나요?</dt><dd>오전 10시 · 아메리카노 반 잔</dd></div>
-                  <div><dt>😴 잠은 어땠나요?</dt><dd>눕고 30분 뒤 잠듦 · 밤에 1번 깸</dd></div>
-                  <div><dt>💓 몸의 느낌은요?</dt><dd>마신 뒤 두근거림 없음</dd></div>
+                  <div><dt>언제, 얼마나 마셨나요?</dt><dd>오전 10시 · 아메리카노 반 잔</dd></div>
+                  <div><dt>잠은 어땠나요?</dt><dd>눕고 30분 뒤 잠듦 · 밤에 1번 깸</dd></div>
+                  <div><dt>몸의 느낌은요?</dt><dd>마신 뒤 두근거림 없음</dd></div>
                 </dl>
                 <h4>이렇게 활용해 보세요</h4>
                 <ul>
@@ -386,9 +385,9 @@
         </div>
 
         <div class="metabolism-type-card">
-          <span>카페인 대사 관련 분류(모형)</span>
+          <span>카페인이 빠져나가는 속도</span>
           <strong id="metabolismTypeName">--</strong>
-          <p id="metabolismTypeDesc">대사 관련 유전자형을 모형에 반영한 분류입니다. 실제 카페인 대사 속도나 체내 잔류 시간은 측정하지 않습니다.</p>
+          <p id="metabolismTypeDesc">카페인 분해에 가장 중요한 유전자 정보가 없어서 판단하지 않았어요.</p>
         </div>
 
         <div class="atlas-method-score" id="atlas-method-score" hidden>
@@ -399,16 +398,16 @@
               <div class="gauge-marker" id="gaugeMarker"></div>
             </div>
             <div class="gauge-scale">
-              <span>저민감형 · 낮음</span>
-              <span>중민감형 · 중간</span>
-              <span>고민감형 · 높음</span>
+              <span>저민감형 0~33점</span>
+              <span>중민감형 34~66점</span>
+              <span>고민감형 67~100점</span>
             </div>
           </div>
           <p class="score-position" id="scorePosition" hidden></p>
         </div>
 
         <div class="layer-stack">
-          <h3>결과를 볼 때 참고한 항목</h3>
+          <h3>분석 레이어</h3>
           <div class="layer-row">
             <span>대사 민감도 점수</span>
             <strong id="metabolismScore">--</strong>
@@ -420,11 +419,11 @@
             <div class="mini-bar"><i id="behaviorBar"></i></div>
           </div>
           <div class="layer-row">
-            <span>입력 완성도</span>
+            <span>확인된 유전자</span>
             <strong id="confidenceScore">--</strong>
             <div class="mini-bar"><i id="confidenceBar"></i></div>
           </div>
-          <p class="reference-scope-note">입력 완성도는 4개 SNP 중 확인된 유전자형의 비율이며, 예측 정확도·통계적 신뢰도를 의미하지 않습니다.</p>
+          <p class="reference-scope-note">유전자 4개 중 결과가 확인된 개수를 보여 줘요. 결과가 얼마나 정확한지를 뜻하는 숫자는 아니에요.</p>
         </div>
 
         <details class="score-explanation" id="scenarioDetails" hidden>
@@ -446,8 +445,8 @@
               <strong id="referencePositionText">--</strong>
             </div>
           </div>
-          <canvas id="referenceChart" width="680" height="300" role="img" aria-label="기존 연구 PRS 350개 표본의 점수별 빈도. 개인 참조 위치는 산출하지 않습니다."></canvas>
-          <p class="reference-scope-note"><span id="referenceSourceNote"></span> <a href="https://github.com/Haru-today/caffeine-atlas/blob/main/caffeine_model_evidence_pack.md">모델 근거 문서 보기</a></p>
+          <canvas id="referenceChart" width="680" height="300" role="img" aria-label="같은 모델로 계산한 연구 참조자료의 민감도 점수 분포"></canvas>
+          <p class="reference-scope-note"><span id="referenceSourceNote"></span></p>
         </div>
         </section>
 
@@ -543,6 +542,6 @@
   <script src="./vendor/xlsx.full.min.js?v=0.20.3"></script>
   <script src="./batch-pdf.js?v=20261118"></script>
   <script src="./workspace.js?v=type-v3-20261127"></script>
-  <script src="./app.js?v=life-guide-20261127"></script>
+  <script src="./app.js?v=reference-20261127"></script>
 </body>
 </html>

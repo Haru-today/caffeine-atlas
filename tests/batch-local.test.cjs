@@ -91,12 +91,12 @@ test("each batch PDF uses its own ID, dates, genotypes and held result", async (
   assert.match(flow.popups[0], /이 유전자는 카페인이 빨리 빠져나가는 쪽이에요/);
   assert.doesNotMatch(flow.popups[0], /대사 민감도 점수는 섭취·조절 민감도 점수와 비교하면/);
   assert.match(flow.popups[0], /평소 마시는 양 그대로 살펴보기/);
-  assert.match(flow.popups[0], /동일 모델 참조자료 미확보 · 개인 위치 산출 보류/);
+  assert.match(flow.popups[0], /내 점수 이하: 20\.6%/);
   assert.doesNotMatch(flow.popups[0], /95\/100/);
   assert.match(flow.popups[2], /gauge is-unscored/);
-  assert.match(flow.popups[2], /핵심 SNP 미확인으로 참조 위치 산출 보류/);
-  assert.match(flow.popups[3], /28\.7.*제한적 결과 · 3\/4 SNP 확인/);
-  assert.match(flow.element("batchResultsBody").innerHTML, /28\.7점<small class="score-coverage-note">제한적 결과 · 3\/4 SNP 확인/);
+  assert.match(flow.popups[2], /핵심 유전자를 확인하지 못해 위치를 표시하지 않아요/);
+  assert.match(flow.popups[3], /28\.7.*제한적 결과 · 확인된 유전자 4개 중 3개/);
+  assert.match(flow.element("batchResultsBody").innerHTML, /28\.7점<small class="score-coverage-note">제한적 결과 · 확인된 유전자 4개 중 3개/);
   assert.doesNotMatch(flow.popups[2], /<circle class="distribution-marker"/);
   assert.equal(flow.networkCalls(), 0);
 });
@@ -328,9 +328,9 @@ test("download workbook retains every row, source values, errors and safe text c
   const partialOutput = resultRows.find(row => row[1] === "PARTIAL");
   assert.equal(partialOutput[4], "미기재");
   assert.equal(partialOutput[11], 28.7);
-  assert.equal(partialOutput[21], "제한적 결과 · 3/4 SNP 확인");
+  assert.equal(partialOutput[21], "제한적 결과 · 확인된 유전자 4개 중 3개");
   assert.deepEqual(partialOutput.slice(24), [28.7, 42.5, "저민감형 / 중민감형", 3]);
-  assert.match(JSON.stringify(toRows(exported.Sheets["해석 안내"])), /기존 연구 PRS 원자료/);
+  assert.match(JSON.stringify(toRows(exported.Sheets["해석 안내"])), /같은 방법으로 계산한 연구 참조자료/);
   const flattened = JSON.stringify(resultRows);
   for (const id of records.map(record => record.sampleId)) assert.ok(resultRows.some(row => row.includes(id)), id);
   assert.match(flattened, /GG/);
@@ -385,11 +385,11 @@ test("all 256 combinations produce finite bounded scores or an explicit core-mar
 
 test("interpretation follows the metabolism layer even when the overall type differs", async () => {
   const entries = [
-    ["FAST", ["AA", "GG", "CC", "AT"], "저민감형", "빠른 방향"],
-    ["MID", ["AC", "AG", "CT", "AT"], "중민감형", "중간 방향"],
-    ["SLOW", ["CC", "AA", "TT", "TT"], "고민감형", "느린 방향"],
-    ["MIXED-SLOW", ["CC", "GG", "CC", "AA"], "중민감형", "느린 방향"],
-    ["MIXED-FAST", ["AA", "AA", "TT", "TT"], "중민감형", "빠른 방향"]
+    ["FAST", ["AA", "GG", "CC", "AT"], "저민감형", "빠른 편"],
+    ["MID", ["AC", "AG", "CT", "AT"], "중민감형", "보통"],
+    ["SLOW", ["CC", "AA", "TT", "TT"], "고민감형", "느린 편"],
+    ["MIXED-SLOW", ["CC", "GG", "CC", "AA"], "중민감형", "느린 편"],
+    ["MIXED-FAST", ["AA", "AA", "TT", "TT"], "중민감형", "빠른 편"]
   ];
   const records = (await app.parseBatchWorkbook(file(workbook(entries.map(([id, g]) => row(id, g)))))).map(app.analyzeBatchRow);
   for (const [i, [id, , type, speed]] of entries.entries()) {
@@ -417,8 +417,24 @@ test("all report outputs use score-specific explanations and selected guide word
   assert.match(mid.recommendations.join(" "), /조금씩 마시며 반응 살펴보기/);
   assert.match(high.recommendations.join(" "), /양을 줄여 보기/);
   for (const report of [low, mid, high]) {
-    assert.match(report.recommendations.join(" "), /카페인 107 mg/);
-    assert.match(report.recommendations.join(" "), /권장 섭취량이나 개인별 안전량이 아닙니다/);
+    assert.match(report.recommendations.join(" "), /커피 한 잔/);
+    assert.match(report.recommendations.join(" "), /일반적인 안전 참고 수준/);
   }
-  assert.match(high.recommendations.join(" "), /커피를 마신 뒤 두근거리거나 잠이 잘 오지 않으면/);
+  assert.match(high.recommendations.join(" "), /반 잔이나 디카페인으로 바꿔 보세요/);
+});
+
+test("reference comparison counts ties and withholds incomplete genotypes", () => {
+  function calculate(codes) {
+    const selections = {};
+    app.genes.forEach((gene, i) => { selections[gene.id] = gene.genotypes.find(g => g.code === codes[i]); });
+    return app.buildComputedResult(selections);
+  }
+  const low = calculate(["AA", "GG", "CC", "AA"]);
+  assert.equal(low.score, 0);
+  assert.equal(low.referencePercent, 16 / 350 * 100);
+  assert.equal(low.percentile, null);
+  const example = calculate(["AA", "GG", "CC", "AT"]);
+  assert.ok(Math.abs(example.referencePercent - 72 / 350 * 100) < 1e-9);
+  assert.equal(calculate(["CC", "AA", "TT", "TT"]).referencePercent, 100);
+  assert.equal(calculate(["AA", "unknown", "CC", "AT"]).referencePercent, null);
 });
