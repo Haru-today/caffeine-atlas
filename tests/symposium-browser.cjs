@@ -218,9 +218,9 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.match(content, /rs6968865|AHR/);
     assert.match(content, /연구 참조분포/);
     assert.match(content, /내 점수 이하: 20\.6% \(350명 기준\)/);
-    assert.match(content, /기존 연구 PRS 원자료/);
+    assert.match(content, /같은 방법으로 계산한 연구 참조자료 350명/);
     assert.doesNotMatch(content, /95\/100/);
-    assert.match(content, /SNP coverage/);
+    assert.match(content, /확인된 유전자/);
     await popup.close();
 
     await page.locator("#editBtn").click();
