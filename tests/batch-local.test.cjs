@@ -87,7 +87,10 @@ test("each batch PDF uses its own ID, dates, genotypes and held result", async (
   assert.match(flow.popups[1], /<title>Caffeine-Atlas-Report-PDF-SECOND-2026-11-09<\/title>/);
   assert.doesNotMatch(flow.popups[1], /PDF-FIRST|PDF-HOLD/);
   assert.match(flow.popups[1], /<td>CC<\/td>/);
-  assert.match(flow.popups[0], /동일 모델 참조자료 미확보 · 개인 위치 산출 보류/);
+  assert.match(flow.popups[0], /내 점수 이하: 20\.6% \(350명 기준\)/);
+  assert.match(flow.popups[0], /class="distribution-marker"/);
+  assert.match(flow.popups[3], /미확인 유전자형이 있어 비교 보류/);
+  assert.doesNotMatch(flow.popups[3], /class="distribution-marker"/);
   assert.doesNotMatch(flow.popups[0], /95\/100/);
   assert.match(flow.popups[2], /gauge is-unscored/);
   assert.match(flow.popups[2], /핵심 SNP 미확인으로 참조 위치 산출 보류/);
@@ -326,7 +329,7 @@ test("download workbook retains every row, source values, errors and safe text c
   assert.equal(partialOutput[11], 28.7);
   assert.equal(partialOutput[21], "제한적 결과 · 3/4 SNP 확인");
   assert.deepEqual(partialOutput.slice(24), [28.7, 42.5, "잠꾸러기형 / 잠잠형", 3]);
-  assert.match(JSON.stringify(toRows(exported.Sheets["해석 안내"])), /기존 연구 PRS 원자료/);
+  assert.match(JSON.stringify(toRows(exported.Sheets["해석 안내"])), /참조자료 350명의 유전자형/);
   const flattened = JSON.stringify(resultRows);
   for (const id of records.map(record => record.sampleId)) assert.ok(resultRows.some(row => row.includes(id)), id);
   assert.match(flattened, /GG/);
@@ -377,4 +380,18 @@ test("all 256 combinations produce finite bounded scores or an explicit core-mar
   }
   visit(0, {});
   assert.equal(count, 256);
+});
+
+test("current-model reference uses exact score ties and holds incomplete genotypes", async () => {
+  const genotypes = [
+    ["AA", "GG", "CC", "AA"],
+    ["AA", "GG", "CC", "AT"],
+    ["AC", "AG", "CT", "AT"],
+    ["CC", "AA", "TT", "TT"],
+    ["AA", "GG", "CC", "모름"]
+  ];
+  const records = await app.parseBatchWorkbook(file(workbook(genotypes.map((g, i) => row("TEST-" + i, g)))));
+  const results = records.map(app.analyzeBatchRow).map(record => record.result);
+  assert.deepEqual(results.map(r => r.score), [0, 6.9, 50, 100, 0]);
+  assert.deepEqual(results.map(r => r.percentile === null ? null : Number(r.percentile.toFixed(1))), [4.6, 20.6, 88.9, 100, null]);
 });
