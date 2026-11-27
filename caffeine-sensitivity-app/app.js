@@ -449,7 +449,7 @@
       : {
         name: "판정 보류",
         displayName: "판정 보류",
-        desc: "핵심 대사 표지자인 CYP1A2*1F rs762551가 '모름'이어서 카페인이 몸에 남는 시간을 판정하지 않았습니다."
+        desc: "핵심 대사 표지자인 CYP1A2*1F(rs762551)가 미확인되어 대사 모형 분류를 보류했습니다."
       };
     // Preserve the existing research-storage field; public reports use the cumulative position.
     var sensitivityRank = hasScore ? calculateRankFromPercentile(percentile.percentile) : null;
@@ -461,7 +461,10 @@
       : "";
 
     var interpretation = category.text.split("\n\n");
-    if (metabolismSubtype.effect) interpretation[0] += " 대사 모형에서는 " + metabolismSubtype.displayName + "이에요. " + metabolismSubtype.effect;
+    if (hasScore && metabolismSubtype.effect) {
+      interpretation.push("대사 모형: " + metabolismSubtype.displayName + ". " + metabolismSubtype.effect + " 종합 민감도 지수와 별도로 해석합니다.");
+      interpretation.push("본 점수는 연구용 종합지수이며 실제 대사 속도, 각성 효과, 수면 반응을 측정한 결과가 아닙니다. 섭취량·시간과 평소 반응을 함께 확인하세요.");
+    }
     if (coverageNote) interpretation.push(coverageNote);
 
     return {
@@ -567,9 +570,9 @@
         illustration: "sleepy",
         badge: "민감도 지수 낮음",
         emoji: "🌙",
-        desc: "연구용 카페인 민감도 지수가 낮은 구간이에요.",
-        title: "카페인 민감도 지수가 낮은 편이에요!",
-        text: "카페인 대사와 섭취에 관련된 유전자형을 종합했을 때, 민감도를 높이는 방향으로 반영된 점수가 낮은 구간이에요.\n\n커피를 마신 시각과 양, 잠들기까지 걸린 시간을 함께 살펴보세요."
+        desc: "잠꾸러기형 · 연구용 민감도 지수가 낮은 구간입니다.",
+        title: "잠꾸러기형 | 민감도 지수 낮음",
+        text: "카페인 관련 SNP를 반영하는 연구 모형에서 종합점수가 낮은 구간입니다. 카페인에 상대적으로 덜 민감한 방향으로 정의한 유형이지만, 카페인을 많이 마셔도 괜찮거나 수면에 영향이 없다는 뜻은 아닙니다."
       };
     }
     if (score < TYPE_THRESHOLDS[1]) {
@@ -578,9 +581,9 @@
         illustration: "calm",
         badge: "민감도 지수 중간",
         emoji: "🌿",
-        desc: "연구용 카페인 민감도 지수가 중간 구간이에요.",
-        title: "카페인 민감도 지수가 중간 구간이에요!",
-        text: "카페인 대사와 섭취에 관련된 유전자형을 종합한 연구용 민감도 지수가 중간 구간이에요.\n\n커피를 마신 시각과 양, 잠들기까지 걸린 시간을 함께 살펴보세요."
+        desc: "잠잠형 · 연구용 민감도 지수가 중간 구간입니다.",
+        title: "잠잠형 | 민감도 지수 중간",
+        text: "카페인 관련 SNP를 반영하는 연구 모형에서 종합점수가 중간 구간입니다. 낮은 유형과 높은 유형 사이의 점수이며, 실제 카페인 반응이 평균적이라는 의미는 아닙니다."
       };
     }
     return {
@@ -588,9 +591,9 @@
       illustration: "awake",
       badge: "민감도 지수 높음",
       emoji: "⚡",
-      desc: "연구용 카페인 민감도 지수가 높은 구간이에요.",
-      title: "카페인 민감도 지수가 높은 편이에요!",
-      text: "카페인 대사와 섭취에 관련된 유전자형을 종합했을 때, 민감도를 높이는 방향으로 반영된 점수가 높은 구간이에요.\n\n커피를 마신 시각과 양, 잠들기까지 걸린 시간을 함께 살펴보세요."
+      desc: "각성형 · 연구용 민감도 지수가 높은 구간입니다.",
+      title: "각성형 | 민감도 지수 높음",
+      text: "카페인 관련 SNP를 반영하는 연구 모형에서 종합점수가 높은 구간입니다. 카페인에 상대적으로 더 민감한 방향으로 정의한 유형으로, 섭취 후 각성감이나 수면 변화를 주의 깊게 살펴보세요. 실제 불면이나 카페인 불내성을 뜻하지는 않습니다."
     };
   }
 
@@ -615,7 +618,7 @@
       return {
         name: "판정 보류",
         displayName: "판정 보류",
-        desc: "확인된 대사 관련 유전자형이 없어 카페인이 몸에서 빠져나가는 속도를 판정하지 않았습니다."
+        desc: "확인된 대사 관련 유전자형이 없어 대사 모형 분류를 보류했습니다."
       };
     }
 
@@ -623,24 +626,24 @@
     if (score <= 33.33) {
       return {
         name: "고속 대사형",
-        displayName: "카페인 고속 대사형",
-        effect: "같은 양을 마셨을 때 카페인 분해가 빠르면, 몸에 남는 시간이 짧아져 잠이 깨는 느낌도 더 일찍 잦아들 수 있어요.",
-        desc: "대사 관련 유전자형을 모형에 반영했을 때 빠른 분해 쪽으로 분류됐어요."
+        displayName: "빠른 분해 경향",
+        effect: "대사 관련 SNP의 점수는 상대적으로 빠른 분해 방향을 나타냅니다.",
+        desc: "대사 모형에서 빠른 분해 방향의 구간입니다. 실제 분해 속도를 측정한 결과는 아닙니다."
       };
     }
     if (score <= 66.67) {
       return {
         name: "중간 대사형",
-        displayName: "카페인 중간 대사형",
-        effect: "커피를 마신 뒤 느끼는 각성과 수면 반응은 섭취량과 시각에 따라 달라질 수 있어요.",
-        desc: "대사 모형 점수가 빠른 분해와 느린 분해 사이 구간에 있어요."
+        displayName: "중간 분해 경향",
+        effect: "대사 관련 SNP의 점수는 중간 구간에 해당합니다.",
+        desc: "대사 모형에서 중간 구간입니다. 실제 분해 속도를 측정한 결과는 아닙니다."
       };
     }
     return {
       name: "저속 대사형",
-      displayName: "카페인 저속 대사형",
-      effect: "실제로 카페인이 몸에서 천천히 줄어들면 각성 효과가 더 오래 이어져, 늦게 마신 날에는 잠들기 어려울 수 있어요.",
-      desc: "대사 관련 유전자형을 모형에 반영했을 때 느린 분해 쪽으로 분류됐어요."
+      displayName: "느린 분해 경향",
+      effect: "대사 관련 SNP의 점수는 상대적으로 느린 분해 방향을 나타냅니다.",
+      desc: "대사 모형에서 느린 분해 방향의 구간입니다. 실제 분해 속도를 측정한 결과는 아닙니다."
     };
   }
 
@@ -832,7 +835,7 @@
     elements.typeIllustration.hidden = !category.illustration;
     elements.typeBadge.textContent = category.badge;
     elements.typeName.textContent = category.label;
-    elements.typeDesc.textContent = hasScore ? metabolismSubtype.displayName : lastResult.typeDescription;
+    elements.typeDesc.textContent = category.desc;
     elements.coverageText.textContent = "입력 완성도 " + confidence + "% (확인 " + valid.length + "/4 · 모름 " + unknownCount + "/4)";
     elements.gaugeFill.style.width = hasScore ? score.toFixed(2) + "%" : "0%";
     elements.gaugeMarker.style.left = hasScore ? score.toFixed(2) + "%" : "0%";
@@ -851,7 +854,7 @@
     elements.metabolismTypeDesc.textContent = metabolismSubtype.desc;
     elements.interpretationTitle.textContent = category.title;
     var paragraphs = lastResult.interpretation.split("\n\n");
-    elements.interpretationSummary.textContent = hasScore ? metabolismSubtype.effect || category.desc : category.title;
+    elements.interpretationSummary.textContent = hasScore ? category.text.split("\n\n")[0] : category.desc;
     elements.interpretationText.textContent = paragraphs.join("\n\n");
     elements.interpretationMore.hidden = false;
     elements.interpretationMore.open = false;
@@ -934,7 +937,7 @@
     elements.detailCategory.textContent = "--";
     elements.detailInputQuality.textContent = "--";
     elements.metabolismTypeName.textContent = "--";
-    elements.metabolismTypeDesc.textContent = "유전자형을 바탕으로 카페인이 비교적 빨리 빠지는지, 오래 남는지 보여드립니다.";
+    elements.metabolismTypeDesc.textContent = "대사 관련 유전자형의 모형상 분류입니다. 실제 카페인 대사 속도는 측정하지 않습니다.";
     elements.interpretationTitle.textContent = "유전자형을 선택해 주세요";
     elements.interpretationSummary.textContent = "리포트 정보와 4개 유전자형 항목을 선택한 뒤 리포트 생성 버튼을 누르면 결과가 생성됩니다.";
     elements.interpretationText.textContent = "";
@@ -1347,7 +1350,7 @@
       genotypes: getGenotypeRecordsFor(selectionMap),
       recommendations: result.category.recommendations,
       limitations: [
-        "본 결과는 연구·교육용 해석 리포트이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다.",
+        "본 결과는 연구·교육용 해석 리포트이며 질병 진단, 의학적 처방, 치료 판단을 대체하지 않습니다. 민감도 구간은 자체 모형 기준이며 임상 검증된 분류가 아닙니다.",
         "실제 카페인 반응은 수면, 약물, 간 기능, 임신, 흡연, 스트레스, 섭취량과 섭취 시간의 영향을 받을 수 있습니다.",
         result.confidence < 100 ? "'모름'으로 선택한 유전자형은 점수에서 제외했으며, 분석 완성도가 낮을수록 결과의 불확실성이 큽니다." : ""
       ].filter(Boolean)
