@@ -391,3 +391,11 @@
 .atlas-life-text {
   line-height: 1.65;
 }
+
+.report-hero-card .atlas-type-copy #typeDesc {
+  margin-top: 8px;
+  color: #52676f;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.6;
+}

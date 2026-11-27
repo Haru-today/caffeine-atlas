@@ -217,7 +217,6 @@
     behaviorBar: document.getElementById("behaviorBar"),
     confidenceBar: document.getElementById("confidenceBar"),
     referencePositionText: document.getElementById("referencePositionText"),
-    referenceSourceNote: document.getElementById("referenceSourceNote"),
     interpretationTitle: document.getElementById("interpretationTitle"),
     interpretationSummary: document.getElementById("atlas-interpretation-summary"),
     interpretationMore: document.getElementById("atlas-interpretation-more"),
@@ -574,6 +573,7 @@
         label: "저민감형",
         illustration: "sleepy",
         badge: "카페인 민감도 지수가 낮아요.",
+        resultLine: "입력하신 유전자형을 바탕으로 계산한 결과,\n카페인 민감도 지수가 낮은 구간에 해당해요.",
         desc: "카페인에 덜 민감한 편이에요.",
         title: "저민감형 | 카페인에 덜 민감한 편",
         text: "카페인이 몸에서 비교적 빨리 빠져나가는 편이에요. 그래도 많이 마셔도 괜찮다는 뜻은 아니니, 마시는 양과 잠자리 컨디션을 함께 살펴봐 주세요."
@@ -584,6 +584,7 @@
         label: "중민감형",
         illustration: "calm",
         badge: "카페인 민감도 지수가 중간이에요.",
+        resultLine: "입력하신 유전자형을 바탕으로 계산한 결과,\n카페인 민감도 지수가 중간 구간에 해당해요.",
         desc: "카페인에 보통인 편이에요.",
         title: "중민감형 | 카페인에 보통인 편",
         text: "카페인에 보통 정도로 반응하는 편이에요. 오후 늦게 마신 날에는 잠이 어땠는지 한번 살펴봐 주세요.",
@@ -594,6 +595,7 @@
       label: "고민감형",
       illustration: "awake",
       badge: "카페인 민감도 지수가 높아요.",
+      resultLine: "입력하신 유전자형을 바탕으로 계산한 결과,\n카페인 민감도 지수가 높은 구간에 해당해요.",
       desc: "카페인에 민감한 편이에요.",
       title: "고민감형 | 카페인에 민감한 편",
       text: "카페인이 몸에 오래 머무는 편이에요. 적은 양에도 잠이 깨거나 두근거릴 수 있으니, 늦은 시간 커피는 줄여 보세요.",
@@ -651,7 +653,7 @@
 
   function formatReferencePosition(percentile, hasScore) {
     return typeof percentile === "number"
-      ? "기존 연구 참여자 350명 중 " + percentile.toFixed(1) + "%가 내 점수와 같거나 낮아요."
+      ? ""
       : hasScore
         ? "확인되지 않은 유전자가 있어 350명과 비교하지 않았어요."
         : "카페인 분해에 가장 중요한 유전자 정보가 없어서 350명과 비교하지 않았어요.";
@@ -836,9 +838,10 @@
     elements.typeIllustration.innerHTML = typeArtworkHtml(category.illustration);
     elements.typeIllustration.hidden = !category.illustration;
     elements.typeBadge.textContent = category.badge;
+    elements.typeBadge.hidden = hasScore;
     elements.typeName.textContent = category.label;
-    elements.typeDesc.textContent = hasScore ? "" : category.desc;
-    elements.typeDesc.hidden = hasScore;
+    elements.typeDesc.innerHTML = textHtml(hasScore ? category.resultLine : category.desc);
+    elements.typeDesc.hidden = false;
     elements.coverageText.textContent = "확인된 유전자 4개 중 " + valid.length + "개";
     elements.gaugeFill.style.width = hasScore ? score.toFixed(2) + "%" : "0%";
     elements.gaugeMarker.style.left = hasScore ? score.toFixed(2) + "%" : "0%";
@@ -934,6 +937,7 @@
     elements.typeIllustration.innerHTML = "";
     elements.typeIllustration.hidden = true;
     elements.typeBadge.textContent = "대기 중";
+    elements.typeBadge.hidden = false;
     elements.typeDesc.hidden = false;
     elements.typeName.textContent = "리포트 결과 대기";
     elements.typeDesc.textContent = "리포트 정보와 유전자형을 입력하면 개인 유형이 표시됩니다.";
@@ -958,31 +962,23 @@
     metabolism: "점수가 높을수록 카페인이 몸에 오래 남는 쪽과 관련 있어요.",
     behavior: "점수가 높을수록 커피를 많이 마시는 경향과 관련 있어요."
   };
-  var LAYER_PHRASES = {
-    metabolism: { 0: "카페인이 빨리 빠져나가는 쪽", 50: "카페인이 빠져나가는 속도가 중간쯤인 쪽", 100: "카페인이 몸에 오래 남는 쪽", end: "이에요." },
-    behavior: { 0: "커피를 적게 마시는 경향", 50: "커피를 마시는 양이 중간쯤인 경향", 100: "커피를 많이 마시는 경향", end: "과 관련 있어요." }
+  var GENOTYPE_EXPLANATIONS = {
+    metabolism: {
+      0: "이 유전자는 카페인이 빨리 빠져나가는 쪽이에요.",
+      50: "이 유전자는 카페인이 빠져나가는 속도가 중간쯤이에요.",
+      100: "이 유전자는 카페인이 몸에 오래 남는 쪽이에요."
+    },
+    behavior: {
+      0: "이 유전자는 커피를 적게 마시는 경향과 관련 있어요.",
+      50: "이 유전자는 커피를 마시는 경향이 중간쯤이에요.",
+      100: "이 유전자는 커피를 많이 마시는 경향과 관련 있어요."
+    }
   };
   var SOURCE_LABELS = { "기능 연구": "실험 연구", "GWAS": "대규모 유전자 연구", "AHR 후보": "후보 유전자(근거 보완 중)" };
 
   function genotypeExplanation(layer, points) {
     if (points === null) return "유전자형을 확인하지 못해 점수에 반영하지 않았어요.";
-    return LAYER_PHRASES[layer][points] + LAYER_PHRASES[layer].end;
-  }
-
-  // Korean topic particle for gene names read aloud (e.g. AHR -> 은, CYP1A2*1F -> 는).
-  function topicParticle(name) {
-    return /[LMNR013678]$/i.test(name) ? "은" : "는";
-  }
-
-  function groupedGenotypeExplanations(records) {
-    return ["metabolism", "behavior"].map(function (layer) {
-      var items = records.filter(function (item) { return item.layerKey === layer && item.points !== null; });
-      var phrases = LAYER_PHRASES[layer];
-      if (!items.length) return "";
-      if (items.length === 1) return items[0].name + topicParticle(items[0].name) + " " + phrases[items[0].points] + phrases.end;
-      if (items.every(function (item) { return item.points === items[0].points; })) return "두 유전자 모두 " + phrases[items[0].points] + phrases.end;
-      return items.map(function (item) { return item.name + topicParticle(item.name) + " " + phrases[item.points]; }).join(", ") + phrases.end;
-    }).filter(Boolean);
+    return GENOTYPE_EXPLANATIONS[layer][points];
   }
 
   function renderSummary() {
@@ -1041,7 +1037,7 @@
     var compact = width < 500;
     var padLeft = compact ? 14 : 24;
     var padRight = compact ? 14 : 24;
-    var padTop = compact ? 50 : 58;
+    var padTop = compact ? 38 : 44;
     var padBottom = compact ? 58 : 70;
     var chartW = width - padLeft - padRight;
     var chartH = height - padTop - padBottom;
@@ -1086,10 +1082,9 @@
     if (lastResult && typeof lastResult.referencePercent === "number") {
       var markerX = xAt(lastResult.score);
       var markerY = yAt(referenceDensity(lastResult.score));
-      var label = lastResult.score.toFixed(1) + "점 · " + lastResult.referencePercent.toFixed(1) + "%";
       ctx.font = "bold " + (compact ? "11px" : "13px") + " sans-serif";
-      var boxW = Math.max(ctx.measureText(label).width, ctx.measureText("내 위치").width) + 18;
-      var boxH = compact ? 34 : 40;
+      var boxW = ctx.measureText("내 위치").width + 20;
+      var boxH = compact ? 22 : 26;
       var boxX = Math.max(2, Math.min(markerX - boxW / 2, width - boxW - 2));
       ctx.strokeStyle = "#a32d2d"; ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]);
       ctx.beginPath(); ctx.moveTo(markerX, 4 + boxH); ctx.lineTo(markerX, baseY); ctx.stroke();
@@ -1097,10 +1092,7 @@
       ctx.fillStyle = "#a32d2d";
       ctx.beginPath(); ctx.roundRect ? ctx.roundRect(boxX, 4, boxW, boxH, 6) : ctx.rect(boxX, 4, boxW, boxH); ctx.fill();
       ctx.fillStyle = "#ffffff"; ctx.textAlign = "center";
-      ctx.font = (compact ? "10px" : "11px") + " sans-serif";
-      ctx.fillText("내 위치", boxX + boxW / 2, 4 + (compact ? 13 : 15));
-      ctx.font = "bold " + (compact ? "11px" : "13px") + " sans-serif";
-      ctx.fillText(label, boxX + boxW / 2, 4 + (compact ? 27 : 32));
+      ctx.fillText("내 위치", boxX + boxW / 2, 4 + (compact ? 15 : 18));
       ctx.beginPath(); ctx.arc(markerX, markerY, compact ? 5 : 6, 0, Math.PI * 2);
       ctx.fillStyle = "#a32d2d"; ctx.fill();
       ctx.lineWidth = 2.5; ctx.strokeStyle = "#ffffff"; ctx.stroke();
@@ -1213,7 +1205,7 @@
         + (lastResult.coverageLabel ? " (" + lastResult.coverageLabel + ")" : ""),
       "유형: " + lastResult.category.label,
       "카페인이 빠져나가는 속도: " + lastResult.metabolismSubtype.displayName,
-      formatReferencePosition(lastResult.referencePercent, typeof lastResult.score === "number"),
+      formatReferencePosition(lastResult.referencePercent, typeof lastResult.score === "number") || null,
       layerText.join("\n"),
       "",
       "[유전자형]",
@@ -1227,7 +1219,7 @@
     lines.push("", "[꼭 알아 두세요]", CAUTION_LINES.concat(lastResult.unknownCount ? [CAUTION_UNKNOWN] : []).map(function (item) {
       return "- " + item;
     }).join("\n"), CAUTION_SOURCES);
-    return lines.join("\n");
+    return lines.filter(function (line) { return line !== null; }).join("\n");
   }
 
   function copyResult() {
@@ -1294,6 +1286,7 @@
         category: result.category.label,
         title: result.category.title,
         badge: result.category.badge,
+        resultLine: result.category.resultLine || "",
         typeDescription: result.typeDescription,
         interpretation: result.interpretation,
         interpretationSections: result.interpretationSections,
@@ -1314,8 +1307,7 @@
       recommendations: result.category.recommendations,
       limitations: CAUTION_LINES.concat(result.unknownCount ? [CAUTION_UNKNOWN] : []),
       habitIntro: getHabitIntro(result.category.illustration),
-      habitGuide: result.habitGuide,
-      genotypeNotes: groupedGenotypeExplanations(getGenotypeRecordsFor(selectionMap))
+      habitGuide: result.habitGuide
     };
   }
 
@@ -2195,18 +2187,15 @@
         "<tr><td><strong>", escapeHtml(item.name), "</strong><small>", escapeHtml(item.rsid), "</small></td>",
         "<td>", escapeHtml(item.genotype), "</td>",
         "<td>", escapeHtml(item.layer), "</td>",
-        "<td>", escapeHtml(item.evidenceScore), "</td></tr>"
+        "<td>", escapeHtml(item.evidenceScore), "</td></tr><tr class=\"gene-note\"><td colspan=\"4\">", escapeHtml(item.plainExplanation), "</td></tr>"
       ].join("");
     }).join("");
     var interpretationMarkup = result.interpretationSections.map(function (section) {
       return "<div><strong>" + escapeHtml(section.title) + "</strong><p>" + textHtml(section.text) + "</p></div>";
     }).join("");
-    var interpretationColumns = result.interpretationSections.length;
-    var guideColumns = data.habitGuide.length;
     var recommendations = data.habitGuide.map(function (item) {
       return "<div class=\"guide-item\"><strong>" + escapeHtml(item.title) + "</strong><span>" + escapeHtml(item.value) + "</span><p>" + textHtml(item.text) + "</p></div>";
     }).join("");
-    var genotypeNotes = data.genotypeNotes.map(function (item) { return escapeHtml(item); }).join("<br>");
     var cautionItems = data.limitations.map(function (item) { return "<li>" + escapeHtml(item) + "</li>"; }).join("");
     var filename = "Caffeine-Atlas-Report-" + safeFilePart(info.sampleId) + "-" + safeFilePart(info.reportDate);
     var hasScore = typeof result.score === "number";
@@ -2229,7 +2218,7 @@
       hasPosition ? '<line class="distribution-marker" x1="' + markerLeft + '" y1="13" x2="' + markerLeft + '" y2="54" stroke="#a32d2d" stroke-width="1.2" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"></line>' : '',
       '</svg>',
       hasPosition ? '<span class="dist-dot" style="left:' + markerLeft + '%;top:' + markerTop.toFixed(1) + '%"></span>' +
-        '<span class="dist-label" style="left:' + Math.max(13, Math.min(87, markerLeft)) + '%">내 위치 ' + result.referenceScore.toFixed(1) + '점 · ' + result.referencePercent.toFixed(1) + '%</span>' : '',
+        '<span class="dist-label" style="left:' + Math.max(6, Math.min(94, markerLeft)) + '%">내 위치</span>' : '',
       '</div>'
     ].join("");
 
@@ -2244,11 +2233,11 @@
       ".pdf-controls{width:210mm;margin:0 auto 12px;display:flex;justify-content:flex-end;gap:8px}.pdf-controls button{border:1px solid #bac7ce;background:#fff;color:#17313a;padding:9px 14px;font-weight:800;cursor:pointer}.pdf-controls .primary{border-color:#126f72;background:#126f72;color:#fff}",
       ".pdf-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:2.6mm;border-bottom:1.5px solid #163e46}.pdf-brand img{display:block;width:52mm;height:auto}.pdf-brand p{margin:1.5mm 0 0;color:#587079;font-size:7.5pt;font-weight:700}.pdf-title{text-align:right}.pdf-title h1{margin:0;color:#173e47;font-size:18pt}.pdf-title p{margin:1.5mm 0 0;color:#60737b;font-size:7.5pt}",
       ".pdf-meta{display:grid;grid-template-columns:1.05fr .85fr .85fr .8fr 1.45fr;border:1px solid #d6e0e3}.pdf-meta div{min-width:0;padding:2.4mm 2.7mm;border-right:1px solid #d6e0e3}.pdf-meta div:last-child{border-right:0}.pdf-meta span,.metric span{display:block;color:#647981;font-size:6.8pt;font-weight:800;text-transform:uppercase}.pdf-meta strong{display:block;margin-top:1mm;font-size:8.2pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}",
-      ".pdf-summary{display:grid;grid-template-columns:1.1fr .9fr;gap:4mm}.type-panel,.score-panel,.pdf-card{border:1px solid #d6e0e3;background:#fff;padding:3.5mm}.type-panel{border-left:3mm solid #148589}.type-panel .badge{color:#0d696c;font-size:7.5pt;font-weight:900}.type-panel h2{margin:1.2mm 0 1mm;font-size:16pt}.type-panel h2 small{display:block;margin-bottom:.7mm;color:#52676f;font-size:7.5pt}.type-panel p{margin:0;color:#52676f;font-size:8pt;line-height:1.5}.score-row{display:flex;justify-content:space-between;align-items:flex-end}.score-label{color:#60767d;font-size:7.5pt;font-weight:800}.score-value{color:#d45b38;font-size:24pt;font-weight:950;line-height:1}.score-value small{font-size:9pt}.score-coverage-note{margin:1.3mm 0 0;color:#795300;font-size:7.5pt;font-weight:800}.gauge{position:relative;height:4mm;margin-top:2.5mm;background:linear-gradient(90deg,#188b91 0 33.34%,#e5ad3c 33.34% 66.67%,#d85d39 66.67%);border-radius:2mm}.gauge:after{content:'';position:absolute;left:var(--score);top:-1.4mm;width:1.4mm;height:6.8mm;background:#172f38;transform:translateX(-50%)}.gauge.is-unscored:after{display:none}.gauge-scale{display:flex;justify-content:space-between;margin-top:1mm;color:#657980;font-size:6.4pt;font-weight:800}",
+      ".pdf-summary{display:grid;grid-template-columns:1.1fr .9fr;gap:4mm}.type-panel,.score-panel,.pdf-card{border:1px solid #d6e0e3;background:#fff;padding:3.5mm}.type-panel{border-left:3mm solid #148589}.type-panel .badge{color:#0d696c;font-size:7.5pt;font-weight:900}.type-panel h2{margin:1.2mm 0 1mm;font-size:16pt}.type-panel h2 small{display:block;margin-bottom:.7mm;color:#52676f;font-size:7.5pt}.type-panel p{margin:1.2mm 0 0;color:#52676f;font-size:8pt;line-height:1.5}.score-row{display:flex;justify-content:space-between;align-items:flex-end}.score-label{color:#60767d;font-size:7.5pt;font-weight:800}.score-value{color:#d45b38;font-size:24pt;font-weight:950;line-height:1}.score-value small{font-size:9pt}.score-coverage-note{margin:1.3mm 0 0;color:#795300;font-size:7.5pt;font-weight:800}.gauge{position:relative;height:4mm;margin-top:2.5mm;background:linear-gradient(90deg,#188b91 0 33.34%,#e5ad3c 33.34% 66.67%,#d85d39 66.67%);border-radius:2mm}.gauge:after{content:'';position:absolute;left:var(--score);top:-1.4mm;width:1.4mm;height:6.8mm;background:#172f38;transform:translateX(-50%)}.gauge.is-unscored:after{display:none}.gauge-scale{display:flex;justify-content:space-between;margin-top:1mm;color:#657980;font-size:6.4pt;font-weight:800}",
       ".metrics{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid #d6e0e3}.metric{padding:2.4mm 3mm;border-right:1px solid #d6e0e3}.metric:last-child{border-right:0}.metric strong{display:block;margin-top:1mm;color:#173f47;font-size:10pt}",
       ".pdf-main{display:grid;grid-template-columns:.9fr 1.1fr;gap:4mm}.pdf-card h3{margin:0 0 1.6mm;color:#183e47;font-size:9.5pt}.chart-summary{margin-bottom:1.2mm}.chart-summary strong{color:#97422c;font-size:8.3pt}.distribution-chart{display:block;width:100%;height:22mm;border-bottom:1px solid #9fb0b6}.chart-axis{display:flex;justify-content:space-between;margin-top:1mm;color:#6a7d84;font-size:6pt}.layer-list{display:grid;gap:1.4mm}.layer{display:grid;grid-template-columns:24mm 12mm 1fr;gap:2mm;align-items:center;font-size:7pt}.layer strong{text-align:right}.layer-track{height:2mm;background:#e8edef}.layer-track i{display:block;height:100%;background:#148589}.layer:nth-child(2) .layer-track i{background:#dfa936}.layer:nth-child(3) .layer-track i{background:#3a78a0}",
-      ".genotype-note{margin:1.4mm 0 0;color:#4f646c;font-size:7pt;line-height:1.4}table{width:100%;border-collapse:collapse;font-size:7pt}th{padding:1.6mm;text-align:left;color:#587078;background:#eef4f5;border-bottom:1px solid #cbd8dc}td{padding:1.5mm;border-bottom:1px solid #e2e9eb}td small{display:block;margin-top:.5mm;color:#71848b;font-size:7pt;line-height:1.3}tbody tr:last-child td{border-bottom:0}",
-      ".pdf-content{display:grid;grid-template-columns:1fr;gap:2.6mm}.interp-grid{display:grid;gap:5mm}.guide-grid{display:grid;gap:4mm}.dist-wrap{position:relative}.dist-dot{position:absolute;width:2.4mm;height:2.4mm;margin:-1.2mm 0 0 -1.2mm;border-radius:50%;background:#a32d2d;border:.5mm solid #fff;box-sizing:border-box}.dist-label{position:absolute;top:0;transform:translateX(-50%);background:#a32d2d;color:#fff;font-size:6.4pt;font-weight:800;padding:.4mm 1.6mm;border-radius:1mm;white-space:nowrap}.interpretation{border-left:2mm solid #d45b38}.interpretation h3,.guide h3{margin:0 0 1.5mm;color:#183e47;font-size:9.5pt}.interpretation strong{display:block;margin:1.2mm 0 .6mm;font-size:8.2pt}.interpretation p{margin:0;color:#4f646c;font-size:7pt;line-height:1.45;white-space:pre-line}.guide>p{margin:0 0 1.2mm;color:#4f646c;font-size:7pt;line-height:1.4}.guide ul{margin:0;padding-left:4mm}.guide li{margin:0 0 1mm;color:#4f646c;font-size:6.8pt;line-height:1.35}.guide li:last-child{margin-bottom:0}.guide-item{margin:0}.guide-item strong{display:block;color:#183e47;font-size:7.4pt}.guide-item span{display:block;color:#0d696c;font-size:7.2pt;font-weight:800;margin:.3mm 0}.guide-item p{margin:.3mm 0 0;color:#4f646c;font-size:6.8pt;line-height:1.35}.notice ul{margin:0 0 1mm;padding-left:3.5mm;color:#687b82;font-size:6.2pt;line-height:1.45}",
+      ".genotype-note{margin:1.4mm 0 0;color:#4f646c;font-size:7pt;line-height:1.4}table{width:100%;border-collapse:collapse;font-size:7pt}th{padding:1.6mm;text-align:left;color:#587078;background:#eef4f5;border-bottom:1px solid #cbd8dc}td{padding:1.5mm;border-bottom:1px solid #e2e9eb}td small{display:block;margin-top:.5mm;color:#71848b;font-size:7pt;line-height:1.3}tbody tr:last-child td{border-bottom:0}tr.gene-note td{padding-top:0;color:#4f646c;font-size:6.8pt}tbody tr:not(.gene-note) td{border-bottom:0;padding-bottom:.6mm}",
+      ".pdf-content{display:grid;grid-template-columns:0.68fr 1.32fr;gap:4mm;align-items:stretch}.interp-grid{display:grid;gap:4.5mm}.guide-grid{display:grid;gap:2.2mm}.dist-wrap{position:relative}.dist-dot{position:absolute;width:2.4mm;height:2.4mm;margin:-1.2mm 0 0 -1.2mm;border-radius:50%;background:#a32d2d;border:.5mm solid #fff;box-sizing:border-box}.dist-label{position:absolute;top:0;transform:translateX(-50%);background:#a32d2d;color:#fff;font-size:6.4pt;font-weight:800;padding:.4mm 1.6mm;border-radius:1mm;white-space:nowrap}.interpretation{border-left:2mm solid #d45b38}.interpretation h3,.guide h3{margin:0 0 1.5mm;color:#183e47;font-size:9.5pt}.interpretation strong{display:block;margin:0 0 1mm;color:#183e47;font-size:9pt}.interpretation p{margin:0;color:#4f646c;font-size:7.8pt;line-height:1.65;white-space:pre-line}.guide>p{margin:0 0 2mm;padding-bottom:1.6mm;border-bottom:1px solid #e2e9eb;color:#4f646c;font-size:7.2pt;line-height:1.45}.guide ul{margin:0;padding-left:4mm}.guide li{margin:0 0 1mm;color:#4f646c;font-size:6.8pt;line-height:1.35}.guide li:last-child{margin-bottom:0}.guide-item{margin:0}.guide-item strong{display:block;color:#183e47;font-size:7.6pt}.guide-item span{display:block;color:#0d696c;font-size:7.2pt;font-weight:800;margin:.3mm 0}.guide-item p{margin:.3mm 0 0;color:#4f646c;font-size:7pt;line-height:1.4}.notice ul{margin:0 0 1mm;padding-left:3.5mm;color:#687b82;font-size:6.2pt;line-height:1.45}",
       ".pdf-footer{margin-top:auto;padding-top:2.2mm;border-top:1px solid #cfdadd;display:grid;grid-template-columns:1fr auto;gap:5mm;align-items:end}.notice strong{display:block;margin-bottom:1mm;color:#173f47;font-size:7pt}.notice p{margin:0;color:#687b82;font-size:6.2pt;line-height:1.45}.footer-mark{text-align:right;color:#6c7f86;font-size:6pt;white-space:nowrap}.footer-mark strong{display:block;color:#173f47;font-size:7pt}",
       "@media print{html,body{width:210mm;height:auto;background:#fff}body{padding:0}.pdf-controls{display:none}.pdf-sheet{margin:0;box-shadow:none;page-break-after:avoid}.pdf-summary,.pdf-main,.pdf-content,.pdf-footer{break-inside:avoid}}",
       forArchive ? "body{padding:0}.pdf-sheet{margin:0;box-shadow:none}.pdf-meta strong{white-space:normal;word-break:keep-all;overflow-wrap:anywhere}" : `
@@ -2302,10 +2291,10 @@
       "<main class=\"pdf-sheet\" style=\"--score:", hasScore ? result.score : 0, "%\">",
       "<header class=\"pdf-header\"><div class=\"pdf-brand\"><img src=\"", escapeHtml(logoUrl), "\" alt=\"Caffeine Atlas\"><p>Evidence-based caffeine response interpretation</p></div><div class=\"pdf-title\"><h1>Caffeine Atlas Report</h1><p>", escapeHtml(data.generatedAt), "</p></div></header>",
       "<section class=\"pdf-meta\"><div><span>Sample ID</span><strong>", escapeHtml(info.sampleId), "</strong></div><div><span>Report date</span><strong>", escapeHtml(info.reportDate), "</strong></div><div><span>Collection</span><strong>", escapeHtml(formatCollectionDate(info.collectionDate)), "</strong></div><div><span>Specimen / Sex</span><strong>", escapeHtml(info.sampleType), " / ", escapeHtml(info.sex), "</strong></div><div><span>Institution</span><strong>", escapeHtml(info.institution), "</strong></div></section>",
-      "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", hasScore ? "<small>제 카페인 유형은</small> " : "", escapeHtml(result.category + (hasScore ? "이에요!" : "")), "</h2>", hasScore ? "" : "<p>" + escapeHtml(result.typeDescription) + "</p>", "</div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div>", coverageMarkup, "<div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>저민감형 0~33점</span><span>중민감형 34~66점</span><span>고민감형 67~100점</span></div></div></section>",
-      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><h3>", escapeHtml(REFERENCE_TITLE), "</h3><strong>", escapeHtml(referencePosition), "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>저민감형</span><span>중민감형</span><span>고민감형</span></div><p class=\"genotype-note\">", textHtml(REFERENCE_SOURCE_NOTE), "</p><h3 style=\"margin-top:3mm\">영역별 점수</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사 민감도 점수</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취·조절 민감도 점수</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>확인된 유전자</span><strong>4개 중 ", result.confirmedCount, "개</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
-      "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><p class=\"genotype-note\">유전자 4개를 하나씩 살펴본 결과예요.</p><table><thead><tr><th>유전자</th><th>내 결과</th><th>구분</th><th>민감도 반영 점수</th></tr></thead><tbody>", genotypeRows, "</tbody></table>", genotypeNotes ? "<p class=\"genotype-note\">" + genotypeNotes + "</p>" : "", "</div></section>",
-      "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3><div class=\"interp-grid\" style=\"grid-template-columns:repeat(", interpretationColumns, ",1fr)\">", interpretationMarkup, "</div></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드 · ", escapeHtml(hasScore ? result.category : "일반"), "</h3><p>", textHtml(data.habitIntro), "</p><div class=\"guide-grid\" style=\"grid-template-columns:repeat(", guideColumns, ",1fr)\">", recommendations, "</div></div></section>",
+      "<section class=\"pdf-summary\"><div class=\"type-panel\">", hasScore ? "" : "<span class=\"badge\">" + escapeHtml(result.badge) + "</span>", "<h2>", hasScore ? "<small>제 카페인 유형은</small> " : "", escapeHtml(result.category + (hasScore ? "이에요!" : "")), "</h2><p>", textHtml(hasScore ? result.resultLine : result.typeDescription), "</p></div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div>", coverageMarkup, "<div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>저민감형 0~33점</span><span>중민감형 34~66점</span><span>고민감형 67~100점</span></div></div></section>",
+      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><h3>", escapeHtml(REFERENCE_TITLE), "</h3>", referencePosition ? "<strong>" + escapeHtml(referencePosition) + "</strong>" : "", "</div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>저민감형</span><span>중민감형</span><span>고민감형</span></div><h3 style=\"margin-top:3mm\">영역별 점수</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사 민감도 점수</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취·조절 민감도 점수</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>확인된 유전자</span><strong>4개 중 ", result.confirmedCount, "개</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
+      "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><p class=\"genotype-note\">유전자 4개를 하나씩 살펴본 결과예요.</p><table><thead><tr><th>유전자</th><th>내 결과</th><th>구분</th><th>민감도 반영 점수</th></tr></thead><tbody>", genotypeRows, "</tbody></table></div></section>",
+      "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3><div class=\"interp-grid\">", interpretationMarkup, "</div></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드 · ", escapeHtml(hasScore ? result.category : "일반"), "</h3><p>", textHtml(data.habitIntro), "</p><div class=\"guide-grid\">", recommendations, "</div></div></section>",
       "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>꼭 알아 두세요</strong><ul>", cautionItems, "</ul><p>", escapeHtml(CAUTION_SOURCES), "</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
       "</main>",
       forArchive ? "" : "<script>window.addEventListener('load',function(){if(navigator.webdriver||matchMedia('(max-width: 820px), (pointer: coarse)').matches)return;var ready=document.fonts?document.fonts.ready:Promise.resolve();ready.then(function(){setTimeout(function(){window.print()},350)})});<\/script>",
@@ -2449,7 +2438,6 @@
     createGeneCards();
     bindEvents();
     elements.institution.value = FIXED_INSTITUTION;
-    elements.referenceSourceNote.innerHTML = textHtml(REFERENCE_SOURCE_NOTE);
     elements.reportDate.value = getKoreaDateString();
     elements.collectionDate.value = "";
     setInputMode(window.location.hash === "#batch" ? "batch" : "single");

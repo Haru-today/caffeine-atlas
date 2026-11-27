@@ -169,10 +169,10 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       assert.equal(await page.locator('[data-gene="' + gene + '"][data-genotype="' + genotype + '"]').getAttribute("aria-pressed"), "true", gene);
     }
     assert.equal(await page.locator("#resultReport").isVisible(), true);
-    assert.equal(await page.locator("#referencePositionText").textContent(), "기존 연구 참여자 350명 중 20.6%가 내 점수와 같거나 낮아요.");
+    assert.equal(await page.locator("#referencePositionText").textContent(), "");
     assert.match(await page.locator("#reportMeta").textContent(), /Collection date: 미기재/);
     assert.equal(await page.locator("#scoreCoverageNote").isVisible(), false);
-    assert.equal(await page.locator(".chart-card .reference-scope-note").isVisible(), true);
+    assert.equal(await page.locator(".chart-card .reference-scope-note").count(), 0);
     assert.equal(await page.locator(".layer-stack .reference-scope-note").count(), 0);
     assert.match(await page.locator(".layer-stack").textContent(), /확인된 유전자/);
 
@@ -217,8 +217,8 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.match(content, /DEMO-001/);
     assert.match(content, /rs6968865|AHR/);
     assert.match(content, /연구 참조 분포/);
-    assert.match(content, /350명 중 20\.6%가 내 점수와 같거나 낮아요/);
-    assert.match(content, /350명의 점수를 부드러운 곡선으로/);
+    assert.match(content, /내 위치/);
+    assert.doesNotMatch(content, /350명의 점수를 부드러운 곡선으로/);
     assert.doesNotMatch(content, /95\/100/);
     assert.match(content, /확인된 유전자/);
     await popup.close();

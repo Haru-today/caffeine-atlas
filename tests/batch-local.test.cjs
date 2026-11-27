@@ -93,7 +93,8 @@ test("each batch PDF uses its own ID, dates, genotypes and held result", async (
   assert.match(flow.popups[0], /카페인 섭취 가이드 · /);
   assert.doesNotMatch(flow.popups[0], /대사 민감도 점수는 섭취·조절 민감도 점수와 비교하면/);
   assert.match(flow.popups[0], /평소 양 유지하기/);
-  assert.match(flow.popups[0], /350명 중 20\.6%가 내 점수와 같거나 낮아요/);
+  assert.match(flow.popups[0], /class="dist-label"[^>]*>내 위치</);
+  assert.doesNotMatch(flow.popups[0], /같거나 낮아요|100점 만점/);
   assert.doesNotMatch(flow.popups[0], /95\/100/);
   assert.match(flow.popups[2], /gauge is-unscored/);
   assert.match(flow.popups[2], /카페인 분해에 가장 중요한 유전자 정보가 없어서 350명과 비교하지 않았어요/);
@@ -426,14 +427,13 @@ test("all report outputs use score-specific explanations and selected guide word
   }
   assert.match(low.habitIntro, /^저민감형이라고 해서 커피를 더 마셔도 된다는 뜻은 아니에요\./);
   assert.match(high.recommendations.join(" "), /반 잔이나 디카페인 커피로 바꿔 보세요/);
-  assert.deepEqual(Array.from(low.genotypeNotes), [
-    "두 유전자 모두 카페인이 빨리 빠져나가는 쪽이에요.",
-    "CYP1A1-CYP1A2는 커피를 적게 마시는 경향, AHR은 커피를 마시는 양이 중간쯤인 경향과 관련 있어요."
+  assert.deepEqual(Array.from(low.genotypes, g => g.plainExplanation), [
+    "이 유전자는 카페인이 빨리 빠져나가는 쪽이에요.",
+    "이 유전자는 카페인이 빨리 빠져나가는 쪽이에요.",
+    "이 유전자는 커피를 적게 마시는 경향과 관련 있어요.",
+    "이 유전자는 커피를 마시는 경향이 중간쯤이에요."
   ]);
-  assert.deepEqual(Array.from(high.genotypeNotes), [
-    "두 유전자 모두 카페인이 몸에 오래 남는 쪽이에요.",
-    "두 유전자 모두 커피를 많이 마시는 경향과 관련 있어요."
-  ]);
+  assert.match(high.genotypes[0].plainExplanation, /몸에 오래 남는 쪽/);
 });
 
 test("reference comparison counts ties and withholds incomplete genotypes", () => {

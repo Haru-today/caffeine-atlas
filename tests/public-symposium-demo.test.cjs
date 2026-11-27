@@ -89,7 +89,8 @@ test("reference distribution uses the current model and only displays complete r
   assert.match(source, /350명의 점수를 부드러운 곡선으로/);
   assert.match(source, /REFERENCE_BANDWIDTH = 10/);
   assert.match(source, /unknownCount === 0/);
-  assert.match(source, /내 점수와 같거나 낮아요/);
+  assert.match(source, /내 위치/);
+  assert.doesNotMatch(source, /내 점수와 같거나 낮아요/);
   assert.doesNotMatch(source, /referenceBins/);
   assert.doesNotMatch(source, /기존 연구 PRS 원자료/);
 });
