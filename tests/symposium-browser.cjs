@@ -150,7 +150,7 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
       assert.equal(await page.locator('[data-gene="' + gene + '"][data-genotype="' + genotype + '"]').getAttribute("aria-pressed"), "true", gene);
     }
     assert.equal(await page.locator("#resultReport").isVisible(), true);
-    assert.equal(await page.locator("#referencePositionText").textContent(), "내 점수 이하: 20.6% (350명 기준)");
+    assert.equal(await page.locator("#referencePositionText").textContent(), "동일 모델 참조자료 미확보 · 개인 위치 산출 보류");
     assert.match(await page.locator("#reportMeta").textContent(), /Collection date: 미기재/);
     assert.equal(await page.locator("#scoreCoverageNote").isVisible(), false);
     assert.equal(await page.locator(".chart-card .reference-scope-note").isVisible(), true);
@@ -198,8 +198,8 @@ async function runCase(name, browserType, viewport, deviceOverrides = {}) {
     assert.match(content, /DEMO-001/);
     assert.match(content, /rs6968865|AHR/);
     assert.match(content, /연구 참조분포/);
-    assert.match(content, /내 점수 이하: 20\.6% \(350명 기준\)/);
-    assert.match(content, /참조자료 350명의 유전자형/);
+    assert.match(content, /동일 모델 참조자료 미확보 · 개인 위치 산출 보류/);
+    assert.match(content, /기존 연구 PRS 원자료/);
     assert.doesNotMatch(content, /95\/100/);
     assert.match(content, /SNP coverage/);
     await popup.close();

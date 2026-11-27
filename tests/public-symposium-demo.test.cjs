@@ -84,13 +84,15 @@ test("one-tap example is explicitly fictional and does not enable research uploa
   assert.match(source, /if \(!RESEARCH_STORAGE_MODE\)\s*\{\s*\/\/ Important for a shared symposium demo device/);
 });
 
-test("reference compares the same model and labels its research scope", () => {
+test("historical PRS distribution is not a current-model percentile", () => {
   assert.match(analyzer, /연구 참조분포/);
-  assert.match(source, /참조자료 350명의 유전자형을 현재 모델과 같은 방법으로 다시 계산/);
-  assert.match(source, /일반 인구의 백분위나 임상 기준은 아니에요/);
-  assert.match(source, /미확인 유전자형이 있어 비교 보류/);
+  assert.match(analyzer, /caffeine_model_evidence_pack\.md/);
+  assert.match(source, /기존 연구 PRS 원자료/);
+  assert.match(source, /개인 참조 위치·백분위는 제공하지 않습니다/);
+  assert.match(source, /동일 모델 참조자료 미확보/);
   assert.match(source, /핵심 SNP 미확인으로 참조 위치 산출 보류/);
-  assert.match(landing, /일반 인구의 백분위가 아니며/);
+  assert.doesNotMatch(source, /참조자료 대비 순서|확인된 유전자형 없음/);
+  assert.match(landing, /개인별 안전 섭취량도 산출하지 않습니다/);
 });
 
 

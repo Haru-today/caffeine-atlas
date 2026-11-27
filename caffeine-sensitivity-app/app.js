@@ -89,18 +89,18 @@
 
   var TYPE_THRESHOLDS = [33.34, 66.67];
 
-  // Aggregated current-model scores in hundredths of a point, n=350.
-  // rs2472297 CC was confirmed by the research team; other alleles were joined
-  // to their source sheets by sample ID. No individual genotypes are published.
-  var referenceScores = [[0,16],[630,31],[690,25],[1260,12],[1320,36],[1380,6],[1950,8],[2010,8],[2640,2],[2870,31],[3500,19],[3560,54],[4190,31],[4250,19],[4880,13],[5740,12],[6430,20],[7120,7]];
-  var REFERENCE_TOTAL = 350;
-  var referenceBins = Array.from({ length: 10 }, function (_, i) {
-    return { raw: 5 + i * 10, level: referenceScores.reduce(function (sum, item) {
-      var bin = Math.min(9, Math.floor(item[0] / 1000));
-      return sum + (bin === i ? item[1] : 0);
-    }, 0) };
-  });
-  var REFERENCE_SOURCE_NOTE = "참조자료 350명의 유전자형을 현재 모델과 같은 방법으로 다시 계산했어요. 위치는 반올림 전 내 점수 이하인 참조 표본의 비율이며, 일반 인구의 백분위나 임상 기준은 아니에요. rs2472297은 제공자가 확인한 350명 모두 CC를 사용했어요.";
+  // Historical PRS distribution only: aggregate counts, not the current score model.
+  var referenceBins = [
+    { raw: -0.5, level: 12 },
+    { raw: -0.25, level: 50 },
+    { raw: 0, level: 79 },
+    { raw: 0.25, level: 85 },
+    { raw: 0.5, level: 76 },
+    { raw: 0.75, level: 32 },
+    { raw: 1, level: 16 }
+  ];
+
+  var REFERENCE_SOURCE_NOTE = "기존 연구 PRS 원자료(참조표준SNP 샘플별 유전형, n=350)의 점수별 빈도입니다. 현재 70:30 모델과 동일한 방식으로 재산출된 분포가 아니므로 개인 참조 위치·백분위는 제공하지 않습니다.";
 
   // The public QR demo is offline-first for analysis: no research upload API.
   // A separately hosted, Access-authenticated research build enables storage.
@@ -257,7 +257,7 @@
   }
 
   function normalizeReference(raw) {
-    return clamp(raw, 0, 100);
+    return ((raw + 0.5) / 1.5) * 100;
   }
 
   function createGeneCards() {
@@ -438,10 +438,7 @@
     });
     var hasScore = hasCoreGenotype && result.finalNorm !== null && typeof result.finalNorm === "number";
     var score = hasScore ? clamp(result.finalNorm * 100, 0, 100) : null;
-    var referenceCount = hasScore && unknownCount === 0 ? referenceScores.reduce(function (sum, item) {
-      return sum + (item[0] <= Math.round(score * 100) ? item[1] : 0);
-    }, 0) : null;
-    var percentile = { percentile: referenceCount === null ? null : 100 * referenceCount / REFERENCE_TOTAL };
+    var percentile = { percentile: null, total: 0 };
     var confidence = Math.round((valid.length / genes.length) * 100);
     var category = hasScore ? classify(score) : getInsufficientCategory(valid.length);
     var habitGuide = buildCaffeineHabitGuide(category.illustration);
@@ -455,7 +452,7 @@
         displayName: "판정 보류",
         desc: "핵심 대사 표지자인 CYP1A2*1F(rs762551)가 미확인되어 대사 모형 분류를 보류했습니다."
       };
-    // Comparison is limited to this research sample, not a population rank.
+    // Keep compatibility fields, but do not derive population ranks from historical PRS.
     var sensitivityRank = null;
     var coverageLabel = hasScore && unknownCount
       ? "제한적 결과 · " + valid.length + "/" + genes.length + " SNP 확인"
@@ -593,7 +590,7 @@
   }
 
   function formatReferencePosition(percentile, hasScore) {
-    return typeof percentile === "number" ? "내 점수 이하: " + percentile.toFixed(1) + "% (350명 기준)" : hasScore ? "미확인 유전자형이 있어 비교 보류" : "핵심 SNP 미확인으로 참조 위치 산출 보류";
+    return hasScore ? "동일 모델 참조자료 미확보 · 개인 위치 산출 보류" : "핵심 SNP 미확인으로 참조 위치 산출 보류";
   }
 
   function formatCollectionDate(value) {
@@ -959,7 +956,6 @@
 
   function drawReferenceChart() {
     var canvas = elements.chart;
-    canvas.setAttribute("aria-label", "현재 모델로 계산한 참조 표본 350명의 민감도 점수 분포" + (lastResult && typeof lastResult.percentile === "number" ? "와 내 점수 위치" : ". 개인 위치 표시 없음"));
     var ctx = canvas.getContext("2d");
     var measuredWidth = Math.round(canvas.getBoundingClientRect().width);
     var width = measuredWidth > 0 ? measuredWidth : 760;
@@ -1039,22 +1035,13 @@
       ctx.fillStyle = "#657487";
       ctx.textAlign = "center";
       ctx.font = (compact ? "10px" : "12px") + " sans-serif";
-      ctx.fillText((index * 10) + "–" + ((index + 1) * 10), point.x, height - 24);
+      ctx.fillText(referenceBins[index].raw.toFixed(2), point.x, height - 24);
     });
 
     ctx.fillStyle = "#334155";
     ctx.textAlign = "center";
     ctx.font = "bold " + (compact ? "10px" : "13px") + " sans-serif";
-    ctx.fillText("카페인 민감도 점수", padLeft + chartW / 2, height - 7);
-
-    if (lastResult && typeof lastResult.percentile === "number") {
-      var markerX = padLeft + (lastResult.score / 100) * chartW;
-      ctx.strokeStyle = "#c0442b";
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(markerX, padTop); ctx.lineTo(markerX, padTop + chartH); ctx.stroke();
-      ctx.fillStyle = "#a63320"; ctx.textAlign = "center";
-      ctx.fillText("내 점수", Math.max(padLeft + 18, Math.min(markerX, width - padRight - 18)), padTop - 7);
-    }
+    ctx.fillText("기존 PRS 점수", padLeft + chartW / 2, height - 7);
 
     ctx.save();
     ctx.translate(16, padTop + chartH / 2);
@@ -2100,7 +2087,7 @@
 
     if (clonedCanvas) {
       chartImage.src = elements.chart.toDataURL("image/png");
-      chartImage.alt = "현재 모델로 계산한 참조 표본 350명의 민감도 점수 분포";
+      chartImage.alt = "기존 연구 PRS 350개 표본의 점수별 빈도 그래프";
       chartImage.className = "saved-chart-image";
       clonedCanvas.replaceWith(chartImage);
     }
@@ -2169,12 +2156,11 @@
     if (result.sensitivitySummary) coverageMarkup += '<p class="score-coverage-note">미확인 SNP 대입 시 ' +
       escapeHtml(result.sensitivitySummary) + '</p>';
     var pdfDistributionChart = [
-      '<svg class="distribution-chart" viewBox="0 0 100 60" role="img" aria-label="현재 모델로 계산한 참조 표본 350명의 민감도 점수 분포">',
+      '<svg class="distribution-chart" viewBox="0 0 100 60" role="img" aria-label="기존 연구 PRS 350개 표본의 점수별 빈도">',
       '<line class="distribution-grid" x1="0" y1="21" x2="100" y2="21" stroke="#e3eaec" stroke-width=".45"></line>',
       '<line class="distribution-grid" x1="0" y1="38" x2="100" y2="38" stroke="#e3eaec" stroke-width=".45"></line>',
       '<polygon class="distribution-area" points="0,54 ', pdfChartPoints, ' 100,54" fill="#dceff0"></polygon>',
       '<polyline class="distribution-line" points="', pdfChartPoints, '" fill="none" stroke="#148589" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"></polyline>',
-      typeof result.percentile === 'number' ? '<line class=\"distribution-marker\" x1=\"' + result.score + '\" y1=\"2\" x2=\"' + result.score + '\" y2=\"54\" stroke=\"#c0442b\" stroke-width=\"1\"></line>' : '',
       '</svg>'
     ].join("");
 
@@ -2248,7 +2234,7 @@
       "<section class=\"pdf-meta\"><div><span>Sample ID</span><strong>", escapeHtml(info.sampleId), "</strong></div><div><span>Report date</span><strong>", escapeHtml(info.reportDate), "</strong></div><div><span>Collection</span><strong>", escapeHtml(formatCollectionDate(info.collectionDate)), "</strong></div><div><span>Specimen / Sex</span><strong>", escapeHtml(info.sampleType), " / ", escapeHtml(info.sex), "</strong></div><div><span>Institution</span><strong>", escapeHtml(info.institution), "</strong></div></section>",
       "<section class=\"pdf-summary\"><div class=\"type-panel\"><span class=\"badge\">", escapeHtml(result.badge), "</span><h2>", hasScore ? "<small>제 카페인 유형은</small> " : "", escapeHtml(result.category + (hasScore ? "이에요!" : "")), "</h2>", hasScore ? "" : "<p>" + escapeHtml(result.typeDescription) + "</p>", "</div><div class=\"score-panel\"><div class=\"score-row\"><span class=\"score-label\">카페인 민감도 점수</span><strong class=\"score-value\">", pdfScoreText, pdfScoreUnit, "</strong></div>", coverageMarkup, "<div class=\"gauge", hasScore ? "" : " is-unscored", "\"></div><div class=\"gauge-scale\"><span>잠꾸러기형 · 낮음</span><span>잠잠형 · 중간</span><span>각성형 · 높음</span></div></div></section>",
       "<section class=\"metrics\"><div class=\"metric\"><span>Result type</span><strong>", escapeHtml(result.category), "</strong></div><div class=\"metric\"><span>Metabolism</span><strong>", escapeHtml(result.metabolismSubtype.displayName || result.metabolismSubtype.name), "</strong></div><div class=\"metric\"><span>SNP coverage</span><strong>", result.confidence, "%</strong></div></section>",
-      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><h3>연구 참조분포</h3><strong>", escapeHtml(referencePosition), "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>0</span><span>카페인 민감도 점수</span><span>100</span></div>", typeof result.percentile === "number" ? "<p class=\"genotype-note\">빨간 선: 내 점수</p>" : "", "<h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>입력 완성도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
+      "<section class=\"pdf-main\"><div class=\"pdf-card\"><div class=\"chart-summary\"><h3>연구 참조분포</h3><strong>", escapeHtml(referencePosition), "</strong></div>", pdfDistributionChart, "<div class=\"chart-axis\"><span>-0.50</span><span>기존 PRS 점수</span><span>1.00</span></div><h3 style=\"margin-top:3mm\">분석 레이어</h3><div class=\"layer-list\"><div class=\"layer\"><span>대사</span><strong>", formatPdfScore(result.metabolismScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.metabolismScore || 0, "%\"></i></div></div><div class=\"layer\"><span>섭취/조절</span><strong>", formatPdfScore(result.regulationScore), "</strong><div class=\"layer-track\"><i style=\"width:", result.regulationScore || 0, "%\"></i></div></div><div class=\"layer\"><span>입력 완성도</span><strong>", result.confidence, "%</strong><div class=\"layer-track\"><i style=\"width:", result.confidence, "%\"></i></div></div></div></div>",
       "<div class=\"pdf-card\"><h3>유전자형 결과 요약</h3><table><thead><tr><th>Gene / SNP</th><th>Genotype</th><th>Layer</th><th>Score</th></tr></thead><tbody>", genotypeRows, "</tbody></table><p class=\"genotype-note\">", escapeHtml(layerComparison(result.metabolismScore, result.regulationScore)), "</p></div></section>",
       "<section class=\"pdf-content\"><div class=\"pdf-card interpretation\"><h3>결과 해석</h3><strong>", escapeHtml(result.title), "</strong><p>", escapeHtml(result.interpretation), "</p></div><div class=\"pdf-card guide\"><h3>카페인 섭취 가이드</h3><ul>", recommendations, "</ul></div></section>",
       "<footer class=\"pdf-footer\"><div class=\"notice\"><strong>주의 및 한계</strong><p>", escapeHtml(data.limitations.concat(REFERENCE_SOURCE_NOTE, "섭취 가이드 근거: FDA 카페인 안내; EFSA 카페인 안전성; Gardiner 등(2023), doi:10.1016/j.smrv.2023.101764.").join(" ")), "</p></div><div class=\"footer-mark\"><strong>Caffeine Atlas</strong>Research &amp; education use only</div></footer>",
